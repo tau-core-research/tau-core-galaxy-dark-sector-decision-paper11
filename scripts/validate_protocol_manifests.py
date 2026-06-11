@@ -613,6 +613,27 @@ def validate_source_import_raw_template_v18() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v18 summary must forbid scoring")
 
 
+def validate_source_import_provenance_v19() -> None:
+    rows = read_csv(ROOT / "data/derived/source_import_provenance_manifest_v19.csv")
+    columns = read_csv(ROOT / "data/derived/source_import_provenance_columns_v19.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_provenance_summary_v19.csv")
+    require(len(rows) == 18, "v19 provenance manifest must cover eighteen candidate rows")
+    require(all(row["catalog_status"] == "PROVENANCE_REQUIRED_NOT_FILLED" for row in rows), "v19 catalog provenance must be unfilled")
+    require(all(row["raw_import_allowed"] == "false" for row in rows), "v19 raw import must not be allowed")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v19 rows cannot allow scoring")
+    require(len(columns) == 7, "v19 must document seven provenance fields")
+    require(all(row["required_before_raw_import"] == "true" for row in columns), "v19 provenance fields must precede raw import")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in columns), "v19 columns cannot allow scoring")
+    require(len(summary) == 1, "v19 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "PROVENANCE_REQUIRED_NOT_FILLED", "v19 provenance must remain unfilled")
+    require(row["candidate_rows"] == "18", "v19 summary must cover eighteen rows")
+    require(row["provenance_complete_rows"] == "0", "v19 must complete zero provenance rows")
+    require(row["raw_import_allowed_rows"] == "0", "v19 must allow zero raw imports")
+    require(row["required_provenance_fields"] == "7", "v19 must require seven provenance fields")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v19 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -646,6 +667,7 @@ def main() -> None:
     validate_source_import_write_authorization_v16()
     validate_source_import_authorized_writer_v17()
     validate_source_import_raw_template_v18()
+    validate_source_import_provenance_v19()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

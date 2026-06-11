@@ -99,6 +99,9 @@ data/derived/source_import_authorized_writer_summary_v17.csv
 data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv
 data/derived/source_import_raw_template_columns_v18.csv
 data/derived/source_import_raw_template_summary_v18.csv
+data/derived/source_import_provenance_manifest_v19.csv
+data/derived/source_import_provenance_columns_v19.csv
+data/derived/source_import_provenance_summary_v19.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -146,6 +149,7 @@ docs/source_import_raw_adapter_v15.md
 docs/source_import_write_authorization_v16.md
 docs/source_import_authorized_writer_v17.md
 docs/source_import_raw_template_v18.md
+docs/source_import_provenance_manifest_v19.md
 ```
 
 ## Reproduce
@@ -203,4 +207,6 @@ write-authorization gate currently reports `WRITE_AUTHORIZATION_BLOCKED`, so no
 real v12 input file is written. The v17 authorized writer path is implemented
 but currently reports `AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18
 raw-input template is present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`,
-but it is not data and cannot be used for scoring.
+but it is not data and cannot be used for scoring. The v19 provenance manifest
+currently reports `PROVENANCE_REQUIRED_NOT_FILLED`, so raw import remains
+blocked before any observed value can enter the scoring path.
