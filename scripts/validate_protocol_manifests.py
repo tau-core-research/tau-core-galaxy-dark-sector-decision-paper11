@@ -1444,6 +1444,58 @@ def validate_frontier_provenance_source_candidate_ledger_v45() -> None:
     )
 
 
+def validate_frontier_provenance_evidence_payload_draft_v46() -> None:
+    draft = read_csv(ROOT / "data/derived/frontier_provenance_evidence_payload_draft_v46.csv")
+    review = read_csv(ROOT / "data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv")
+    required_fields = {
+        "galaxy_id",
+        "catalog",
+        "table_or_file",
+        "version_or_date",
+        "row_id",
+        "sha256_or_external_accession",
+        "source_route",
+        "leakage_evidence_id",
+        "provenance_evidence_status",
+    }
+    require(len(draft) == 18, "v46 draft must cover eighteen rows")
+    require(set(draft[0].keys()) == required_fields, "v46 draft columns must match v21 columns")
+    require(all(row["catalog"] == "SPARC" for row in draft), "v46 draft must use SPARC catalog")
+    require(all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in draft), "v46 draft must use Table1")
+    require(
+        all(
+            row["sha256_or_external_accession"]
+            == "sha256:5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"
+            for row in draft
+        ),
+        "v46 draft must preserve Table1 hash",
+    )
+    require(
+        all(row["provenance_evidence_status"] == "REVIEW_REQUIRED_NOT_COMPLETE" for row in draft),
+        "v46 draft rows must require review",
+    )
+    require(len(review) == 18, "v46 review ledger must cover eighteen rows")
+    require(all(row["review_required"] == "true" for row in review), "v46 review rows must require review")
+    require(all(row["may_copy_to_v21_after_review"] == "false" for row in review), "v46 cannot copy before review")
+    require(all(row["may_mark_complete_without_review"] == "false" for row in review), "v46 cannot allow unreviewed completion")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in review), "v46 review rows cannot allow scoring")
+    require(len(summary) == 1, "v46 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_PROVENANCE_EVIDENCE_PAYLOAD_DRAFT_V46", "v46 summary id mismatch")
+    require(row["draft_rows"] == "18", "v46 must summarize eighteen draft rows")
+    require(row["draft_rows_requiring_review"] == "18", "v46 must require review for eighteen rows")
+    require(row["complete_evidence_rows"] == "0", "v46 must have zero complete evidence rows")
+    require(row["v21_evidence_rows_created"] == "0", "v46 must create zero v21 evidence rows")
+    require(row["may_copy_to_v21_without_review"] == "false", "v46 cannot copy without review")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v46 summary must forbid scoring")
+    require(row["overall_status"] == "FRONTIER_EVIDENCE_PAYLOAD_DRAFT_READY_REVIEW_REQUIRED", "v46 summary status mismatch")
+    require(
+        row["claim_boundary"] == "frontier_provenance_evidence_payload_draft_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        "v46 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1504,6 +1556,7 @@ def main() -> None:
     validate_post_writer_frontier_work_order_recheck_v43()
     validate_frontier_provenance_evidence_intake_contract_v44()
     validate_frontier_provenance_source_candidate_ledger_v45()
+    validate_frontier_provenance_evidence_payload_draft_v46()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

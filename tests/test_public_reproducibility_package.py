@@ -72,6 +72,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_frontier_work_order_recheck_v43.md",
         "docs/frontier_provenance_evidence_intake_contract_v44.md",
         "docs/frontier_provenance_source_candidate_ledger_v45.md",
+        "docs/frontier_provenance_evidence_payload_draft_v46.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -172,6 +173,9 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_provenance_source_candidate_ledger_v45.csv",
         "data/derived/frontier_provenance_source_candidate_coverage_v45.csv",
         "data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv",
+        "data/derived/frontier_provenance_evidence_payload_draft_v46.csv",
+        "data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -212,6 +216,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_frontier_work_order_recheck.py",
         "scripts/build_frontier_provenance_evidence_intake_contract.py",
         "scripts/build_frontier_provenance_source_candidate_ledger.py",
+        "scripts/build_frontier_provenance_evidence_payload_draft.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1611,6 +1616,53 @@ def test_v45_frontier_provenance_source_candidate_ledger_is_not_evidence() -> No
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_PROVENANCE_SOURCE_CANDIDATES_READY_NOT_EVIDENCE",
             "claim_boundary": "frontier_provenance_source_candidate_ledger_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v46_frontier_provenance_evidence_payload_draft_is_review_required() -> None:
+    draft = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_payload_draft_v46.csv").open()))
+    review = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv").open()))
+    required_fields = {
+        "galaxy_id",
+        "catalog",
+        "table_or_file",
+        "version_or_date",
+        "row_id",
+        "sha256_or_external_accession",
+        "source_route",
+        "leakage_evidence_id",
+        "provenance_evidence_status",
+    }
+    assert len(draft) == 18
+    assert set(draft[0].keys()) == required_fields
+    assert all(row["catalog"] == "SPARC" for row in draft)
+    assert all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in draft)
+    assert all(
+        row["sha256_or_external_accession"]
+        == "sha256:5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"
+        for row in draft
+    )
+    assert all(row["provenance_evidence_status"] == "REVIEW_REQUIRED_NOT_COMPLETE" for row in draft)
+
+    assert len(review) == 18
+    assert all(row["review_required"] == "true" for row in review)
+    assert all(row["may_copy_to_v21_after_review"] == "false" for row in review)
+    assert all(row["may_mark_complete_without_review"] == "false" for row in review)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in review)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_PROVENANCE_EVIDENCE_PAYLOAD_DRAFT_V46",
+            "draft_rows": "18",
+            "draft_rows_requiring_review": "18",
+            "complete_evidence_rows": "0",
+            "v21_evidence_rows_created": "0",
+            "may_copy_to_v21_without_review": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_EVIDENCE_PAYLOAD_DRAFT_READY_REVIEW_REQUIRED",
+            "claim_boundary": "frontier_provenance_evidence_payload_draft_only_no_v21_write_no_scores_no_dark_sector_verdict",
         }
     ]
 
