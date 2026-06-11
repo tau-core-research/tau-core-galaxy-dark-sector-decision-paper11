@@ -48,6 +48,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_manifest_v19.md",
         "docs/source_import_provenance_audit_v20.md",
         "docs/source_import_provenance_template_v21.md",
+        "docs/source_import_provenance_evidence_gate_v22.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -98,6 +99,8 @@ def test_required_files_exist() -> None:
         "data/input/source_import_provenance_evidence_v21_TEMPLATE.csv",
         "data/derived/source_import_provenance_template_columns_v21.csv",
         "data/derived/source_import_provenance_template_summary_v21.csv",
+        "data/derived/source_import_provenance_evidence_gate_v22.csv",
+        "data/derived/source_import_provenance_evidence_gate_summary_v22.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -114,6 +117,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_provenance_manifest.py",
         "scripts/run_source_import_provenance_audit.py",
         "scripts/build_source_import_provenance_template.py",
+        "scripts/run_source_import_provenance_evidence_gate.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -783,6 +787,40 @@ def test_v21_source_import_provenance_template_is_not_evidence() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "PROVENANCE_TEMPLATE_READY_NOT_DATA",
             "claim_boundary": "provenance_template_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v22_source_import_provenance_evidence_gate_blocks_promotion() -> None:
+    gate = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_evidence_gate_v22.csv").open()))
+    assert gate == [
+        {
+            "evidence_gate_id": "SIPEG22_EVIDENCE_TO_PROVENANCE",
+            "evidence_input_file": "data/input/source_import_provenance_evidence_v21.csv",
+            "provenance_manifest": "data/derived/source_import_provenance_manifest_v19.csv",
+            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
+            "evidence_rows_seen": "0",
+            "valid_evidence_rows": "0",
+            "galaxies_with_valid_evidence": "0",
+            "provenance_promotion_allowed": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "provenance_evidence_gate_only_no_promotion_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_evidence_gate_summary_v22.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_PROVENANCE_EVIDENCE_GATE_V22",
+            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
+            "evidence_rows_seen": "0",
+            "valid_evidence_rows": "0",
+            "galaxies_with_valid_evidence": "0",
+            "provenance_promotion_allowed": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PROVENANCE_EVIDENCE_INPUT_MISSING",
+            "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "claim_boundary": "provenance_evidence_gate_only_no_source_import_no_scores",
         }
     ]
 

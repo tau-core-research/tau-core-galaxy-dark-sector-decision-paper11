@@ -672,6 +672,26 @@ def validate_source_import_provenance_template_v21() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v21 summary must forbid scoring")
 
 
+def validate_source_import_provenance_evidence_gate_v22() -> None:
+    gate = read_csv(ROOT / "data/derived/source_import_provenance_evidence_gate_v22.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_provenance_evidence_gate_summary_v22.csv")
+    require(len(gate) == 1, "v22 evidence gate must have one row")
+    row = gate[0]
+    require(row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v22 evidence input must remain absent")
+    require(row["evidence_rows_seen"] == "0", "v22 must see zero evidence rows")
+    require(row["valid_evidence_rows"] == "0", "v22 must validate zero evidence rows")
+    require(row["galaxies_with_valid_evidence"] == "0", "v22 must validate zero galaxies")
+    require(row["provenance_promotion_allowed"] == "false", "v22 must not allow provenance promotion")
+    require(row["endpoint_scoring_allowed"] == "false", "v22 row cannot allow scoring")
+    require(len(summary) == 1, "v22 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "PROVENANCE_EVIDENCE_INPUT_MISSING", "v22 summary must report missing evidence")
+    require(summary_row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v22 summary must report missing evidence input")
+    require(summary_row["valid_evidence_rows"] == "0", "v22 summary must validate zero rows")
+    require(summary_row["provenance_promotion_allowed"] == "false", "v22 summary must block promotion")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v22 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -708,6 +728,7 @@ def main() -> None:
     validate_source_import_provenance_v19()
     validate_source_import_provenance_audit_v20()
     validate_source_import_provenance_template_v21()
+    validate_source_import_provenance_evidence_gate_v22()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

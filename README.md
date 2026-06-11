@@ -107,6 +107,8 @@ data/derived/source_import_provenance_audit_summary_v20.csv
 data/input/source_import_provenance_evidence_v21_TEMPLATE.csv
 data/derived/source_import_provenance_template_columns_v21.csv
 data/derived/source_import_provenance_template_summary_v21.csv
+data/derived/source_import_provenance_evidence_gate_v22.csv
+data/derived/source_import_provenance_evidence_gate_summary_v22.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -157,6 +159,7 @@ docs/source_import_raw_template_v18.md
 docs/source_import_provenance_manifest_v19.md
 docs/source_import_provenance_audit_v20.md
 docs/source_import_provenance_template_v21.md
+docs/source_import_provenance_evidence_gate_v22.md
 ```
 
 ## Reproduce
@@ -219,4 +222,5 @@ currently reports `PROVENANCE_REQUIRED_NOT_FILLED`, so raw import remains
 blocked before any observed value can enter the scoring path. The v20
 provenance audit currently reports `RAW_IMPORT_BLOCKED_BY_PROVENANCE`. The v21
 provenance evidence template is present, but it is not evidence and cannot
-allow raw import.
+allow raw import. The v22 provenance evidence gate currently reports
+`PROVENANCE_EVIDENCE_INPUT_MISSING`, so provenance promotion remains blocked.
