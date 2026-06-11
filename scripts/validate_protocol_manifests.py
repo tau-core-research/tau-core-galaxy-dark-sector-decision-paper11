@@ -749,6 +749,58 @@ def validate_leakage_prescore_artifact_request_ledger_v64() -> None:
     require(row["overall_status"] == "PRESCORE_ARTIFACT_REQUEST_LEDGER_OPEN", "v64 must remain open")
 
 
+def validate_leakage_prescore_artifact_request_review_package_v65() -> None:
+    package_root = ROOT / "review_packages/leakage_prescore_artifact_request_v64_review_package"
+    zip_path = ROOT / "review_packages/leakage_prescore_artifact_request_v64_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_REQUEST_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/leakage_prescore_artifact_request_ledger_v64.csv",
+        "data/leakage_prescore_artifact_request_coverage_v64.csv",
+        "data/leakage_prescore_artifact_request_summary_v64.csv",
+        "data/leakage_prescore_artifact_collection_intake_summary_v63.csv",
+        "templates/leakage_prescore_artifact_request_review_response_TEMPLATE.csv",
+    }
+    require(package_root.exists(), "v65 review package directory must exist")
+    require(zip_path.exists(), "v65 review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v65 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v65 manifest row count mismatch")
+    require(
+        {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"},
+        "v65 manifest package paths mismatch",
+    )
+    require(
+        all(row["claim_boundary"] == "leakage_prescore_artifact_request_review_package_only_no_evidence_no_scores" for row in manifest),
+        "v65 manifest claim boundary mismatch",
+    )
+    response = read_csv(package_root / "templates/leakage_prescore_artifact_request_review_response_TEMPLATE.csv")
+    require(len(response) == 72, "v65 response template must cover 72 request rows")
+    require(len({row["galaxy_id"] for row in response}) == 18, "v65 response template must cover eighteen galaxies")
+    require(
+        all(row["artifact_review_decision"] == "KEEP_OPEN_REVIEWED_PRESCORE_ARTIFACT_REQUIRED_NOT_FILLED" for row in response),
+        "v65 response template must default to open review",
+    )
+    require(all(row["minimal_required_fields_covered"] == "false" for row in response), "v65 cannot field-cover by default")
+    require(all(row["artifact_is_prescore"] == "false" for row in response), "v65 cannot prescore-confirm by default")
+    require(
+        all(row["artifact_uses_forbidden_inputs"] == "UNKNOWN_REVIEW_REQUIRED" for row in response),
+        "v65 must require forbidden-input review by default",
+    )
+    require(
+        all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in response),
+        "v65 cannot promote leakage evidence by default",
+    )
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in response), "v65 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in response), "v65 cannot allow scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    zipped_required = {f"leakage_prescore_artifact_request_v64_review_package/{rel}" for rel in required}
+    require(zipped_required.issubset(names), "v65 zip missing required package files")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2342,6 +2394,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_collection_package_v62()
     validate_leakage_prescore_artifact_collection_intake_v63()
     validate_leakage_prescore_artifact_request_ledger_v64()
+    validate_leakage_prescore_artifact_request_review_package_v65()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
