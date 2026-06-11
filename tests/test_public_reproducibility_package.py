@@ -49,6 +49,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_audit_v20.md",
         "docs/source_import_provenance_template_v21.md",
         "docs/source_import_provenance_evidence_gate_v22.md",
+        "docs/source_import_provenance_promotion_gate_v23.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -101,6 +102,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_provenance_template_summary_v21.csv",
         "data/derived/source_import_provenance_evidence_gate_v22.csv",
         "data/derived/source_import_provenance_evidence_gate_summary_v22.csv",
+        "data/derived/source_import_provenance_promotion_gate_v23.csv",
+        "data/derived/source_import_provenance_promotion_summary_v23.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -118,6 +121,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_provenance_audit.py",
         "scripts/build_source_import_provenance_template.py",
         "scripts/run_source_import_provenance_evidence_gate.py",
+        "scripts/run_source_import_provenance_promotion_gate.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -821,6 +825,34 @@ def test_v22_source_import_provenance_evidence_gate_blocks_promotion() -> None:
             "overall_status": "PROVENANCE_EVIDENCE_INPUT_MISSING",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "provenance_evidence_gate_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v23_source_import_provenance_promotion_gate_blocks_manifest_promotion() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_promotion_gate_v23.csv").open()))
+    assert len(rows) == 18
+    assert all(row["v22_provenance_promotion_allowed"] == "false" for row in rows)
+    assert all(row["promotion_allowed"] == "false" for row in rows)
+    assert all(row["promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows)
+    assert all("provenance_evidence_gate_not_allowed" in row["promotion_blockers"] for row in rows)
+    assert all(row["provenance_rows_promoted"] == "0" for row in rows)
+    assert all(row["raw_import_allowed_after_promotion"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_promotion_summary_v23.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_PROVENANCE_PROMOTION_GATE_V23",
+            "candidate_rows": "18",
+            "promotion_allowed_rows": "0",
+            "promotion_blocked_rows": "18",
+            "provenance_rows_promoted": "0",
+            "raw_import_allowed_rows_after_promotion": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PROVENANCE_PROMOTION_BLOCKED",
+            "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "claim_boundary": "provenance_promotion_gate_only_no_source_import_no_scores",
         }
     ]
 

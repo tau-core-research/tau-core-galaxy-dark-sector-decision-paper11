@@ -692,6 +692,37 @@ def validate_source_import_provenance_evidence_gate_v22() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v22 summary must forbid scoring")
 
 
+def validate_source_import_provenance_promotion_gate_v23() -> None:
+    rows = read_csv(ROOT / "data/derived/source_import_provenance_promotion_gate_v23.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_provenance_promotion_summary_v23.csv")
+    require(len(rows) == 18, "v23 promotion gate must cover eighteen candidate rows")
+    require(
+        all(row["v22_provenance_promotion_allowed"] == "false" for row in rows),
+        "v23 must inherit the blocked v22 promotion decision",
+    )
+    require(all(row["promotion_allowed"] == "false" for row in rows), "v23 must block all promotions")
+    require(
+        all(row["promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows),
+        "v23 must not promote provenance",
+    )
+    require(
+        all("provenance_evidence_gate_not_allowed" in row["promotion_blockers"] for row in rows),
+        "v23 must report the evidence-gate blocker",
+    )
+    require(all(row["provenance_rows_promoted"] == "0" for row in rows), "v23 must promote zero rows")
+    require(all(row["raw_import_allowed_after_promotion"] == "false" for row in rows), "v23 cannot allow raw import")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v23 rows cannot allow scoring")
+    require(len(summary) == 1, "v23 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "PROVENANCE_PROMOTION_BLOCKED", "v23 summary must block promotion")
+    require(row["candidate_rows"] == "18", "v23 summary must cover eighteen rows")
+    require(row["promotion_allowed_rows"] == "0", "v23 must allow zero promotions")
+    require(row["promotion_blocked_rows"] == "18", "v23 must block eighteen promotions")
+    require(row["provenance_rows_promoted"] == "0", "v23 must promote zero provenance rows")
+    require(row["raw_import_allowed_rows_after_promotion"] == "0", "v23 must allow zero raw imports")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v23 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -729,6 +760,7 @@ def main() -> None:
     validate_source_import_provenance_audit_v20()
     validate_source_import_provenance_template_v21()
     validate_source_import_provenance_evidence_gate_v22()
+    validate_source_import_provenance_promotion_gate_v23()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

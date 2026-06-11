@@ -218,6 +218,10 @@ evidence. It is template material only, not provenance evidence.
 The v22 provenance evidence gate checks for that evidence input. In the present
 package the evidence file is absent, so provenance promotion remains blocked.
 
+The v23 provenance-promotion gate prevents the v19 provenance manifest from
+being promoted unless the v22 evidence gate allows it. In the present package
+promotion is blocked and zero provenance rows are promoted.
+
 \section{Claim Boundary}
 
 This paper does not claim:
