@@ -297,6 +297,35 @@ def validate_readiness_audit_v06() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v06 summary must forbid endpoint scoring")
 
 
+def validate_scoring_preflight_v07() -> None:
+    requirements = read_csv(ROOT / "data/derived/scoring_input_requirements_v07.csv")
+    components = read_csv(ROOT / "data/derived/scoring_formula_components_v07.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_preflight_summary_v07.csv")
+    required_artifacts = {row["required_artifact"] for row in requirements}
+    require(
+        required_artifacts
+        == {
+            "activated_scoring_rows_v08.csv",
+            "scoring_observed_inputs_v08.csv",
+            "family_prediction_tables_v08.csv",
+            "numeric_parameter_count_table_v08.csv",
+            "control_runner_outputs_v08.csv",
+            "numeric_decision_thresholds_v08.csv",
+        },
+        f"v07 scoring requirements mismatch: {required_artifacts}",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in requirements), "v07 requirements cannot allow scoring")
+    require(all(row["current_status"].startswith("BLOCKED") for row in requirements), "v07 requirements must remain blocked")
+    require(len(components) == 7, "v07 must expose seven scoring formula components")
+    require(all(row["formula_policy_status"] == "READY_AS_POLICY_NOT_RUN" for row in components), "v07 formulas must be policy-only")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in components), "v07 components cannot allow scoring")
+    require(len(summary) == 1, "v07 scoring summary must have one row")
+    row = summary[0]
+    require(row["readiness_dependency"] == "ENDPOINT_SCORING_BLOCKED", "v07 must depend on blocked readiness")
+    require(row["overall_status"] == "SCORING_NOT_READY", "v07 scoring must remain not ready")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v07 summary must forbid endpoint scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -318,6 +347,7 @@ def main() -> None:
     validate_family_formula_table_v05()
     validate_numeric_count_readiness_v05()
     validate_readiness_audit_v06()
+    validate_scoring_preflight_v07()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

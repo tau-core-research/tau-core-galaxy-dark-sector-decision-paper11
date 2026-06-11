@@ -33,11 +33,16 @@ def test_required_files_exist() -> None:
         "docs/family_formula_table_v05.md",
         "docs/numeric_count_readiness_v05.md",
         "docs/readiness_audit_v06.md",
+        "docs/scoring_preflight_v07.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
         "data/derived/readiness_summary_v06.csv",
+        "data/derived/scoring_input_requirements_v07.csv",
+        "data/derived/scoring_formula_components_v07.csv",
+        "data/derived/scoring_preflight_summary_v07.csv",
         "scripts/run_readiness_audit.py",
+        "scripts/run_scoring_preflight.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -212,6 +217,39 @@ def test_v06_readiness_audit_blocks_endpoint_scoring() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "ENDPOINT_SCORING_BLOCKED",
             "claim_boundary": "readiness_audit_only_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v07_scoring_preflight_names_required_inputs_without_scoring() -> None:
+    requirements = list(csv.DictReader((ROOT / "data/derived/scoring_input_requirements_v07.csv").open()))
+    assert {row["required_artifact"] for row in requirements} == {
+        "activated_scoring_rows_v08.csv",
+        "scoring_observed_inputs_v08.csv",
+        "family_prediction_tables_v08.csv",
+        "numeric_parameter_count_table_v08.csv",
+        "control_runner_outputs_v08.csv",
+        "numeric_decision_thresholds_v08.csv",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in requirements)
+    assert all(row["current_status"].startswith("BLOCKED") for row in requirements)
+
+    components = list(csv.DictReader((ROOT / "data/derived/scoring_formula_components_v07.csv").open()))
+    assert len(components) == 7
+    assert all(row["formula_policy_status"] == "READY_AS_POLICY_NOT_RUN" for row in components)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in components)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/scoring_preflight_summary_v07.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SCORING_PREFLIGHT_V07",
+            "readiness_dependency": "ENDPOINT_SCORING_BLOCKED",
+            "blocked_scoring_requirements": "6",
+            "formula_policy_components_ready": "7",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SCORING_NOT_READY",
+            "next_required_artifact": "activated_scoring_rows_v08.csv",
+            "claim_boundary": "scoring_preflight_only_no_dark_sector_verdict",
         }
     ]
 

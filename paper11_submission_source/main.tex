@@ -88,7 +88,8 @@ contracts, plus v05 row-level source-audit, family formula-table readiness, and
 numeric-count readiness ledgers. The next honest target is source import,
 leakage audit, concrete family formula tables, numeric parameter counts, and
 executable control runners. A v06 executable readiness audit currently reports
-that endpoint scoring remains blocked. The following remain absent:
+that endpoint scoring remains blocked. A v07 scoring preflight currently
+reports that scoring is not ready. The following remain absent:
 \[
 \begin{aligned}
 &\mathrm{Response}_{\tau}, \quad
@@ -150,6 +151,12 @@ activation, formula/count, control-runner, and summary blocker tables. Its
 current output blocks endpoint scoring: no galaxy row is active, no formula
 table is filled, numeric counts are not ready, and control runners are not yet
 implemented.
+
+The v07 scoring preflight names the concrete artifacts required before the
+first scoring run: activated rows, observed input tables, family prediction
+tables, numeric parameter counts, control outputs, and numeric decision
+thresholds. The scoring formula components are present only as frozen policy;
+they are not executed.
 
 \section{Claim Boundary}
 
