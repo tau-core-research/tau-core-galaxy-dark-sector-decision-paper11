@@ -141,6 +141,8 @@ data/derived/post_writer_leakage_audit_recheck_v37.csv
 data/derived/post_writer_leakage_audit_recheck_summary_v37.csv
 data/derived/post_writer_scoring_activation_recheck_v38.csv
 data/derived/post_writer_scoring_activation_recheck_summary_v38.csv
+data/derived/post_writer_scoring_preflight_recheck_v39.csv
+data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -208,6 +210,7 @@ docs/post_writer_raw_adapter_recheck_v35.md
 docs/post_writer_real_values_gate_recheck_v36.md
 docs/post_writer_leakage_audit_recheck_v37.md
 docs/post_writer_scoring_activation_recheck_v38.md
+docs/post_writer_scoring_preflight_recheck_v39.md
 ```
 
 ## Reproduce
@@ -301,4 +304,6 @@ eighteen rows unactivated, with zero imported numeric rows. The v37 post-writer
 leakage audit recheck keeps all eighteen rows leakage-blocked, with zero
 leakage-pass rows and zero activation-allowed rows. The v38 post-writer scoring
 activation recheck keeps all eighteen rows blocked from activation, with zero
-rows activated for scoring.
+rows activated for scoring. The v39 post-writer scoring preflight recheck keeps
+all six preflight requirements blocked, with zero requirements ready after
+recheck.

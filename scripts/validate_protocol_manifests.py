@@ -1123,6 +1123,44 @@ def validate_post_writer_scoring_activation_recheck_v38() -> None:
     )
 
 
+def validate_post_writer_scoring_preflight_recheck_v39() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_scoring_preflight_recheck_v39.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv")
+    require(len(rows) == 6, "v39 preflight recheck must cover six requirements")
+    require(all(row["v07_current_status"].startswith("BLOCKED") for row in rows), "v39 must inherit blocked v07 requirements")
+    require(all(row["v38_rows_activated_after_recheck"] == "0" for row in rows), "v39 must inherit zero activated rows")
+    require(
+        all("v07_requirement_blocked" in row["preflight_recheck_blockers"] for row in rows),
+        "v39 must block on v07 requirements",
+    )
+    require(
+        all("post_writer_activation_recheck_zero_rows" in row["preflight_recheck_blockers"] for row in rows),
+        "v39 must block on zero activated rows",
+    )
+    require(
+        all("post_writer_activation_recheck_scoring_not_allowed" in row["preflight_recheck_blockers"] for row in rows),
+        "v39 must block on scoring denial",
+    )
+    require(
+        all(row["preflight_requirement_status_after_recheck"] == "BLOCKED" for row in rows),
+        "v39 requirements must remain blocked",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v39 rows cannot allow scoring")
+    require(len(summary) == 1, "v39 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_SCORING_PREFLIGHT_RECHECK_V39", "v39 summary id mismatch")
+    require(row["preflight_requirement_rows"] == "6", "v39 must summarize six requirements")
+    require(row["blocked_requirements_after_recheck"] == "6", "v39 must block six requirements")
+    require(row["ready_requirements_after_recheck"] == "0", "v39 must ready zero requirements")
+    require(row["formula_policy_components_ready_not_run"] == "7", "v39 must preserve seven policy components")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v39 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_SCORING_PREFLIGHT_RECHECK_BLOCKED", "v39 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_scoring_preflight_recheck_only_no_scores_no_dark_sector_verdict",
+        "v39 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1176,6 +1214,7 @@ def main() -> None:
     validate_post_writer_real_values_gate_recheck_v36()
     validate_post_writer_leakage_audit_recheck_v37()
     validate_post_writer_scoring_activation_recheck_v38()
+    validate_post_writer_scoring_preflight_recheck_v39()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

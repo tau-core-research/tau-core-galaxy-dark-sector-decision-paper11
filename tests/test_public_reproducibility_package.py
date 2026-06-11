@@ -65,6 +65,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_real_values_gate_recheck_v36.md",
         "docs/post_writer_leakage_audit_recheck_v37.md",
         "docs/post_writer_scoring_activation_recheck_v38.md",
+        "docs/post_writer_scoring_preflight_recheck_v39.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -149,6 +150,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv",
         "data/derived/post_writer_scoring_activation_recheck_v38.csv",
         "data/derived/post_writer_scoring_activation_recheck_summary_v38.csv",
+        "data/derived/post_writer_scoring_preflight_recheck_v39.csv",
+        "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -182,6 +185,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_real_values_gate_recheck.py",
         "scripts/run_post_writer_leakage_audit_recheck.py",
         "scripts/run_post_writer_scoring_activation_recheck.py",
+        "scripts/run_post_writer_scoring_preflight_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1354,6 +1358,32 @@ def test_v38_post_writer_scoring_activation_recheck_blocks_scoring() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_ACTIVATION_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_scoring_activation_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v39_post_writer_scoring_preflight_recheck_blocks_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_preflight_recheck_v39.csv").open()))
+    assert len(rows) == 6
+    assert all(row["v07_current_status"].startswith("BLOCKED") for row in rows)
+    assert all(row["v38_rows_activated_after_recheck"] == "0" for row in rows)
+    assert all("v07_requirement_blocked" in row["preflight_recheck_blockers"] for row in rows)
+    assert all("post_writer_activation_recheck_zero_rows" in row["preflight_recheck_blockers"] for row in rows)
+    assert all("post_writer_activation_recheck_scoring_not_allowed" in row["preflight_recheck_blockers"] for row in rows)
+    assert all(row["preflight_requirement_status_after_recheck"] == "BLOCKED" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_SCORING_PREFLIGHT_RECHECK_V39",
+            "preflight_requirement_rows": "6",
+            "blocked_requirements_after_recheck": "6",
+            "ready_requirements_after_recheck": "0",
+            "formula_policy_components_ready_not_run": "7",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_SCORING_PREFLIGHT_RECHECK_BLOCKED",
+            "claim_boundary": "post_writer_scoring_preflight_recheck_only_no_scores_no_dark_sector_verdict",
         }
     ]
 
