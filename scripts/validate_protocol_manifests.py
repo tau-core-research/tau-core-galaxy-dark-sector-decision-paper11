@@ -801,6 +801,57 @@ def validate_leakage_prescore_artifact_request_review_package_v65() -> None:
     require(zipped_required.issubset(names), "v65 zip missing required package files")
 
 
+def validate_leakage_prescore_artifact_request_review_intake_v66() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_request_review_intake_v66.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv")
+    response_dir = ROOT / "review_packages/leakage_prescore_artifact_request_v64_completed_review_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_request_v64_completed_review_response.zip"
+    required = {
+        "leakage_prescore_artifact_request_v64_review_response.csv",
+        "leakage_prescore_artifact_request_v64_review_completed_summary.csv",
+        "leakage_prescore_artifact_request_v64_review_notes.md",
+        "leakage_prescore_artifact_request_v64_review_validation_log.txt",
+    }
+    require(response_zip.exists(), "v66 completed review response zip must exist")
+    require(response_dir.exists(), "v66 completed review response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v66 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v66 response zip missing required files")
+    require(len(rows) == 72, "v66 intake must cover 72 request rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v66 intake must cover eighteen galaxies")
+    require(
+        all(row["source_mode"] == "completed_response" for row in rows),
+        "v66 must run from completed response",
+    )
+    require(
+        all(row["intake_decision"] == "BLOCKED_PRESCORE_REQUEST_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows),
+        "v66 rows must remain blocked when artifacts are not provided",
+    )
+    require(
+        all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows),
+        "v66 cannot mark candidates without reviewed prescore artifacts",
+    )
+    require(all(row["minimal_required_fields_covered"] == "false" for row in rows), "v66 cannot field-cover rows")
+    require(all(row["artifact_is_prescore"] == "false" for row in rows), "v66 cannot prescore-confirm rows")
+    require(all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows), "v66 cannot promote evidence")
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v66 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v66 cannot allow scoring")
+    require(len(summary) == 1, "v66 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_REQUEST_REVIEW_INTAKE_V66", "v66 summary id mismatch")
+    require(row["response_files_present"] == "4", "v66 must record four response files")
+    require(row["intake_rows"] == "72", "v66 summary must record 72 rows")
+    require(row["completed_response_present"] == "true", "v66 response must be present")
+    require(row["candidate_rows_for_later_leakage_evidence"] == "0", "v66 cannot create candidates")
+    require(row["blocked_or_missing_rows"] == "72", "v66 must keep all rows blocked")
+    require(row["leakage_evidence_rows_created"] == "0", "v66 cannot create leakage evidence")
+    require(row["activation_rows_authorized"] == "0", "v66 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v66 summary must forbid scoring")
+    require(row["overall_status"] == "PRESCORE_REQUEST_REVIEW_RESPONSE_PRESENT_BUT_BLOCKED", "v66 must remain blocked")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2395,6 +2446,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_collection_intake_v63()
     validate_leakage_prescore_artifact_request_ledger_v64()
     validate_leakage_prescore_artifact_request_review_package_v65()
+    validate_leakage_prescore_artifact_request_review_intake_v66()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

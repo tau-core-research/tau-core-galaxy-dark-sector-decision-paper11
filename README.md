@@ -98,6 +98,10 @@ data/derived/leakage_prescore_artifact_request_coverage_v64.csv
 data/derived/leakage_prescore_artifact_request_summary_v64.csv
 review_packages/leakage_prescore_artifact_request_v64_review_package/
 review_packages/leakage_prescore_artifact_request_v64_review_package.zip
+review_packages/leakage_prescore_artifact_request_v64_completed_review_response/
+review_packages/leakage_prescore_artifact_request_v64_completed_review_response.zip
+data/derived/leakage_prescore_artifact_request_review_intake_v66.csv
+data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -257,6 +261,7 @@ docs/leakage_prescore_artifact_collection_package_v62.md
 docs/leakage_prescore_artifact_collection_intake_v63.md
 docs/leakage_prescore_artifact_request_ledger_v64.md
 docs/leakage_prescore_artifact_request_review_package_v65.md
+docs/leakage_prescore_artifact_request_review_intake_v66.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -433,3 +438,6 @@ The v64 request ledger converts those blocked rows into explicit row-level
 requests with minimal required fields and forbidden endpoint-derived inputs.
 The v65 review package turns that ledger into a fillable response template for
 reviewed prescore artifact URI/id and hash/accession collection.
+The v66 intake records the completed v65 response as present but blocked:
+it supplies zero reviewed prescore artifacts and creates zero leakage-evidence
+candidates.

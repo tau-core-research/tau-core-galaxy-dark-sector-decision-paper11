@@ -1,0 +1,49 @@
+Validation log: Leakage prescore artifact request v64 review package
+
+Input package:
+leakage_prescore_artifact_request_v64_review_package.zip
+
+Package access:
+PASS - ZIP was present and readable.
+
+Instruction boundary:
+PASS - Package is request-review only, not leakage evidence, no activation, no endpoint scoring.
+
+Request row count:
+PASS - leakage_prescore_artifact_request_ledger_v64.csv contains 72 rows.
+
+Galaxy/check structure:
+PASS - 18 galaxies x 4 required artifact families.
+
+Coverage summary:
+PASS - all four required evidence families have 18 open request rows and 0 candidate rows already available.
+
+Collection intake status:
+PASS - v63 intake confirms the prior v61 response was present but blocked, with 72 blocked or missing rows.
+
+Response template status:
+BLOCKED - all rows still contain FILL_REVIEWED_PRESCORE_ARTIFACT and FILL_HASH_OR_ACCESSION placeholders.
+
+Minimal required fields:
+BLOCKED - minimal_required_fields_covered=false for all rows.
+
+Artifact prescore status:
+BLOCKED - artifact_is_prescore=false in template defaults because no reviewed artifact is provided.
+
+Forbidden input status:
+BLOCKED - artifact_uses_forbidden_inputs remains UNKNOWN_REVIEW_REQUIRED.
+
+Promotion authorization:
+PASS - completed response authorizes 0 leakage-evidence promotion rows.
+
+Activation authorization:
+PASS - completed response authorizes 0 activation rows.
+
+Endpoint scoring boundary:
+PASS - endpoint_scoring_allowed=false for all 72 response rows.
+
+Decision:
+KEEP_OPEN_REVIEWED_PRESCORE_ARTIFACT_REQUIRED_NOT_FILLED
+
+Completion status:
+PASS_OPEN_NO_GO

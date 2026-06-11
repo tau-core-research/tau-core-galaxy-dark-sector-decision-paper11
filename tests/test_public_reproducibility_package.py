@@ -45,6 +45,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_collection_intake_v63.md",
         "docs/leakage_prescore_artifact_request_ledger_v64.md",
         "docs/leakage_prescore_artifact_request_review_package_v65.md",
+        "docs/leakage_prescore_artifact_request_review_intake_v66.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -163,6 +164,13 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_prescore_artifact_request_v64_review_package/data/leakage_prescore_artifact_collection_intake_summary_v63.csv",
         "review_packages/leakage_prescore_artifact_request_v64_review_package/templates/leakage_prescore_artifact_request_review_response_TEMPLATE.csv",
         "review_packages/leakage_prescore_artifact_request_v64_review_package.zip",
+        "review_packages/leakage_prescore_artifact_request_v64_completed_review_response.zip",
+        "review_packages/leakage_prescore_artifact_request_v64_completed_review_response/leakage_prescore_artifact_request_v64_review_response.csv",
+        "review_packages/leakage_prescore_artifact_request_v64_completed_review_response/leakage_prescore_artifact_request_v64_review_completed_summary.csv",
+        "review_packages/leakage_prescore_artifact_request_v64_completed_review_response/leakage_prescore_artifact_request_v64_review_notes.md",
+        "review_packages/leakage_prescore_artifact_request_v64_completed_review_response/leakage_prescore_artifact_request_v64_review_validation_log.txt",
+        "data/derived/leakage_prescore_artifact_request_review_intake_v66.csv",
+        "data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -307,6 +315,7 @@ def test_required_files_exist() -> None:
         "scripts/run_leakage_prescore_artifact_collection_intake.py",
         "scripts/build_leakage_prescore_artifact_request_ledger.py",
         "scripts/build_leakage_prescore_artifact_request_review_package.py",
+        "scripts/run_leakage_prescore_artifact_request_review_intake.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1013,6 +1022,59 @@ def test_v65_leakage_prescore_artifact_request_review_package_is_not_evidence() 
     with zipfile.ZipFile(zip_path) as archive:
         names = set(archive.namelist())
     assert {f"leakage_prescore_artifact_request_v64_review_package/{rel}" for rel in required}.issubset(names)
+
+
+def test_v66_leakage_prescore_artifact_request_review_intake_is_no_go_not_evidence() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_request_review_intake_v66.csv").open()))
+    summary = list(
+        csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv").open())
+    )
+    response_dir = ROOT / "review_packages/leakage_prescore_artifact_request_v64_completed_review_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_request_v64_completed_review_response.zip"
+    required = {
+        "leakage_prescore_artifact_request_v64_review_response.csv",
+        "leakage_prescore_artifact_request_v64_review_completed_summary.csv",
+        "leakage_prescore_artifact_request_v64_review_notes.md",
+        "leakage_prescore_artifact_request_v64_review_validation_log.txt",
+    }
+    assert response_zip.exists()
+    assert response_dir.exists()
+    for rel in required:
+        assert (response_dir / rel).exists(), rel
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    assert required.issubset(names)
+
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert all(row["source_mode"] == "completed_response" for row in rows)
+    assert all(row["intake_decision"] == "BLOCKED_PRESCORE_REQUEST_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows)
+    assert all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows)
+    assert all(row["minimal_required_fields_covered"] == "false" for row in rows)
+    assert all(row["artifact_is_prescore"] == "false" for row in rows)
+    assert all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows)
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_REQUEST_REVIEW_INTAKE_V66",
+            "response_zip": "review_packages/leakage_prescore_artifact_request_v64_completed_review_response.zip",
+            "response_files_present": "4",
+            "intake_rows": "72",
+            "galaxies_covered": "18",
+            "evidence_checks_per_galaxy": "4",
+            "completed_response_present": "true",
+            "candidate_rows_for_later_leakage_evidence": "0",
+            "blocked_or_missing_rows": "72",
+            "leakage_evidence_rows_created": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PRESCORE_REQUEST_REVIEW_RESPONSE_PRESENT_BUT_BLOCKED",
+            "next_required_artifact": "completed_prescore_artifact_response_with_uri_hash_or_accession_for_each_open_request",
+            "claim_boundary": "leakage_prescore_artifact_request_review_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
 
 
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
