@@ -44,6 +44,7 @@ def main() -> None:
     run(["python", "scripts/run_frontier_authorized_evidence_writer.py"])
     run(["python", "scripts/run_frontier_post_writer_evidence_absence_audit.py"])
     run(["python", "scripts/run_post_writer_evidence_gate_recheck.py"])
+    run(["python", "scripts/run_post_writer_provenance_promotion_recheck.py"])
     run(["python", "scripts/run_scoring_preflight.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])
     run(["tectonic", "main.tex"], cwd=SOURCE)

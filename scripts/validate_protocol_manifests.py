@@ -950,6 +950,34 @@ def validate_post_writer_evidence_gate_recheck_v32() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v32 summary must forbid scoring")
 
 
+def validate_post_writer_provenance_promotion_recheck_v33() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_provenance_promotion_recheck_v33.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv")
+    require(len(rows) == 18, "v33 promotion recheck must cover eighteen rows")
+    require(all(row["v23_promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows), "v33 must inherit v23 no-promotion")
+    require(all(row["valid_evidence_rows_after_writer"] == "0" for row in rows), "v33 must see zero valid evidence rows")
+    require(
+        all("post_writer_evidence_gate_recheck_not_allowed" in row["promotion_recheck_blockers"] for row in rows),
+        "v33 must block on v32 evidence recheck",
+    )
+    require(
+        all(row["provenance_promotion_allowed_after_recheck"] == "false" for row in rows),
+        "v33 cannot allow provenance promotion",
+    )
+    require(all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows), "v33 must promote zero rows")
+    require(all(row["raw_import_allowed_after_recheck"] == "false" for row in rows), "v33 cannot allow raw import")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v33 rows cannot allow scoring")
+    require(len(summary) == 1, "v33 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_BLOCKED", "v33 summary must block")
+    require(row["promotion_recheck_rows"] == "18", "v33 must summarize eighteen rows")
+    require(row["promotion_allowed_rows_after_recheck"] == "0", "v33 must allow zero promotions")
+    require(row["promotion_blocked_rows_after_recheck"] == "18", "v33 must block eighteen promotions")
+    require(row["provenance_rows_promoted_after_recheck"] == "0", "v33 must promote zero rows")
+    require(row["raw_import_allowed_rows_after_recheck"] == "0", "v33 must allow zero raw imports")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v33 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -997,6 +1025,7 @@ def main() -> None:
     validate_frontier_authorized_evidence_writer_v30()
     validate_frontier_post_writer_evidence_absence_audit_v31()
     validate_post_writer_evidence_gate_recheck_v32()
+    validate_post_writer_provenance_promotion_recheck_v33()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
