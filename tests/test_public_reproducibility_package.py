@@ -16,6 +16,8 @@ def test_required_files_exist() -> None:
         "LICENSE",
         "paper11_submission_source/main.tex",
         "paper11_submission_source/refs.bib",
+        "docs/frozen_policy_bundle_instance_v01.md",
+        "docs/galaxy_decision_endpoint_manifest_v01.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -41,6 +43,19 @@ def test_model_family_manifest_is_endpoint_disabled() -> None:
     rows = list(csv.DictReader(path.open()))
     assert {row["family_id"] for row in rows} == {"M0", "M1", "M2"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+
+def test_policy_bundle_and_endpoint_manifest_are_not_results() -> None:
+    bundle = list(csv.DictReader((ROOT / "data/source_manifest/frozen_policy_bundle_instance_v01.csv").open()))
+    endpoint = list(csv.DictReader((ROOT / "data/source_manifest/galaxy_decision_endpoint_manifest_v01.csv").open()))
+    assert len(bundle) == 9
+    assert len(endpoint) == 8
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in bundle)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in endpoint)
+    statuses = " ".join(row["current_status"] for row in endpoint)
+    assert "M0_wins" not in statuses
+    assert "M1_wins" not in statuses
+    assert "M2_wins" not in statuses
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

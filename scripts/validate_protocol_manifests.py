@@ -44,10 +44,44 @@ def validate_outcomes() -> None:
     require("global dark matter rejection" in forbidden_joined, "missing no-global-rejection guard")
 
 
+def validate_policy_bundle_instance() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/frozen_policy_bundle_instance_v01.csv")
+    require(len(rows) == 9, "expected nine frozen policy-bundle component references")
+    components = {row["component"] for row in rows}
+    require("delta_M_extraction_freeze" in components, "missing delta_M extraction freeze")
+    require("ChannelHandoff_policy" in components, "missing channel handoff policy")
+    for row in rows:
+        require(row["bundle_id"] == "PB11_v01", "unexpected bundle id")
+        require(row["endpoint_scoring_allowed"] == "false", "policy bundle cannot allow endpoint scoring")
+        require(row["missing_content"], f"{row['component']} must list missing content")
+
+
+def validate_galaxy_endpoint_manifest() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/galaxy_decision_endpoint_manifest_v01.csv")
+    ids = {row["endpoint_id"] for row in rows}
+    required = {
+        "E11_SCOPE",
+        "E11_SAMPLE_TRAIN",
+        "E11_SAMPLE_HELDOUT",
+        "E11_SCORE",
+        "E11_CONTROL_WRONG_FAMILY",
+        "E11_CONTROL_SHUFFLE",
+        "E11_ZONE",
+        "E11_VERDICT",
+    }
+    require(ids == required, f"unexpected endpoint manifest ids: {ids}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "endpoint manifest v01 must disable scoring")
+        require(row["required_before_scoring"] == "true", f"{row['endpoint_id']} must precede scoring")
+        require(row["allowed_model_families"] == "M0;M1;M2", "all families must share the endpoint manifest")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
     validate_outcomes()
+    validate_policy_bundle_instance()
+    validate_galaxy_endpoint_manifest()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

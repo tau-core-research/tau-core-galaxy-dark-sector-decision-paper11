@@ -41,10 +41,24 @@ Only compact protocol manifests are included:
 data/source_manifest/model_family_decision_protocol.csv
 data/source_manifest/policy_bundle_freeze_requirements.csv
 data/source_manifest/decision_outcome_ladder.csv
+data/source_manifest/frozen_policy_bundle_instance_v01.csv
+data/source_manifest/galaxy_decision_endpoint_manifest_v01.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
 and no fitted galaxy results.
+
+The first frozen-reference bundle is:
+
+```text
+docs/frozen_policy_bundle_instance_v01.md
+```
+
+The first galaxy decision endpoint manifest is:
+
+```text
+docs/galaxy_decision_endpoint_manifest_v01.md
+```
 
 ## Reproduce
 
@@ -71,5 +85,6 @@ Paper 11 compares no-dark, Tau dark-sector response, and standard dark-sector
 benchmark families under the same endpoint-blind decision protocol.
 ```
 
-The next honest target is a frozen policy-bundle instance, not a response
-formula or physical readout claim.
+The current honest status is a frozen-reference policy bundle plus endpoint
+decision manifest. The next target is source-side galaxy sample and scoring-rule
+freeze, not a response formula or physical readout claim.

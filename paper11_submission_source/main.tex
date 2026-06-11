@@ -78,8 +78,10 @@ global falsification of Tau Core.
 
 \section{Current Status}
 
-The present repository supplies only a decision-protocol scaffold. The next
-honest target is a frozen policy-bundle instance. The following remain absent:
+The present repository supplies a decision-protocol scaffold, a frozen-reference
+policy-bundle instance \(PB11\_v01\), and a first galaxy endpoint decision
+manifest. The next honest target is a source-side galaxy sample and scoring-rule
+freeze. The following remain absent:
 \[
 \mathrm{Response}_{\tau}, \quad
 S_{\tau}^{\mathrm{resp}}, \quad
@@ -87,6 +89,21 @@ S_{\tau}^{\mathrm{resp}}, \quad
 \mathrm{ChannelHandoff}_{\tau},
 \]
 as constructed mathematical objects. No endpoint result is reported.
+
+\section{Decision Manifests}
+
+The protocol-level manifests freeze the three model-family roles, policy-bundle
+requirements, and allowed decision outcomes. The \(PB11\_v01\) bundle freezes
+references to the Tau dark-sector carrier, source, state, admissibility, term,
+selection, and channel policy stubs. It is a reference freeze only: it does not
+fill carrier elements, \(\delta M\), \(X_{\mathrm{resp}}\),
+\(\mathrm{Adm}_{\mathrm{resp}}\), \(S_{\tau}^{\mathrm{resp}}\), or
+\(\mathrm{Select}_{\mathrm{stab}}\).
+
+The first galaxy endpoint manifest declares the required source-side decisions:
+train-sample policy, held-out sample policy, shared scoring rule, wrong-family
+controls, shuffle controls, radial-zone diagnostics, and verdict ladder. No
+galaxy sample is selected in this version.
 
 \section{Claim Boundary}
 

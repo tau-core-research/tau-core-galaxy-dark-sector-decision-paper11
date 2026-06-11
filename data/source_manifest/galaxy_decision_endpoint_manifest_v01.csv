@@ -1,0 +1,9 @@
+endpoint_id,role,required_before_scoring,current_status,endpoint_scoring_allowed,allowed_model_families,forbidden_inputs,decision_use
+E11_SCOPE,endpoint_scope,true,SCOPE_DECLARED,false,"M0;M1;M2","endpoint_residual;held_out_score","Restrict decision to galaxy-rotation endpoint class"
+E11_SAMPLE_TRAIN,train_sample_policy,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","held_out_score;endpoint_pass_fail_label","Define calibration/training galaxies before endpoint scoring"
+E11_SAMPLE_HELDOUT,heldout_sample_policy,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","best_fit_curve;training_score","Define held-out decision galaxies before endpoint scoring"
+E11_SCORE,scoring_rule,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","best_endpoint_score;family_winner","Define shared score metrics before any family is evaluated"
+E11_CONTROL_WRONG_FAMILY,wrong_family_controls,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","best_endpoint_score;family_winner","Prevent family-specific residual absorption"
+E11_CONTROL_SHUFFLE,shuffle_controls,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","best_endpoint_score;family_winner","Check whether source labels carry real structure"
+E11_ZONE,radial_zone_diagnostics,true,TO_BE_FILLED_SOURCE_SIDE,false,"M0;M1;M2","best_endpoint_score;family_winner","Separate inner/rising/flat/outer rotation-curve behavior"
+E11_VERDICT,decision_ladder,true,DECLARED_NO_ENDPOINT,false,"M0;M1;M2","posthoc_interpretation","Map outcomes to allowed galaxy-scope interpretations"
