@@ -575,6 +575,27 @@ def validate_source_import_write_authorization_v16() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v16 summary must forbid scoring")
 
 
+def validate_source_import_authorized_writer_v17() -> None:
+    rows = read_csv(ROOT / "data/derived/source_import_authorized_writer_v17.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_authorized_writer_summary_v17.csv")
+    require(len(rows) == 1, "v17 authorized writer must have one row")
+    row = rows[0]
+    require(row["write_authorized"] == "false", "v17 write authorization must remain false")
+    require(row["raw_input_present"] == "false", "v17 raw input must remain absent")
+    require(row["target_preexisting"] == "false", "v17 target input must not preexist")
+    require(row["target_file_written"] == "false", "v17 must not write target input")
+    require(row["rows_written"] == "0", "v17 must write zero rows")
+    require(row["writer_status"] == "WRITER_BLOCKED_BY_AUTHORIZATION", "v17 writer must be authorization-blocked")
+    require(row["endpoint_scoring_allowed"] == "false", "v17 row cannot allow scoring")
+    require(len(summary) == 1, "v17 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "AUTHORIZED_WRITER_BLOCKED", "v17 summary must remain blocked")
+    require(summary_row["target_file_written"] == "false", "v17 summary must not write target input")
+    require(summary_row["rows_written"] == "0", "v17 summary must write zero rows")
+    require(summary_row["target_input_file_present_after_writer"] == "false", "v17 target input must remain absent after writer")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v17 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -606,6 +627,7 @@ def main() -> None:
     validate_source_import_template_v14()
     validate_source_import_raw_adapter_v15()
     validate_source_import_write_authorization_v16()
+    validate_source_import_authorized_writer_v17()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

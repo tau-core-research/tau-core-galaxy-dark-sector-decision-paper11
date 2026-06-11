@@ -43,6 +43,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_real_values_template_v14.md",
         "docs/source_import_raw_adapter_v15.md",
         "docs/source_import_write_authorization_v16.md",
+        "docs/source_import_authorized_writer_v17.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -80,6 +81,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_raw_adapter_summary_v15.csv",
         "data/derived/source_import_write_authorization_v16.csv",
         "data/derived/source_import_write_authorization_summary_v16.csv",
+        "data/derived/source_import_authorized_writer_v17.csv",
+        "data/derived/source_import_authorized_writer_summary_v17.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -91,6 +94,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_real_values_template.py",
         "scripts/run_source_import_raw_adapter.py",
         "scripts/run_source_import_write_authorization.py",
+        "scripts/run_source_import_authorized_writer.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -600,6 +604,41 @@ def test_v16_write_authorization_blocks_target_input_creation() -> None:
             "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
             "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "write_authorization_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v17_authorized_writer_is_implemented_but_blocked() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/source_import_authorized_writer_v17.csv").open()))
+    assert rows == [
+        {
+            "writer_id": "SIAW17_AUTHORIZED_RAW_TO_V12",
+            "authorization_source": "source_import_write_authorization_v16.csv",
+            "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
+            "target_input_file": "data/input/source_import_real_values_v12.csv",
+            "write_authorized": "false",
+            "raw_input_present": "false",
+            "target_preexisting": "false",
+            "target_file_written": "false",
+            "rows_written": "0",
+            "writer_status": "WRITER_BLOCKED_BY_AUTHORIZATION",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "authorized_writer_only_no_scores_no_verdict",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_authorized_writer_summary_v17.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_AUTHORIZED_WRITER_V17",
+            "writer_status": "WRITER_BLOCKED_BY_AUTHORIZATION",
+            "target_file_written": "false",
+            "rows_written": "0",
+            "target_input_file_present_after_writer": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "AUTHORIZED_WRITER_BLOCKED",
+            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
         }
     ]
 
