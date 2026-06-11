@@ -119,6 +119,8 @@ data/derived/frontier_provenance_evidence_acceptance_v26.csv
 data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv
 data/derived/frontier_provenance_evidence_work_order_v27.csv
 data/derived/frontier_provenance_evidence_work_order_summary_v27.csv
+data/derived/frontier_work_order_completion_gate_v28.csv
+data/derived/frontier_work_order_completion_gate_summary_v28.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -175,6 +177,7 @@ docs/scoring_dependency_closure_v24.md
 docs/scoring_unblock_priority_v25.md
 docs/frontier_provenance_evidence_acceptance_v26.md
 docs/frontier_provenance_evidence_work_order_v27.md
+docs/frontier_work_order_completion_gate_v28.md
 ```
 
 ## Reproduce
@@ -250,4 +253,6 @@ frontier as `SCD24_PROVENANCE_EVIDENCE`, with
 artifact. The v26 frontier provenance evidence acceptance checklist keeps all
 eighteen rows at `PENDING_INPUT`; zero rows are accepted for promotion review.
 The v27 frontier provenance evidence work order opens eighteen evidence
-collection tasks but does not authorize evidence writes or scoring.
+collection tasks but does not authorize evidence writes or scoring. The v28
+frontier work-order completion gate keeps all eighteen work orders blocked from
+closure; zero work orders are closed.

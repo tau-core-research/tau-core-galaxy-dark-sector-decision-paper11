@@ -833,6 +833,36 @@ def validate_frontier_provenance_evidence_work_order_v27() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v27 summary must forbid scoring")
 
 
+def validate_frontier_work_order_completion_gate_v28() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_work_order_completion_gate_v28.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_work_order_completion_gate_summary_v28.csv")
+    require(len(rows) == 18, "v28 completion gate must cover eighteen work orders")
+    require(all(row["accepted_for_promotion_review"] == "false" for row in rows), "v28 must inherit zero accepted rows")
+    require(
+        all(row["work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows),
+        "v28 must inherit open work orders",
+    )
+    require(all("work_order_open" in row["completion_blockers"] for row in rows), "v28 must report open work-order blocker")
+    require(
+        all("not_accepted_for_promotion_review" in row["completion_blockers"] for row in rows),
+        "v28 must report promotion-review blocker",
+    )
+    require(
+        all(row["completion_decision"] == "DO_NOT_CLOSE_WORK_ORDER" for row in rows),
+        "v28 must close zero work orders",
+    )
+    require(all(row["may_write_evidence_input_after_completion"] == "false" for row in rows), "v28 cannot authorize evidence writes")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v28 rows cannot allow scoring")
+    require(len(summary) == 1, "v28 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "FRONTIER_WORK_ORDER_COMPLETION_BLOCKED", "v28 summary must block completion")
+    require(row["completion_gate_rows"] == "18", "v28 must summarize eighteen gates")
+    require(row["work_orders_closed"] == "0", "v28 must close zero work orders")
+    require(row["work_orders_blocked"] == "18", "v28 must block eighteen work orders")
+    require(row["may_write_evidence_input_anywhere"] == "false", "v28 summary cannot authorize evidence writes")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v28 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -875,6 +905,7 @@ def main() -> None:
     validate_scoring_unblock_priority_v25()
     validate_frontier_provenance_evidence_acceptance_v26()
     validate_frontier_provenance_evidence_work_order_v27()
+    validate_frontier_work_order_completion_gate_v28()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
