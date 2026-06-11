@@ -634,6 +634,24 @@ def validate_source_import_provenance_v19() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v19 summary must forbid scoring")
 
 
+def validate_source_import_provenance_audit_v20() -> None:
+    rows = read_csv(ROOT / "data/derived/source_import_provenance_audit_v20.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_provenance_audit_summary_v20.csv")
+    require(len(rows) == 18, "v20 provenance audit must cover eighteen candidate rows")
+    require(all(row["provenance_complete"] == "false" for row in rows), "v20 must complete zero provenance rows")
+    require(all(row["raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows), "v20 must block raw import")
+    require(all("catalog_provenance_missing" in row["blocking_requirements"] for row in rows), "v20 must report catalog blockers")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v20 rows cannot allow scoring")
+    require(len(summary) == 1, "v20 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "RAW_IMPORT_BLOCKED_BY_PROVENANCE", "v20 must block raw import by provenance")
+    require(row["audited_rows"] == "18", "v20 summary must audit eighteen rows")
+    require(row["provenance_complete_rows"] == "0", "v20 must complete zero provenance rows")
+    require(row["raw_import_allowed_rows"] == "0", "v20 must allow zero raw imports")
+    require(row["raw_import_blocked_rows"] == "18", "v20 must block eighteen rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v20 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -668,6 +686,7 @@ def main() -> None:
     validate_source_import_authorized_writer_v17()
     validate_source_import_raw_template_v18()
     validate_source_import_provenance_v19()
+    validate_source_import_provenance_audit_v20()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
