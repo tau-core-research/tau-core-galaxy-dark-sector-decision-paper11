@@ -84,9 +84,10 @@ manifest, and v01 sample, scoring, control, and threshold pre-registration
 manifests. It also supplies v02 galaxy-role and scoring-formula freeze
 manifests and v03 family-budget plus control-implementation freeze manifests.
 It further supplies v04 source-field, formula-registry, and control-runner
-contracts. The next honest target is row-level source audit, concrete family
-formula tables, numeric parameter counts, and executable control runners. The
-following remain absent:
+contracts, plus v05 row-level source-audit, family formula-table readiness, and
+numeric-count readiness ledgers. The next honest target is source import,
+leakage audit, concrete family formula tables, numeric parameter counts, and
+executable control runners. The following remain absent:
 \[
 \begin{aligned}
 &\mathrm{Response}_{\tau}, \quad
@@ -136,6 +137,12 @@ It specifies source-field completeness requirements, formula-registry slots,
 and control-runner input/output contracts. These contracts must be satisfied
 before scoring can be activated; they do not fill the formulas, count numeric
 parameters, run controls, or report any family comparison.
+
+The v05 layer adds row-level and family-level readiness ledgers. Every concrete
+galaxy row remains activation-blocked pending source import and leakage audit.
+Every family formula slot remains unfilled, so numeric parameter counts and
+parsimony scores remain blocked. This is a negative readiness result, not a
+physics result.
 
 \section{Claim Boundary}
 

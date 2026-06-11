@@ -238,6 +238,43 @@ def validate_control_runner_contract_v04() -> None:
         require(row["output_contract"], f"{row['runner_id']} missing output contract")
 
 
+def validate_source_row_audit_v05() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/source_row_audit_v05.csv")
+    galaxy_rows = read_csv(ROOT / "data/source_manifest/galaxy_list_freeze_v02.csv")
+    audited = {row["galaxy_id"] for row in rows}
+    listed = {row["galaxy_id"] for row in galaxy_rows}
+    require(audited == listed, f"v05 audit galaxy set mismatch: {listed ^ audited}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v05 row audit must disable endpoint scoring")
+        require(row["activation_status"] == "ACTIVATION_BLOCKED", "v05 rows must remain activation-blocked")
+        require("PENDING" in row["leakage_audit_status"], "v05 rows must keep leakage audit pending")
+        require(row["blocking_reason"], f"{row['audit_id']} missing blocking reason")
+
+
+def validate_family_formula_table_v05() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/family_formula_table_v05.csv")
+    families = {row["family_id"] for row in rows}
+    require({"M0", "M1", "M2", "ALL"}.issubset(families), "v05 formula table missing families")
+    slots = {row["formula_slot"] for row in rows}
+    require("tau_response_formula" in slots, "v05 formula table missing response slot")
+    require("numeric_parameter_count_table" in slots, "v05 formula table missing count slot")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v05 formula rows must disable endpoint scoring")
+        require(row["formula_table_status"] == "FORMULA_TABLE_REQUIRED_NOT_FILLED", "v05 formula tables must remain unfilled")
+        require("BLOCKED" in row["parameter_count_status"] or "PENDING" in row["parameter_count_status"], "v05 count status must be blocked or pending")
+
+
+def validate_numeric_count_readiness_v05() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/numeric_count_readiness_v05.csv")
+    families = {row["family_id"] for row in rows}
+    require({"M0", "M1", "M2", "ALL"}.issubset(families), "v05 numeric readiness missing families")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v05 count rows must disable endpoint scoring")
+        require(row["count_readiness_status"] == "COUNT_NOT_READY", "v05 counts must remain not ready")
+        require(row["blocked_by"], f"{row['readiness_id']} missing blocker")
+        require(row["minimum_completion_condition"], f"{row['readiness_id']} missing completion condition")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -255,6 +292,9 @@ def main() -> None:
     validate_source_field_completeness_v04()
     validate_family_formula_registry_v04()
     validate_control_runner_contract_v04()
+    validate_source_row_audit_v05()
+    validate_family_formula_table_v05()
+    validate_numeric_count_readiness_v05()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

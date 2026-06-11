@@ -54,6 +54,9 @@ data/source_manifest/control_implementation_freeze_v03.csv
 data/source_manifest/source_field_completeness_v04.csv
 data/source_manifest/family_formula_registry_v04.csv
 data/source_manifest/control_runner_contract_v04.csv
+data/source_manifest/source_row_audit_v05.csv
+data/source_manifest/family_formula_table_v05.csv
+data/source_manifest/numeric_count_readiness_v05.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -85,6 +88,9 @@ docs/control_implementation_freeze_v03.md
 docs/source_field_completeness_v04.md
 docs/family_formula_registry_v04.md
 docs/control_runner_contract_v04.md
+docs/source_row_audit_v05.md
+docs/family_formula_table_v05.md
+docs/numeric_count_readiness_v05.md
 ```
 
 ## Reproduce
@@ -116,6 +122,7 @@ The current honest status is a frozen-reference policy bundle, v01
 sample/scoring/control/threshold pre-registration, v02 galaxy-role plus
 scoring-formula freeze, and v03 family-budget plus control-implementation
 freeze, plus v04 source-field, formula-registry, and control-runner contracts.
-The next target is row-level source audit, concrete family formula tables,
-numeric parameter counts, and executable control runners, not a response
-formula or physical readout claim.
+It also includes v05 row-level source-audit, family formula-table readiness,
+and numeric-count readiness ledgers. The next target is source import, leakage
+audit, concrete family formula tables, numeric parameter counts, and executable
+control runners, not a response formula or physical readout claim.

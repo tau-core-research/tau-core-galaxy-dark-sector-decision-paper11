@@ -29,6 +29,9 @@ def test_required_files_exist() -> None:
         "docs/source_field_completeness_v04.md",
         "docs/family_formula_registry_v04.md",
         "docs/control_runner_contract_v04.md",
+        "docs/source_row_audit_v05.md",
+        "docs/family_formula_table_v05.md",
+        "docs/numeric_count_readiness_v05.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -155,6 +158,26 @@ def test_v04_contracts_are_declared_not_implemented() -> None:
     }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in runner_rows)
     assert all(row["execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED" for row in runner_rows)
+
+
+def test_v05_readiness_ledgers_block_activation_and_counts() -> None:
+    audit_rows = list(csv.DictReader((ROOT / "data/source_manifest/source_row_audit_v05.csv").open()))
+    galaxy_rows = list(csv.DictReader((ROOT / "data/source_manifest/galaxy_list_freeze_v02.csv").open()))
+    assert {row["galaxy_id"] for row in audit_rows} == {row["galaxy_id"] for row in galaxy_rows}
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in audit_rows)
+    assert all(row["activation_status"] == "ACTIVATION_BLOCKED" for row in audit_rows)
+    assert all("PENDING" in row["leakage_audit_status"] for row in audit_rows)
+
+    formula_rows = list(csv.DictReader((ROOT / "data/source_manifest/family_formula_table_v05.csv").open()))
+    assert {"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in formula_rows})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in formula_rows)
+    assert all(row["formula_table_status"] == "FORMULA_TABLE_REQUIRED_NOT_FILLED" for row in formula_rows)
+    assert any("Response_tau formula" in row["claim_boundary"] for row in formula_rows)
+
+    count_rows = list(csv.DictReader((ROOT / "data/source_manifest/numeric_count_readiness_v05.csv").open()))
+    assert {"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in count_rows})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in count_rows)
+    assert all(row["count_readiness_status"] == "COUNT_NOT_READY" for row in count_rows)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:
