@@ -147,6 +147,8 @@ data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv
 data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv
 data/derived/post_writer_scoring_unblock_priority_recheck_v41.csv
 data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv
+data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv
+data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -217,6 +219,7 @@ docs/post_writer_scoring_activation_recheck_v38.md
 docs/post_writer_scoring_preflight_recheck_v39.md
 docs/post_writer_scoring_dependency_closure_recheck_v40.md
 docs/post_writer_scoring_unblock_priority_recheck_v41.md
+docs/post_writer_frontier_evidence_acceptance_recheck_v42.md
 ```
 
 ## Reproduce
@@ -316,4 +319,6 @@ recheck. The v40 post-writer scoring dependency-closure recheck keeps all
 thirteen scoring dependencies blocked, with zero closed score-ready paths. The
 v41 post-writer scoring unblock-priority recheck confirms the first frontier as
 `SCD24_PROVENANCE_EVIDENCE`, requiring
-`data/input/source_import_provenance_evidence_v21.csv`.
+`data/input/source_import_provenance_evidence_v21.csv`. The v42 post-writer
+frontier evidence-acceptance recheck keeps all eighteen rows blocked, with zero
+evidence rows present and zero rows accepted for promotion review.

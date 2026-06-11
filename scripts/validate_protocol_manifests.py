@@ -1242,6 +1242,46 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     )
 
 
+def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
+    require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
+    require(all(row["v41_frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows), "v42 must inherit the v41 frontier")
+    require(
+        all(row["v41_frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows),
+        "v42 must inherit the v41 frontier artifact",
+    )
+    require(all(row["v26_acceptance_status"] == "PENDING_INPUT" for row in rows), "v42 must inherit pending v26 acceptance")
+    require(all(row["v26_evidence_input_present"] == "false" for row in rows), "v42 must see zero evidence inputs")
+    require(all(row["v26_accepted_for_promotion_review"] == "false" for row in rows), "v42 must inherit zero accepted rows")
+    require(
+        all("frontier_evidence_input_missing" in row["acceptance_recheck_blockers"] for row in rows),
+        "v42 must block on missing frontier evidence",
+    )
+    require(
+        all("v26_acceptance_not_passed" in row["acceptance_recheck_blockers"] for row in rows),
+        "v42 must block on v26 acceptance",
+    )
+    require(
+        all(row["accepted_for_promotion_review_after_recheck"] == "false" for row in rows),
+        "v42 must accept zero rows after recheck",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v42 rows cannot allow scoring")
+    require(len(summary) == 1, "v42 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_FRONTIER_EVIDENCE_ACCEPTANCE_RECHECK_V42", "v42 summary id mismatch")
+    require(row["acceptance_recheck_rows"] == "18", "v42 must summarize eighteen rows")
+    require(row["evidence_input_rows_present_after_recheck"] == "0", "v42 must see zero evidence rows")
+    require(row["accepted_for_promotion_review_rows_after_recheck"] == "0", "v42 must accept zero rows")
+    require(row["blocked_rows_after_recheck"] == "18", "v42 must block eighteen rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v42 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_FRONTIER_EVIDENCE_ACCEPTANCE_RECHECK_BLOCKED", "v42 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_frontier_evidence_acceptance_recheck_only_no_scores_no_dark_sector_verdict",
+        "v42 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1298,6 +1338,7 @@ def main() -> None:
     validate_post_writer_scoring_preflight_recheck_v39()
     validate_post_writer_scoring_dependency_closure_recheck_v40()
     validate_post_writer_scoring_unblock_priority_recheck_v41()
+    validate_post_writer_frontier_evidence_acceptance_recheck_v42()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
