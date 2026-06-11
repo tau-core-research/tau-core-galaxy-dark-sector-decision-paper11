@@ -456,6 +456,56 @@ def validate_leakage_audit_evidence_template_v58() -> None:
     )
 
 
+def validate_leakage_audit_review_package_v59() -> None:
+    package_root = ROOT / "review_packages/leakage_audit_v58_review_package"
+    zip_path = ROOT / "review_packages/leakage_audit_v58_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "templates/leakage_audit_evidence_v10_TEMPLATE.csv",
+        "templates/leakage_audit_review_response_TEMPLATE.csv",
+        "data/leakage_audit_evidence_template_summary_v58.csv",
+        "data/leakage_evidence_contract_v10.csv",
+        "data/source_import_leakage_summary_v09.csv",
+        "data/source_import_real_values_summary_v12.csv",
+        "data/scoring_unblock_priority_summary_v25.csv",
+    }
+    require(package_root.exists(), "v59 leakage review package directory must exist")
+    require(zip_path.exists(), "v59 leakage review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v59 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v59 manifest row count mismatch")
+    require(
+        {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"},
+        "v59 manifest package paths mismatch",
+    )
+    require(
+        all(row["claim_boundary"] == "leakage_review_package_only_no_evidence_no_scores" for row in manifest),
+        "v59 manifest claim boundary mismatch",
+    )
+    response = read_csv(package_root / "templates/leakage_audit_review_response_TEMPLATE.csv")
+    require(len(response) == 72, "v59 response template must cover 72 rows")
+    require(
+        all(row["review_decision"] == "KEEP_TEMPLATE_NOT_REVIEWED_NO_LEAKAGE_PASS" for row in response),
+        "v59 response template must default to no leakage pass",
+    )
+    require(
+        all(row["reviewer_leakage_pass_authorized"] == "false" for row in response),
+        "v59 response template cannot authorize leakage pass by default",
+    )
+    require(
+        all(row["may_activate_row_after_ingestion"] == "false" for row in response),
+        "v59 response template cannot activate rows by default",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in response), "v59 response cannot allow scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    zipped_required = {f"leakage_audit_v58_review_package/{rel}" for rel in required}
+    require(zipped_required.issubset(names), "v59 zip missing required package files")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2043,6 +2093,7 @@ def main() -> None:
     validate_source_import_leakage_audit_v09()
     validate_source_import_contract_v10()
     validate_leakage_audit_evidence_template_v58()
+    validate_leakage_audit_review_package_v59()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

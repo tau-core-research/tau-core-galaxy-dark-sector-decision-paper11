@@ -78,6 +78,8 @@ data/derived/leakage_evidence_contract_v10.csv
 data/derived/source_import_contract_summary_v10.csv
 data/input/leakage_audit_evidence_v10_TEMPLATE.csv
 data/derived/leakage_audit_evidence_template_summary_v58.csv
+review_packages/leakage_audit_v58_review_package/
+review_packages/leakage_audit_v58_review_package.zip
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -230,6 +232,7 @@ docs/scoring_input_scaffold_v08.md
 docs/source_import_leakage_audit_v09.md
 docs/source_import_contract_v10.md
 docs/leakage_audit_evidence_template_v58.md
+docs/leakage_audit_review_package_v59.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -389,4 +392,7 @@ input writer then writes 450 MassModels raw rows for the eighteen frozen
 galaxies into `data/input/source_import_raw_sparc_like_v15.csv`. The scoring
 unblock frontier moves to `leakage_audit_evidence_v10.csv`; endpoint scoring
 remains disabled. The v58 leakage-evidence template provides the 72-row
-review shape for that frontier but creates zero leakage-pass rows.
+review shape for that frontier but creates zero leakage-pass rows. The v59
+leakage review package bundles that template, contract, frontier summaries,
+and a fillable response template; it is not active leakage evidence and still
+creates zero activation/scoring rows.

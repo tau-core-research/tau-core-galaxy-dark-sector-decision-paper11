@@ -38,6 +38,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_leakage_audit_v09.md",
         "docs/source_import_contract_v10.md",
         "docs/leakage_audit_evidence_template_v58.md",
+        "docs/leakage_audit_review_package_v59.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -106,6 +107,17 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_contract_summary_v10.csv",
         "data/input/leakage_audit_evidence_v10_TEMPLATE.csv",
         "data/derived/leakage_audit_evidence_template_summary_v58.csv",
+        "review_packages/leakage_audit_v58_review_package/README.md",
+        "review_packages/leakage_audit_v58_review_package/DO_NOT_COPY_WITHOUT_COMPLETED_REVIEW.md",
+        "review_packages/leakage_audit_v58_review_package/REVIEW_MANIFEST.csv",
+        "review_packages/leakage_audit_v58_review_package/templates/leakage_audit_evidence_v10_TEMPLATE.csv",
+        "review_packages/leakage_audit_v58_review_package/templates/leakage_audit_review_response_TEMPLATE.csv",
+        "review_packages/leakage_audit_v58_review_package/data/leakage_audit_evidence_template_summary_v58.csv",
+        "review_packages/leakage_audit_v58_review_package/data/leakage_evidence_contract_v10.csv",
+        "review_packages/leakage_audit_v58_review_package/data/source_import_leakage_summary_v09.csv",
+        "review_packages/leakage_audit_v58_review_package/data/source_import_real_values_summary_v12.csv",
+        "review_packages/leakage_audit_v58_review_package/data/scoring_unblock_priority_summary_v25.csv",
+        "review_packages/leakage_audit_v58_review_package.zip",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -243,6 +255,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_leakage_audit.py",
         "scripts/build_source_import_contract.py",
         "scripts/build_leakage_audit_evidence_template.py",
+        "scripts/build_leakage_audit_review_package.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -631,6 +644,43 @@ def test_v58_leakage_audit_evidence_template_is_not_evidence() -> None:
             "claim_boundary": "leakage_evidence_template_only_no_pass_no_scores_no_dark_sector_verdict",
         }
     ]
+
+
+def test_v59_leakage_audit_review_package_is_not_evidence() -> None:
+    package_root = ROOT / "review_packages/leakage_audit_v58_review_package"
+    zip_path = ROOT / "review_packages/leakage_audit_v58_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "templates/leakage_audit_evidence_v10_TEMPLATE.csv",
+        "templates/leakage_audit_review_response_TEMPLATE.csv",
+        "data/leakage_audit_evidence_template_summary_v58.csv",
+        "data/leakage_evidence_contract_v10.csv",
+        "data/source_import_leakage_summary_v09.csv",
+        "data/source_import_real_values_summary_v12.csv",
+        "data/scoring_unblock_priority_summary_v25.csv",
+    }
+    assert package_root.exists()
+    assert zip_path.exists()
+    for rel in required:
+        assert (package_root / rel).exists(), rel
+
+    manifest = list(csv.DictReader((package_root / "REVIEW_MANIFEST.csv").open()))
+    assert len(manifest) == len(required) - 1
+    assert {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"}
+    assert all(row["claim_boundary"] == "leakage_review_package_only_no_evidence_no_scores" for row in manifest)
+
+    response = list(csv.DictReader((package_root / "templates/leakage_audit_review_response_TEMPLATE.csv").open()))
+    assert len(response) == 72
+    assert all(row["review_decision"] == "KEEP_TEMPLATE_NOT_REVIEWED_NO_LEAKAGE_PASS" for row in response)
+    assert all(row["reviewer_leakage_pass_authorized"] == "false" for row in response)
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in response)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in response)
+
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    assert {f"leakage_audit_v58_review_package/{rel}" for rel in required}.issubset(names)
 
 
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
