@@ -89,6 +89,8 @@ data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv
 data/derived/leakage_prescore_artifact_work_order_summary_v61.csv
 review_packages/leakage_prescore_artifact_v61_collection_package/
 review_packages/leakage_prescore_artifact_v61_collection_package.zip
+data/derived/leakage_prescore_artifact_collection_intake_v63.csv
+data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -245,6 +247,7 @@ docs/leakage_audit_review_package_v59.md
 docs/leakage_audit_review_response_intake_v60.md
 docs/leakage_prescore_artifact_work_order_v61.md
 docs/leakage_prescore_artifact_collection_package_v62.md
+docs/leakage_prescore_artifact_collection_intake_v63.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -414,4 +417,7 @@ work order converts that no-go into 72 concrete prescore artifact tasks across
 the four leakage checks; all remain open and non-scoring. The v62 collection
 package turns those tasks into a fillable prescore artifact response template,
 while still creating zero leakage evidence, zero activation rows, and zero
-endpoint scores.
+endpoint scores. The v63 intake gate now defines how a future completed v62
+response will be checked. Since that completed response is absent, all 72 rows
+remain blocked and the next required artifact is the completed collection
+response zip.

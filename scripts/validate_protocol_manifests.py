@@ -652,6 +652,48 @@ def validate_leakage_prescore_artifact_collection_package_v62() -> None:
     require(zipped_required.issubset(names), "v62 zip missing required package files")
 
 
+def validate_leakage_prescore_artifact_collection_intake_v63() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_collection_intake_v63.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv")
+    require(len(rows) == 72, "v63 intake must cover 72 work-order rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v63 intake must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v63 evidence ids must match leakage contract",
+    )
+    require(
+        all(row["source_mode"] == "template_absent_completed_response" for row in rows),
+        "v63 must currently run from template because completed response is absent",
+    )
+    require(
+        all(row["intake_decision"] == "BLOCKED_COMPLETED_PRESCORE_ARTIFACT_RESPONSE_ABSENT" for row in rows),
+        "v63 rows must remain blocked while completed response is absent",
+    )
+    require(
+        all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_COMPLETED_RESPONSE_ABSENT" for row in rows),
+        "v63 cannot mark leakage evidence candidates without completed response",
+    )
+    require(
+        all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows),
+        "v63 cannot promote leakage evidence from template rows",
+    )
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v63 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v63 rows cannot allow scoring")
+    require(len(summary) == 1, "v63 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_COLLECTION_INTAKE_V63", "v63 summary id mismatch")
+    require(row["expected_response_files_present"] == "0", "v63 must record absent completed response files")
+    require(row["intake_rows"] == "72", "v63 summary must record 72 intake rows")
+    require(row["completed_response_present"] == "false", "v63 completed response must be absent")
+    require(row["candidate_rows_for_later_leakage_evidence"] == "0", "v63 cannot create candidates yet")
+    require(row["blocked_or_missing_rows"] == "72", "v63 must keep all rows blocked")
+    require(row["leakage_evidence_rows_created"] == "0", "v63 cannot create leakage evidence")
+    require(row["activation_rows_authorized"] == "0", "v63 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v63 summary must forbid scoring")
+    require(row["overall_status"] == "PRESCORE_ARTIFACT_RESPONSE_BLOCKED_OR_ABSENT", "v63 must remain blocked")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2243,6 +2285,7 @@ def main() -> None:
     validate_leakage_audit_review_response_intake_v60()
     validate_leakage_prescore_artifact_work_order_v61()
     validate_leakage_prescore_artifact_collection_package_v62()
+    validate_leakage_prescore_artifact_collection_intake_v63()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
