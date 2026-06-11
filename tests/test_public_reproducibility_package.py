@@ -46,6 +46,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_request_ledger_v64.md",
         "docs/leakage_prescore_artifact_request_review_package_v65.md",
         "docs/leakage_prescore_artifact_request_review_intake_v66.md",
+        "docs/leakage_prescore_artifact_candidate_ledger_v67.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -171,6 +172,9 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_prescore_artifact_request_v64_completed_review_response/leakage_prescore_artifact_request_v64_review_validation_log.txt",
         "data/derived/leakage_prescore_artifact_request_review_intake_v66.csv",
         "data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
+        "data/derived/leakage_prescore_artifact_candidate_ledger_v67.csv",
+        "data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv",
+        "data/derived/leakage_prescore_artifact_candidate_summary_v67.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -316,6 +320,7 @@ def test_required_files_exist() -> None:
         "scripts/build_leakage_prescore_artifact_request_ledger.py",
         "scripts/build_leakage_prescore_artifact_request_review_package.py",
         "scripts/run_leakage_prescore_artifact_request_review_intake.py",
+        "scripts/build_leakage_prescore_artifact_candidate_ledger.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1073,6 +1078,51 @@ def test_v66_leakage_prescore_artifact_request_review_intake_is_no_go_not_eviden
             "overall_status": "PRESCORE_REQUEST_REVIEW_RESPONSE_PRESENT_BUT_BLOCKED",
             "next_required_artifact": "completed_prescore_artifact_response_with_uri_hash_or_accession_for_each_open_request",
             "claim_boundary": "leakage_prescore_artifact_request_review_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v67_leakage_prescore_artifact_candidate_ledger_is_review_required_not_evidence() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_candidate_ledger_v67.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_candidate_summary_v67.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {
+        "LEC10_SOURCE_ROUTE",
+        "LEC10_OBSERVED_INPUTS",
+        "LEC10_MORPH_LABELS",
+        "LEC10_BENCHMARK_INPUTS",
+    }
+    assert all(row["candidate_artifact_uri_or_id"] for row in rows)
+    assert all(row["candidate_artifact_hash_or_accession"].startswith("sha256:") for row in rows)
+    assert all(row["candidate_review_status"].endswith("REVIEW_REQUIRED") for row in rows)
+    assert all(row["may_promote_to_leakage_evidence_without_review"] == "false" for row in rows)
+    assert all(row["may_activate_row_from_candidate"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert len(coverage) == 4
+    assert all(row["candidate_rows"] == "18" for row in coverage)
+    assert all(row["review_required_rows"] == "18" for row in coverage)
+    assert all(row["ready_for_leakage_evidence_rows"] == "0" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_CANDIDATE_LEDGER_V67",
+            "candidate_rows": "72",
+            "galaxies_covered": "18",
+            "evidence_checks_per_galaxy": "4",
+            "full_candidate_rows": "36",
+            "partial_candidate_rows": "36",
+            "review_required_rows": "72",
+            "ready_for_leakage_evidence_rows": "0",
+            "leakage_evidence_rows_created": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PRESCORE_ARTIFACT_CANDIDATES_IDENTIFIED_REVIEW_REQUIRED",
+            "next_required_artifact": "completed_candidate_review_response_authorizing_prescore_artifacts",
+            "claim_boundary": "leakage_prescore_artifact_candidate_ledger_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

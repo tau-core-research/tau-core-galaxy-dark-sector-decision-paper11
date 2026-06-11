@@ -44,6 +44,7 @@ def main() -> None:
     run(["python", "scripts/build_leakage_prescore_artifact_request_ledger.py"])
     run(["python", "scripts/build_leakage_prescore_artifact_request_review_package.py"])
     run(["python", "scripts/run_leakage_prescore_artifact_request_review_intake.py"])
+    run(["python", "scripts/build_leakage_prescore_artifact_candidate_ledger.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])
     run(["python", "scripts/build_scoring_dependency_closure.py"])

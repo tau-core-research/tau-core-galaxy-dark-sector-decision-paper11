@@ -852,6 +852,54 @@ def validate_leakage_prescore_artifact_request_review_intake_v66() -> None:
     require(row["overall_status"] == "PRESCORE_REQUEST_REVIEW_RESPONSE_PRESENT_BUT_BLOCKED", "v66 must remain blocked")
 
 
+def validate_leakage_prescore_artifact_candidate_ledger_v67() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_candidate_ledger_v67.csv")
+    coverage = read_csv(ROOT / "data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_candidate_summary_v67.csv")
+    require(len(rows) == 72, "v67 candidate ledger must cover 72 rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v67 candidate ledger must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v67 evidence ids must match leakage contract",
+    )
+    require(
+        all(row["candidate_artifact_uri_or_id"] for row in rows),
+        "v67 rows must identify candidate artifact ids",
+    )
+    require(
+        all(row["candidate_artifact_hash_or_accession"].startswith("sha256:") for row in rows),
+        "v67 rows must carry sha256/accession support",
+    )
+    require(
+        all(row["candidate_review_status"].endswith("REVIEW_REQUIRED") for row in rows),
+        "v67 candidates must remain review-required",
+    )
+    require(
+        all(row["may_promote_to_leakage_evidence_without_review"] == "false" for row in rows),
+        "v67 cannot promote candidates without review",
+    )
+    require(all(row["may_activate_row_from_candidate"] == "false" for row in rows), "v67 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v67 cannot allow scoring")
+    require(len(coverage) == 4, "v67 coverage must summarize four leakage checks")
+    require(all(row["candidate_rows"] == "18" for row in coverage), "v67 coverage rows must cover eighteen galaxies")
+    require(all(row["review_required_rows"] == "18" for row in coverage), "v67 coverage must require review")
+    require(all(row["ready_for_leakage_evidence_rows"] == "0" for row in coverage), "v67 coverage cannot mark ready rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v67 coverage cannot allow scoring")
+    require(len(summary) == 1, "v67 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_CANDIDATE_LEDGER_V67", "v67 summary id mismatch")
+    require(row["candidate_rows"] == "72", "v67 must summarize 72 candidate rows")
+    require(row["full_candidate_rows"] == "36", "v67 must mark 36 full candidate rows")
+    require(row["partial_candidate_rows"] == "36", "v67 must mark 36 partial candidate rows")
+    require(row["review_required_rows"] == "72", "v67 must keep all candidates review-required")
+    require(row["ready_for_leakage_evidence_rows"] == "0", "v67 cannot mark ready rows")
+    require(row["leakage_evidence_rows_created"] == "0", "v67 cannot create leakage evidence")
+    require(row["activation_rows_authorized"] == "0", "v67 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v67 summary must forbid scoring")
+    require(row["overall_status"] == "PRESCORE_ARTIFACT_CANDIDATES_IDENTIFIED_REVIEW_REQUIRED", "v67 status mismatch")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2447,6 +2495,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_request_ledger_v64()
     validate_leakage_prescore_artifact_request_review_package_v65()
     validate_leakage_prescore_artifact_request_review_intake_v66()
+    validate_leakage_prescore_artifact_candidate_ledger_v67()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
