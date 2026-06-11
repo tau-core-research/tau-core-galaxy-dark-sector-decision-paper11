@@ -723,6 +723,40 @@ def validate_source_import_provenance_promotion_gate_v23() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v23 summary must forbid scoring")
 
 
+def validate_scoring_dependency_closure_v24() -> None:
+    rows = read_csv(ROOT / "data/derived/scoring_dependency_closure_v24.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_dependency_closure_summary_v24.csv")
+    require(len(rows) == 13, "v24 dependency closure must check thirteen dependencies")
+    ids = {row["dependency_id"] for row in rows}
+    required = {
+        "SCD24_PROVENANCE_EVIDENCE",
+        "SCD24_PROVENANCE_PROMOTION",
+        "SCD24_PROVENANCE_AUDIT",
+        "SCD24_RAW_ADAPTER_INPUT",
+        "SCD24_WRITE_AUTHORIZATION",
+        "SCD24_AUTHORIZED_WRITER",
+        "SCD24_REAL_VALUES",
+        "SCD24_LEAKAGE_AUDIT",
+        "SCD24_ROW_ACTIVATION",
+        "SCD24_FAMILY_FORMULA_TABLES",
+        "SCD24_PARAMETER_COUNTS",
+        "SCD24_CONTROL_RUNNERS",
+        "SCD24_DECISION_THRESHOLDS",
+    }
+    require(ids == required, f"v24 dependency ids mismatch: {ids ^ required}")
+    require(all(row["dependency_decision"] == "BLOCKED" for row in rows), "v24 must block all dependencies")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v24 rows cannot allow scoring")
+    require(any(row["upstream_status"] == "PROVENANCE_PROMOTION_BLOCKED" for row in rows), "v24 must include v23 block")
+    require(any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows), "v24 must include v13 block")
+    require(len(summary) == 1, "v24 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
+    require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
+    require(row["ready_dependencies"] == "0", "v24 must have zero ready dependencies")
+    require(row["blocked_dependencies"] == "13", "v24 must block thirteen dependencies")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -761,6 +795,7 @@ def main() -> None:
     validate_source_import_provenance_template_v21()
     validate_source_import_provenance_evidence_gate_v22()
     validate_source_import_provenance_promotion_gate_v23()
+    validate_scoring_dependency_closure_v24()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

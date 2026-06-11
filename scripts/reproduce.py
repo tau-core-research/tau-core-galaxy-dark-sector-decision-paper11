@@ -35,6 +35,7 @@ def main() -> None:
     run(["python", "scripts/run_source_import_real_values_gate.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])
+    run(["python", "scripts/build_scoring_dependency_closure.py"])
     run(["python", "scripts/run_scoring_preflight.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])
     run(["tectonic", "main.tex"], cwd=SOURCE)

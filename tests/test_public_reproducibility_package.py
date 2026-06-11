@@ -50,6 +50,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_template_v21.md",
         "docs/source_import_provenance_evidence_gate_v22.md",
         "docs/source_import_provenance_promotion_gate_v23.md",
+        "docs/scoring_dependency_closure_v24.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -104,6 +105,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_provenance_evidence_gate_summary_v22.csv",
         "data/derived/source_import_provenance_promotion_gate_v23.csv",
         "data/derived/source_import_provenance_promotion_summary_v23.csv",
+        "data/derived/scoring_dependency_closure_v24.csv",
+        "data/derived/scoring_dependency_closure_summary_v24.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -122,6 +125,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_provenance_template.py",
         "scripts/run_source_import_provenance_evidence_gate.py",
         "scripts/run_source_import_provenance_promotion_gate.py",
+        "scripts/build_scoring_dependency_closure.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -853,6 +857,44 @@ def test_v23_source_import_provenance_promotion_gate_blocks_manifest_promotion()
             "overall_status": "PROVENANCE_PROMOTION_BLOCKED",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "provenance_promotion_gate_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/scoring_dependency_closure_v24.csv").open()))
+    assert len(rows) == 13
+    assert {row["dependency_id"] for row in rows} == {
+        "SCD24_PROVENANCE_EVIDENCE",
+        "SCD24_PROVENANCE_PROMOTION",
+        "SCD24_PROVENANCE_AUDIT",
+        "SCD24_RAW_ADAPTER_INPUT",
+        "SCD24_WRITE_AUTHORIZATION",
+        "SCD24_AUTHORIZED_WRITER",
+        "SCD24_REAL_VALUES",
+        "SCD24_LEAKAGE_AUDIT",
+        "SCD24_ROW_ACTIVATION",
+        "SCD24_FAMILY_FORMULA_TABLES",
+        "SCD24_PARAMETER_COUNTS",
+        "SCD24_CONTROL_RUNNERS",
+        "SCD24_DECISION_THRESHOLDS",
+    }
+    assert all(row["dependency_decision"] == "BLOCKED" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert any(row["upstream_status"] == "PROVENANCE_PROMOTION_BLOCKED" for row in rows)
+    assert any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/scoring_dependency_closure_summary_v24.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SCORING_DEPENDENCY_CLOSURE_V24",
+            "dependencies_checked": "13",
+            "ready_dependencies": "0",
+            "blocked_dependencies": "13",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
+            "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
 

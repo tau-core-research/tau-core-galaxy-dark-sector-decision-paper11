@@ -222,6 +222,11 @@ The v23 provenance-promotion gate prevents the v19 provenance manifest from
 being promoted unless the v22 evidence gate allows it. In the present package
 promotion is blocked and zero provenance rows are promoted.
 
+The v24 scoring-dependency closure collects the currently blocked provenance,
+raw-import, real-value, leakage, activation, formula, count, control, and
+threshold dependencies into one ledger. It reports the scoring path as blocked
+and does not compute an endpoint score.
+
 \section{Claim Boundary}
 
 This paper does not claim:
