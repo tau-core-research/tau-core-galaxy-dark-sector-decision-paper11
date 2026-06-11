@@ -1724,6 +1724,62 @@ def validate_post_hash_frontier_review_promotion_recheck_v51() -> None:
     )
 
 
+def validate_post_hash_review_promotion_package_v52() -> None:
+    package_root = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_review_package"
+    zip_path = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_EXPLICIT_PROMOTION.md",
+        "REVIEW_MANIFEST.csv",
+        "data/frontier_provenance_evidence_payload_draft_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "data/frontier_provenance_review_response_intake_v48.csv",
+        "data/frontier_provenance_review_response_intake_summary_v48.csv",
+        "data/frontier_review_promotion_gate_v49.csv",
+        "data/frontier_review_promotion_gate_summary_v49.csv",
+        "data/frontier_external_hash_recompute_audit_v50.csv",
+        "data/frontier_external_hash_recompute_audit_summary_v50.csv",
+        "data/post_hash_frontier_review_promotion_recheck_v51.csv",
+        "data/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
+        "templates/frontier_review_promotion_authorization_TEMPLATE.csv",
+    }
+    require(package_root.exists(), "v52 review package directory must exist")
+    require(zip_path.exists(), "v52 review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v52 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v52 manifest row count mismatch")
+    manifest_paths = {row["package_path"] for row in manifest}
+    require(required - {"REVIEW_MANIFEST.csv"} == manifest_paths, "v52 manifest paths mismatch")
+    require(
+        all(row["claim_boundary"] == "post_hash_review_promotion_package_only_no_evidence_no_scores" for row in manifest),
+        "v52 claim boundary mismatch",
+    )
+    template = read_csv(package_root / "templates/frontier_review_promotion_authorization_TEMPLATE.csv")
+    require(len(template) == 18, "v52 authorization template must cover eighteen rows")
+    require(
+        all(row["primary_table1_hash_recomputed_matched"] == "true" for row in template),
+        "v52 template must preserve primary hash support",
+    )
+    require(
+        all(row["reviewer_promotion_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in template),
+        "v52 template must default to no promotion",
+    )
+    require(
+        all(row["may_copy_to_v21_after_authorization"] == "false" for row in template),
+        "v52 template cannot default to v21 copy",
+    )
+    require(
+        all(row["may_mark_provenance_complete_after_authorization"] == "false" for row in template),
+        "v52 template cannot default to provenance completion",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in template), "v52 template cannot allow scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    zipped_required = {f"frontier_post_hash_review_promotion_v51_review_package/{rel}" for rel in required}
+    require(zipped_required.issubset(names), "v52 zip missing required package files")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1790,6 +1846,7 @@ def main() -> None:
     validate_frontier_review_promotion_gate_v49()
     validate_frontier_external_hash_recompute_audit_v50()
     validate_post_hash_frontier_review_promotion_recheck_v51()
+    validate_post_hash_review_promotion_package_v52()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

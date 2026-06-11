@@ -173,6 +173,8 @@ data/derived/frontier_external_hash_recompute_audit_v50.csv
 data/derived/frontier_external_hash_recompute_audit_summary_v50.csv
 data/derived/post_hash_frontier_review_promotion_recheck_v51.csv
 data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv
+review_packages/frontier_post_hash_review_promotion_v51_review_package/
+review_packages/frontier_post_hash_review_promotion_v51_review_package.zip
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -253,6 +255,7 @@ docs/frontier_provenance_review_response_intake_v48.md
 docs/frontier_review_promotion_gate_v49.md
 docs/frontier_external_hash_recompute_audit_v50.md
 docs/post_hash_frontier_review_promotion_recheck_v51.md
+docs/post_hash_review_promotion_package_v52.md
 ```
 
 ## Reproduce
@@ -378,4 +381,7 @@ completion. The v50 external hash recompute audit closes the hash caveat by
 matching both cached SPARC source files against the v45 ledger. The v51
 post-hash promotion recheck then narrows the remaining block to explicit review
 promotion authorization: all eighteen rows have primary hash support, but zero
-rows may write v21 evidence or activate scoring.
+rows may write v21 evidence or activate scoring. The v52 post-hash review
+promotion package bundles the v46, v48, v49, v50, and v51 artifacts plus a
+fillable authorization template for the next human review decision; it remains
+review-only and does not create v21 evidence or allow scoring.

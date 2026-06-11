@@ -78,6 +78,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_review_promotion_gate_v49.md",
         "docs/frontier_external_hash_recompute_audit_v50.md",
         "docs/post_hash_frontier_review_promotion_recheck_v51.md",
+        "docs/post_hash_review_promotion_package_v52.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -203,6 +204,15 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_external_hash_recompute_audit_summary_v50.csv",
         "data/derived/post_hash_frontier_review_promotion_recheck_v51.csv",
         "data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package.zip",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/README.md",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/DO_NOT_COPY_WITHOUT_EXPLICIT_PROMOTION.md",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/REVIEW_MANIFEST.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/frontier_external_hash_recompute_audit_v50.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/frontier_external_hash_recompute_audit_summary_v50.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/post_hash_frontier_review_promotion_recheck_v51.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_review_package/templates/frontier_review_promotion_authorization_TEMPLATE.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -249,6 +259,7 @@ def test_required_files_exist() -> None:
         "scripts/run_frontier_review_promotion_gate.py",
         "scripts/run_frontier_external_hash_recompute_audit.py",
         "scripts/run_post_hash_frontier_review_promotion_recheck.py",
+        "scripts/build_post_hash_review_promotion_package.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1884,6 +1895,48 @@ def test_v51_post_hash_frontier_review_promotion_recheck_still_requires_authoriz
             "claim_boundary": "post_hash_frontier_review_promotion_recheck_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
+
+
+def test_v52_post_hash_review_promotion_package_is_review_only() -> None:
+    package_root = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_review_package"
+    zip_path = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_EXPLICIT_PROMOTION.md",
+        "REVIEW_MANIFEST.csv",
+        "data/frontier_provenance_evidence_payload_draft_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "data/frontier_provenance_review_response_intake_v48.csv",
+        "data/frontier_provenance_review_response_intake_summary_v48.csv",
+        "data/frontier_review_promotion_gate_v49.csv",
+        "data/frontier_review_promotion_gate_summary_v49.csv",
+        "data/frontier_external_hash_recompute_audit_v50.csv",
+        "data/frontier_external_hash_recompute_audit_summary_v50.csv",
+        "data/post_hash_frontier_review_promotion_recheck_v51.csv",
+        "data/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
+        "templates/frontier_review_promotion_authorization_TEMPLATE.csv",
+    }
+    assert package_root.exists()
+    assert zip_path.exists()
+    for rel in required:
+        assert (package_root / rel).exists(), rel
+
+    manifest = list(csv.DictReader((package_root / "REVIEW_MANIFEST.csv").open()))
+    assert len(manifest) == len(required) - 1
+    assert {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"}
+    assert all(row["claim_boundary"] == "post_hash_review_promotion_package_only_no_evidence_no_scores" for row in manifest)
+
+    template = list(csv.DictReader((package_root / "templates/frontier_review_promotion_authorization_TEMPLATE.csv").open()))
+    assert len(template) == 18
+    assert all(row["primary_table1_hash_recomputed_matched"] == "true" for row in template)
+    assert all(row["reviewer_promotion_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in template)
+    assert all(row["may_copy_to_v21_after_authorization"] == "false" for row in template)
+    assert all(row["may_mark_provenance_complete_after_authorization"] == "false" for row in template)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in template)
+
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    assert {f"frontier_post_hash_review_promotion_v51_review_package/{rel}" for rel in required}.issubset(names)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:
