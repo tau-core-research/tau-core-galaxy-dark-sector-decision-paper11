@@ -1077,6 +1077,99 @@ def validate_leakage_evidence_candidate_ingestion_gate_v70() -> None:
     )
 
 
+def validate_leakage_partial_candidate_sufficiency_review_package_v71() -> None:
+    policy = read_csv(ROOT / "data/derived/leakage_partial_candidate_sufficiency_policy_v71.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_partial_candidate_sufficiency_policy_summary_v71.csv")
+    package_root = ROOT / "review_packages/leakage_partial_candidate_sufficiency_v71_review_package"
+    zip_path = ROOT / "review_packages/leakage_partial_candidate_sufficiency_v71_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_SUFFICIENCY_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/leakage_evidence_candidate_ingestion_gate_v70.csv",
+        "data/leakage_evidence_candidate_ingestion_coverage_v70.csv",
+        "data/leakage_evidence_candidate_ingestion_summary_v70.csv",
+        "data/leakage_partial_candidate_sufficiency_policy_v71.csv",
+        "data/leakage_partial_candidate_sufficiency_policy_summary_v71.csv",
+        "templates/leakage_partial_candidate_sufficiency_v71_review_response_TEMPLATE.csv",
+    }
+    require(len(policy) == 4, "v71 policy must cover four leakage components")
+    by_id = {row["evidence_id"]: row for row in policy}
+    require(
+        set(by_id) == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v71 policy evidence ids mismatch",
+    )
+    require(by_id["LEC10_SOURCE_ROUTE"]["v70_draft_available_rows"] == "18", "v71 source-route draft mismatch")
+    require(by_id["LEC10_OBSERVED_INPUTS"]["v70_draft_available_rows"] == "18", "v71 observed-input draft mismatch")
+    require(by_id["LEC10_MORPH_LABELS"]["requires_completed_sufficiency_review"] == "true", "v71 morphology must need review")
+    require(by_id["LEC10_BENCHMARK_INPUTS"]["requires_completed_sufficiency_review"] == "true", "v71 benchmark must need review")
+    require(
+        all(row["required_for_full_leakage_pass"] == "true" for row in policy),
+        "v71 must require all components for full leakage pass",
+    )
+    require(
+        all(row["may_use_minimum_two_component_gate_for_endpoint_scoring"] == "false" for row in policy),
+        "v71 cannot allow two-component endpoint scoring",
+    )
+    require(all(row["target_evidence_rows_created"] == "0" for row in policy), "v71 cannot create evidence")
+    require(all(row["leakage_pass_authorized"] == "false" for row in policy), "v71 cannot authorize leakage pass")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in policy), "v71 cannot allow scoring")
+    require(len(summary) == 1, "v71 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PARTIAL_CANDIDATE_SUFFICIENCY_POLICY_V71", "v71 summary id mismatch")
+    require(row["policy_rows"] == "4", "v71 summary must record four policy rows")
+    require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v71 must require four components")
+    require(row["components_with_full_draft_available"] == "2", "v71 must record two draft-ready components")
+    require(row["components_requiring_sufficiency_review"] == "2", "v71 must record two blocked components")
+    require(row["partial_candidate_rows_requiring_review"] == "36", "v71 must require review for 36 partial rows")
+    require(
+        row["minimum_scoring_policy"] == "FULL_FOUR_COMPONENT_LEAKAGE_REQUIRED_BEFORE_ENDPOINT_SCORING",
+        "v71 minimum scoring policy mismatch",
+    )
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v71 summary must forbid scoring")
+    require(
+        row["overall_status"] == "PARTIAL_SUFFICIENCY_REVIEW_PACKAGE_REQUIRED_BEFORE_LEAKAGE_PASS",
+        "v71 overall status mismatch",
+    )
+    require(package_root.exists(), "v71 review package directory must exist")
+    require(zip_path.exists(), "v71 review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v71 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v71 manifest row count mismatch")
+    require(
+        {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"},
+        "v71 manifest package paths mismatch",
+    )
+    require(
+        all(
+            row["claim_boundary"] == "leakage_partial_candidate_sufficiency_review_package_only_no_evidence_no_scores"
+            for row in manifest
+        ),
+        "v71 manifest claim boundary mismatch",
+    )
+    template = read_csv(package_root / "templates/leakage_partial_candidate_sufficiency_v71_review_response_TEMPLATE.csv")
+    require(len(template) == 36, "v71 response template must cover 36 partial rows")
+    require(
+        {row["evidence_id"] for row in template} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v71 response template must only cover partial components",
+    )
+    require(
+        all(row["sufficiency_review_decision"] == "KEEP_BLOCKED_PARTIAL_REVIEW_REQUIRED_NOT_AUTHORIZED" for row in template),
+        "v71 response template must default to blocked",
+    )
+    require(all(row["partial_candidate_sufficient_for_later_ingestion"] == "false" for row in template), "v71 cannot pre-accept rows")
+    require(all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in template), "v71 cannot promote by default")
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in template), "v71 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in template), "v71 cannot allow scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    require(
+        {f"leakage_partial_candidate_sufficiency_v71_review_package/{rel}" for rel in required}.issubset(names),
+        "v71 zip missing required package files",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2676,6 +2769,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_candidate_review_package_v68()
     validate_leakage_prescore_artifact_candidate_review_intake_v69()
     validate_leakage_evidence_candidate_ingestion_gate_v70()
+    validate_leakage_partial_candidate_sufficiency_review_package_v71()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

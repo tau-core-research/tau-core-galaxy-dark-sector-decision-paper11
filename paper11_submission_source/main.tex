@@ -387,6 +387,10 @@ The v70 ingestion gate converts those accepted rows into draft evidence
 candidates only. Because the morphology-label and benchmark-policy components
 remain blocked, the gate does not create active leakage evidence, authorize
 leakage pass, or permit endpoint scoring.
+The v71 sufficiency policy fixes the scoring-facing minimum as a full
+four-component leakage requirement. It packages the 36 blocked morphology-label
+and benchmark-policy rows for separate sufficiency review without creating
+evidence rows, activation rows, or scores.
 
 \section{Claim Boundary}
 

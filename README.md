@@ -114,6 +114,10 @@ data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv
 data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv
 data/derived/leakage_evidence_candidate_ingestion_coverage_v70.csv
 data/derived/leakage_evidence_candidate_ingestion_summary_v70.csv
+data/derived/leakage_partial_candidate_sufficiency_policy_v71.csv
+data/derived/leakage_partial_candidate_sufficiency_policy_summary_v71.csv
+review_packages/leakage_partial_candidate_sufficiency_v71_review_package/
+review_packages/leakage_partial_candidate_sufficiency_v71_review_package.zip
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -278,6 +282,7 @@ docs/leakage_prescore_artifact_candidate_ledger_v67.md
 docs/leakage_prescore_artifact_candidate_review_package_v68.md
 docs/leakage_prescore_artifact_candidate_review_intake_v69.md
 docs/leakage_evidence_candidate_ingestion_gate_v70.md
+docs/leakage_partial_candidate_sufficiency_review_package_v71.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -473,3 +478,8 @@ candidates only. Since the morphology-label and benchmark-policy evidence
 components remain blocked, no full four-component leakage pass is available;
 the gate writes zero target evidence rows and still permits zero endpoint
 scoring rows.
+The v71 partial-candidate sufficiency policy fixes the scoring-facing minimum:
+all four leakage components are required before endpoint scoring. It packages
+the 36 blocked morphology-label and benchmark-policy rows for separate
+sufficiency review, while creating zero evidence rows, zero activation rows,
+and zero endpoint scores.
