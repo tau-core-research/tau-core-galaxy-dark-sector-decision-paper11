@@ -244,6 +244,10 @@ The v28 frontier work-order completion gate prevents open work orders from being
 treated as completed evidence. In the present package zero work orders are
 closed, so the provenance frontier remains blocked.
 
+The v29 frontier evidence-write authorization gate requires closed work orders
+before the evidence input may be written. Since no work order is closed, the
+target evidence file is not written and scoring remains closed.
+
 \section{Claim Boundary}
 
 This paper does not claim:

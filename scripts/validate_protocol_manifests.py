@@ -863,6 +863,28 @@ def validate_frontier_work_order_completion_gate_v28() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v28 summary must forbid scoring")
 
 
+def validate_frontier_evidence_write_authorization_v29() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_evidence_write_authorization_v29.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_evidence_write_authorization_summary_v29.csv")
+    require(len(rows) == 1, "v29 write authorization must have one row")
+    row = rows[0]
+    require(row["completion_gate_status"] == "FRONTIER_WORK_ORDER_COMPLETION_BLOCKED", "v29 must inherit blocked v28 status")
+    require(row["completion_gate_rows"] == "18", "v29 must inspect eighteen completion rows")
+    require(row["work_orders_closed"] == "0", "v29 must see zero closed work orders")
+    require(row["target_evidence_input_present"] == "false", "v29 target evidence input must remain absent")
+    require("frontier_work_orders_not_closed" in row["write_blockers"], "v29 must block on open frontier work orders")
+    require(row["write_authorized"] == "false", "v29 cannot authorize evidence writes")
+    require(row["target_file_written"] == "false", "v29 must write no target file")
+    require(row["endpoint_scoring_allowed"] == "false", "v29 row cannot allow scoring")
+    require(len(summary) == 1, "v29 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "FRONTIER_EVIDENCE_WRITE_BLOCKED", "v29 summary must block evidence writing")
+    require(summary_row["write_authorized"] == "false", "v29 summary cannot authorize writing")
+    require(summary_row["target_evidence_input_present"] == "false", "v29 summary must keep target absent")
+    require(summary_row["target_file_written"] == "false", "v29 summary must write no target")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v29 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -906,6 +928,7 @@ def main() -> None:
     validate_frontier_provenance_evidence_acceptance_v26()
     validate_frontier_provenance_evidence_work_order_v27()
     validate_frontier_work_order_completion_gate_v28()
+    validate_frontier_evidence_write_authorization_v29()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
