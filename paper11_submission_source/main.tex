@@ -163,6 +163,11 @@ table shapes expected by a future scoring runner. It activates zero rows and
 imports zero observed numeric rows, so scoring remains blocked pending source
 import and leakage audit.
 
+The v09 source-import and leakage audit evaluates the v08 placeholders. It
+finds source import pending for all declared scoring rows, no leakage-audit
+passes, and zero activated rows. This is a scoring gate result only: it does
+not import data, compute scores, or compare model families.
+
 \section{Claim Boundary}
 
 This paper does not claim:

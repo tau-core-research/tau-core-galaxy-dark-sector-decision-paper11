@@ -349,6 +349,37 @@ def validate_scoring_input_scaffold_v08() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 summary must forbid scoring")
 
 
+def validate_source_import_leakage_audit_v09() -> None:
+    audit = read_csv(ROOT / "data/derived/source_import_and_leakage_audit_v09.csv")
+    requirements = read_csv(ROOT / "data/derived/source_import_requirements_v09.csv")
+    findings = read_csv(ROOT / "data/derived/leakage_audit_findings_v09.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_leakage_summary_v09.csv")
+    require(len(audit) == 18, "v09 source/leakage audit must cover eighteen rows")
+    require(all(row["source_import_status"] == "SOURCE_IMPORT_PENDING" for row in audit), "v09 source import must remain pending")
+    require(all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit), "v09 leakage cannot pass")
+    require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit), "v09 must not activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in audit), "v09 audit cannot allow scoring")
+    required_artifacts = {row["required_artifact"] for row in requirements}
+    require(
+        required_artifacts
+        == {
+            "source_import_table_v10.csv",
+            "scoring_observed_inputs_v10.csv",
+            "leakage_audit_evidence_v10.csv",
+            "activated_scoring_rows_v10.csv",
+        },
+        f"v09 requirement mismatch: {required_artifacts}",
+    )
+    require(all(row["current_status"] == "PENDING" for row in requirements), "v09 requirements must remain pending")
+    require(len(findings) == 18, "v09 leakage findings must cover eighteen rows")
+    require(all(row["leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in findings), "v09 findings cannot pass leakage")
+    require(len(summary) == 1, "v09 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED", "v09 status must remain blocked")
+    require(row["activated_rows"] == "0", "v09 must activate zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -372,6 +403,7 @@ def main() -> None:
     validate_readiness_audit_v06()
     validate_scoring_preflight_v07()
     validate_scoring_input_scaffold_v08()
+    validate_source_import_leakage_audit_v09()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

@@ -68,6 +68,10 @@ data/derived/activated_scoring_rows_v08.csv
 data/derived/scoring_observed_input_schema_v08.csv
 data/derived/scoring_observed_inputs_v08.csv
 data/derived/scoring_input_scaffold_summary_v08.csv
+data/derived/source_import_and_leakage_audit_v09.csv
+data/derived/source_import_requirements_v09.csv
+data/derived/leakage_audit_findings_v09.csv
+data/derived/source_import_leakage_summary_v09.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -105,6 +109,7 @@ docs/numeric_count_readiness_v05.md
 docs/readiness_audit_v06.md
 docs/scoring_preflight_v07.md
 docs/scoring_input_scaffold_v08.md
+docs/source_import_leakage_audit_v09.md
 ```
 
 ## Reproduce
@@ -144,4 +149,5 @@ readiness audit is executable and currently reports `ENDPOINT_SCORING_BLOCKED`.
 The v07 scoring preflight is also executable and currently reports
 `SCORING_NOT_READY`. The v08 scoring-input scaffold declares the scoring row
 and observed-input table shapes, but activates no rows and imports no observed
-numeric data.
+numeric data. The v09 source-import/leakage audit currently reports
+`SOURCE_IMPORT_AND_LEAKAGE_BLOCKED`.
