@@ -43,6 +43,10 @@ data/source_manifest/policy_bundle_freeze_requirements.csv
 data/source_manifest/decision_outcome_ladder.csv
 data/source_manifest/frozen_policy_bundle_instance_v01.csv
 data/source_manifest/galaxy_decision_endpoint_manifest_v01.csv
+data/source_manifest/galaxy_sample_freeze_v01.csv
+data/source_manifest/scoring_rule_freeze_v01.csv
+data/source_manifest/control_manifest_v01.csv
+data/source_manifest/decision_threshold_v01.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -58,6 +62,15 @@ The first galaxy decision endpoint manifest is:
 
 ```text
 docs/galaxy_decision_endpoint_manifest_v01.md
+```
+
+The first pre-registration manifests are:
+
+```text
+docs/galaxy_sample_freeze_v01.md
+docs/scoring_rule_freeze_v01.md
+docs/control_manifest_v01.md
+docs/decision_threshold_v01.md
 ```
 
 ## Reproduce
@@ -85,6 +98,7 @@ Paper 11 compares no-dark, Tau dark-sector response, and standard dark-sector
 benchmark families under the same endpoint-blind decision protocol.
 ```
 
-The current honest status is a frozen-reference policy bundle plus endpoint
-decision manifest. The next target is source-side galaxy sample and scoring-rule
-freeze, not a response formula or physical readout claim.
+The current honest status is a frozen-reference policy bundle plus v01
+sample/scoring/control/threshold pre-registration. The next target is concrete
+source-side galaxy list and numeric scoring formula freeze, not a response
+formula or physical readout claim.

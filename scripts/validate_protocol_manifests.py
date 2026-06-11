@@ -76,12 +76,60 @@ def validate_galaxy_endpoint_manifest() -> None:
         require(row["allowed_model_families"] == "M0;M1;M2", "all families must share the endpoint manifest")
 
 
+def validate_sample_freeze() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/galaxy_sample_freeze_v01.csv")
+    ids = {row["sample_id"] for row in rows}
+    require(ids == {"GS_SCOPE", "GS_TRAIN", "GS_HELDOUT", "GS_CHALLENGE", "GS_EXCLUSION"}, "bad sample freeze ids")
+    for row in rows:
+        require(row["required_before_scoring"] == "true", f"{row['sample_id']} must precede scoring")
+        require(row["endpoint_scoring_allowed"] == "false", "sample v01 must disable endpoint scoring")
+        require(row["forbidden_inputs"], f"{row['sample_id']} missing forbidden inputs")
+
+
+def validate_scoring_freeze() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/scoring_rule_freeze_v01.csv")
+    ids = {row["score_id"] for row in rows}
+    required = {"SC_FULL_CURVE", "SC_ZONE_INNER", "SC_ZONE_FLAT", "SC_HELDOUT", "SC_PARSIMONY", "SC_CONTROL"}
+    require(ids == required, f"bad scoring ids: {ids}")
+    for row in rows:
+        require(row["required_before_scoring"] == "true", f"{row['score_id']} must precede scoring")
+        require(row["endpoint_scoring_allowed"] == "false", "scoring v01 must disable endpoint scoring")
+        require("PENDING" in row["current_status"], "v01 scoring must remain formula-pending")
+
+
+def validate_controls() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/control_manifest_v01.csv")
+    ids = {row["control_id"] for row in rows}
+    required = {"CTRL_SHUFFLE", "CTRL_WRONG_FAMILY", "CTRL_NULL_SOURCE", "CTRL_LEAKAGE", "CTRL_RADIAL_PERMUTE"}
+    require(ids == required, f"bad control ids: {ids}")
+    for row in rows:
+        require(row["required_before_scoring"] == "true", f"{row['control_id']} must precede scoring")
+        require(row["endpoint_scoring_allowed"] == "false", "controls v01 must disable endpoint scoring")
+        require("IMPLEMENTATION_PENDING" in row["current_status"], "controls must remain implementation-pending")
+
+
+def validate_thresholds() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/decision_threshold_v01.csv")
+    labels = {row["verdict_label"] for row in rows}
+    required = {"M0_SUFFICIENT", "M1_FAVORED", "M2_BENCHMARK_STRONGER", "UNRESOLVED"}
+    require(labels == required, f"bad verdict labels: {labels}")
+    forbidden = " ".join(row["forbidden_interpretation"] for row in rows).lower()
+    require("global dark matter rejection" in forbidden, "thresholds must block global no-DM claim")
+    require("physical tau dark-sector field" in forbidden, "thresholds must block physical-field promotion")
+    for row in rows:
+        require("NUMERIC_CUTOFF_PENDING" in row["current_status"], "numeric cutoffs must remain pending")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
     validate_outcomes()
     validate_policy_bundle_instance()
     validate_galaxy_endpoint_manifest()
+    validate_sample_freeze()
+    validate_scoring_freeze()
+    validate_controls()
+    validate_thresholds()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

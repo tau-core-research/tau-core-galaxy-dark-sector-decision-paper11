@@ -18,6 +18,10 @@ def test_required_files_exist() -> None:
         "paper11_submission_source/refs.bib",
         "docs/frozen_policy_bundle_instance_v01.md",
         "docs/galaxy_decision_endpoint_manifest_v01.md",
+        "docs/galaxy_sample_freeze_v01.md",
+        "docs/scoring_rule_freeze_v01.md",
+        "docs/control_manifest_v01.md",
+        "docs/decision_threshold_v01.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -56,6 +60,27 @@ def test_policy_bundle_and_endpoint_manifest_are_not_results() -> None:
     assert "M0_wins" not in statuses
     assert "M1_wins" not in statuses
     assert "M2_wins" not in statuses
+
+
+def test_pre_registration_manifests_are_not_endpoint_results() -> None:
+    files = [
+        "galaxy_sample_freeze_v01.csv",
+        "scoring_rule_freeze_v01.csv",
+        "control_manifest_v01.csv",
+    ]
+    for name in files:
+        rows = list(csv.DictReader((ROOT / "data/source_manifest" / name).open()))
+        assert rows
+        assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    thresholds = list(csv.DictReader((ROOT / "data/source_manifest/decision_threshold_v01.csv").open()))
+    assert {row["verdict_label"] for row in thresholds} == {
+        "M0_SUFFICIENT",
+        "M1_FAVORED",
+        "M2_BENCHMARK_STRONGER",
+        "UNRESOLVED",
+    }
+    assert all("PENDING" in row["current_status"] for row in thresholds)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:
