@@ -506,6 +506,53 @@ def validate_leakage_audit_review_package_v59() -> None:
     require(zipped_required.issubset(names), "v59 zip missing required package files")
 
 
+def validate_leakage_audit_review_response_intake_v60() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_audit_review_response_intake_v60.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_audit_review_response_intake_summary_v60.csv")
+    response_dir = ROOT / "review_packages/leakage_audit_v58_completed_review_response"
+    response_zip = ROOT / "review_packages/leakage_audit_v58_completed_review_response.zip"
+    required = {
+        "leakage_audit_v58_review_response.csv",
+        "leakage_audit_v58_review_completed_summary.csv",
+        "leakage_audit_v58_review_notes.md",
+        "leakage_audit_v58_review_validation_log.txt",
+    }
+    require(response_zip.exists(), "v60 completed response zip must exist")
+    require(response_dir.exists(), "v60 completed response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v60 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v60 response zip missing required files")
+    require(len(rows) == 72, "v60 intake must cover 72 review rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v60 intake must cover eighteen galaxies")
+    require(
+        all(row["review_decision"] == "NO_GO_EVIDENCE_REQUIRED_NOT_FILLED" for row in rows),
+        "v60 rows must record no-go decisions",
+    )
+    require(all(row["reviewer_leakage_pass_authorized"] == "false" for row in rows), "v60 must authorize zero passes")
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v60 must authorize zero activations")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v60 rows cannot allow scoring")
+    require(
+        all(row["intake_decision"] == "ACCEPT_AS_REVIEWED_NO_GO_NOT_EVIDENCE" for row in rows),
+        "v60 intake rows must be accepted only as no-go review",
+    )
+    require(len(summary) == 1, "v60 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_AUDIT_REVIEW_RESPONSE_INTAKE_V60", "v60 summary id mismatch")
+    require(row["response_files_present"] == "4", "v60 must record four response files")
+    require(row["review_rows"] == "72", "v60 summary must record 72 rows")
+    require(row["no_go_rows"] == "72", "v60 summary must record 72 no-go rows")
+    require(row["leakage_pass_rows_authorized"] == "0", "v60 summary must authorize zero leakage passes")
+    require(row["activation_rows_authorized"] == "0", "v60 summary must authorize zero activations")
+    require(row["target_evidence_rows_created_by_response"] == "0", "v60 response cannot create target evidence")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v60 summary must forbid scoring")
+    require(
+        row["overall_status"] == "LEAKAGE_REVIEW_RESPONSE_ACCEPTED_AS_NO_GO_NOT_EVIDENCE",
+        "v60 summary must be no-go not evidence",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2094,6 +2141,7 @@ def main() -> None:
     validate_source_import_contract_v10()
     validate_leakage_audit_evidence_template_v58()
     validate_leakage_audit_review_package_v59()
+    validate_leakage_audit_review_response_intake_v60()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

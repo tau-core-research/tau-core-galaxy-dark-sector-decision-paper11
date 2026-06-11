@@ -37,6 +37,7 @@ def main() -> None:
     run(["python", "scripts/run_source_import_real_values_gate.py"])
     run(["python", "scripts/build_leakage_audit_evidence_template.py"])
     run(["python", "scripts/build_leakage_audit_review_package.py"])
+    run(["python", "scripts/ingest_leakage_audit_review_response.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])
     run(["python", "scripts/build_scoring_dependency_closure.py"])

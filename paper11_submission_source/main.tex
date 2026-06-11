@@ -182,6 +182,11 @@ contract, current frontier summaries, and a fillable review-response template.
 It is review-only: all response rows default to no leakage pass and no row
 activation.
 
+The v60 completed leakage-review response intake records the returned review
+as a no-go decision because required evidence is not filled. It covers all 72
+review rows, authorizes zero leakage-pass rows, authorizes zero activation
+rows, and keeps endpoint scoring disabled.
+
 The v11 source-import value ledger instantiates those fields row by row. It
 contains placeholders only: no source route, observed numeric value, or leakage
 evidence has been filled.
