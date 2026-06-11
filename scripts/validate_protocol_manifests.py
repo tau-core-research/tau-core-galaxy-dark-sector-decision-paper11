@@ -324,6 +324,29 @@ def validate_scoring_preflight_v07() -> None:
     require(row["readiness_dependency"] == "ENDPOINT_SCORING_BLOCKED", "v07 must depend on blocked readiness")
     require(row["overall_status"] == "SCORING_NOT_READY", "v07 scoring must remain not ready")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v07 summary must forbid endpoint scoring")
+    require(row["next_required_artifact"] == "source_import_and_leakage_audit_v09.csv", "v07 must point to v09 source import")
+
+
+def validate_scoring_input_scaffold_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/activated_scoring_rows_v08.csv")
+    schema = read_csv(ROOT / "data/derived/scoring_observed_input_schema_v08.csv")
+    observed = read_csv(ROOT / "data/derived/scoring_observed_inputs_v08.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_input_scaffold_summary_v08.csv")
+    require(len(rows) == 18, "v08 must declare eighteen scoring rows")
+    require(all(row["activation_status"] == "NOT_ACTIVATED" for row in rows), "v08 must not activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v08 rows cannot allow scoring")
+    fields = {row["field_name"] for row in schema}
+    require({"galaxy_id", "radius_kpc", "v_obs_km_s", "sigma_v_km_s"}.issubset(fields), "v08 observed schema incomplete")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v08 schema cannot allow scoring")
+    require(len(observed) == 18, "v08 must provide one placeholder observed row per scoring row")
+    require(all(row["v_obs_km_s"] == "PENDING_SOURCE_IMPORT" for row in observed), "v08 observed data must remain pending")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in observed), "v08 observed rows cannot allow scoring")
+    require(len(summary) == 1, "v08 summary must have one row")
+    row = summary[0]
+    require(row["activated_rows"] == "0", "v08 must activate zero rows")
+    require(row["observed_numeric_rows"] == "0", "v08 must import zero numeric observed rows")
+    require(row["overall_status"] == "INPUT_SCAFFOLD_READY_DATA_MISSING", "v08 status must remain data-missing")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 summary must forbid scoring")
 
 
 def main() -> None:
@@ -348,6 +371,7 @@ def main() -> None:
     validate_numeric_count_readiness_v05()
     validate_readiness_audit_v06()
     validate_scoring_preflight_v07()
+    validate_scoring_input_scaffold_v08()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

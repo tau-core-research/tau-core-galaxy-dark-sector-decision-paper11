@@ -158,6 +158,11 @@ tables, numeric parameter counts, control outputs, and numeric decision
 thresholds. The scoring formula components are present only as frozen policy;
 they are not executed.
 
+The v08 scoring-input scaffold creates the activated-row and observed-input
+table shapes expected by a future scoring runner. It activates zero rows and
+imports zero observed numeric rows, so scoring remains blocked pending source
+import and leakage audit.
+
 \section{Claim Boundary}
 
 This paper does not claim:

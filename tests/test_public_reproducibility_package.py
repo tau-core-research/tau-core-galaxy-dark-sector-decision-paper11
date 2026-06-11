@@ -34,6 +34,7 @@ def test_required_files_exist() -> None:
         "docs/numeric_count_readiness_v05.md",
         "docs/readiness_audit_v06.md",
         "docs/scoring_preflight_v07.md",
+        "docs/scoring_input_scaffold_v08.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -41,8 +42,13 @@ def test_required_files_exist() -> None:
         "data/derived/scoring_input_requirements_v07.csv",
         "data/derived/scoring_formula_components_v07.csv",
         "data/derived/scoring_preflight_summary_v07.csv",
+        "data/derived/activated_scoring_rows_v08.csv",
+        "data/derived/scoring_observed_input_schema_v08.csv",
+        "data/derived/scoring_observed_inputs_v08.csv",
+        "data/derived/scoring_input_scaffold_summary_v08.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
+        "scripts/build_scoring_input_scaffold.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -248,8 +254,40 @@ def test_v07_scoring_preflight_names_required_inputs_without_scoring() -> None:
             "formula_policy_components_ready": "7",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_NOT_READY",
-            "next_required_artifact": "activated_scoring_rows_v08.csv",
+            "next_required_artifact": "source_import_and_leakage_audit_v09.csv",
             "claim_boundary": "scoring_preflight_only_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v08_scoring_input_scaffold_declares_shapes_without_data() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/activated_scoring_rows_v08.csv").open()))
+    assert len(rows) == 18
+    assert all(row["activation_status"] == "NOT_ACTIVATED" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert {row["proposed_split"] for row in rows}.issuperset({"train_candidate", "transfer_candidate"})
+
+    schema = list(csv.DictReader((ROOT / "data/derived/scoring_observed_input_schema_v08.csv").open()))
+    assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "sigma_v_km_s"}.issubset({row["field_name"] for row in schema})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in schema)
+
+    observed = list(csv.DictReader((ROOT / "data/derived/scoring_observed_inputs_v08.csv").open()))
+    assert len(observed) == 18
+    assert all(row["v_obs_km_s"] == "PENDING_SOURCE_IMPORT" for row in observed)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in observed)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/scoring_input_scaffold_summary_v08.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SCORING_INPUT_SCAFFOLD_V08",
+            "scoring_rows_declared": "18",
+            "activated_rows": "0",
+            "observed_input_rows": "18",
+            "observed_numeric_rows": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "INPUT_SCAFFOLD_READY_DATA_MISSING",
+            "next_required_artifact": "source_import_and_leakage_audit_v09.csv",
+            "claim_boundary": "scoring_input_scaffold_only_no_scores",
         }
     ]
 

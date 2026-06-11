@@ -64,6 +64,10 @@ data/derived/readiness_summary_v06.csv
 data/derived/scoring_input_requirements_v07.csv
 data/derived/scoring_formula_components_v07.csv
 data/derived/scoring_preflight_summary_v07.csv
+data/derived/activated_scoring_rows_v08.csv
+data/derived/scoring_observed_input_schema_v08.csv
+data/derived/scoring_observed_inputs_v08.csv
+data/derived/scoring_input_scaffold_summary_v08.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -100,6 +104,7 @@ docs/family_formula_table_v05.md
 docs/numeric_count_readiness_v05.md
 docs/readiness_audit_v06.md
 docs/scoring_preflight_v07.md
+docs/scoring_input_scaffold_v08.md
 ```
 
 ## Reproduce
@@ -137,4 +142,6 @@ audit, concrete family formula tables, numeric parameter counts, and executable
 control runners, not a response formula or physical readout claim. The v06
 readiness audit is executable and currently reports `ENDPOINT_SCORING_BLOCKED`.
 The v07 scoring preflight is also executable and currently reports
-`SCORING_NOT_READY`.
+`SCORING_NOT_READY`. The v08 scoring-input scaffold declares the scoring row
+and observed-input table shapes, but activates no rows and imports no observed
+numeric data.

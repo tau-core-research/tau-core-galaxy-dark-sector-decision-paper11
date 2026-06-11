@@ -1,0 +1,11 @@
+field_name,field_type,definition,required_before_scoring,endpoint_scoring_allowed,claim_boundary
+galaxy_id,string,Galaxy identifier matching activated_scoring_rows_v08.csv,true,false,schema_only_no_observed_data_claim
+radial_index,integer,Stable point index on the declared radial grid,true,false,schema_only_no_observed_data_claim
+radius_kpc,float,Declared radius in kpc,true,false,schema_only_no_observed_data_claim
+v_obs_km_s,float,Observed circular velocity,true,false,schema_only_no_observed_data_claim
+sigma_v_km_s,float,Velocity uncertainty used by the shared score,true,false,schema_only_no_observed_data_claim
+v_gas_km_s,float,Gas contribution under the shared baryonic policy,true,false,schema_only_no_observed_data_claim
+v_disk_km_s,float,Disk contribution under the shared baryonic policy,true,false,schema_only_no_observed_data_claim
+v_bulge_km_s,float,Bulge contribution under the shared baryonic policy,false,false,schema_only_no_observed_data_claim
+source_route,string,Reproducible source route for the row,true,false,schema_only_no_observed_data_claim
+leakage_audit_status,string,Leakage status before scoring activation,true,false,schema_only_no_observed_data_claim

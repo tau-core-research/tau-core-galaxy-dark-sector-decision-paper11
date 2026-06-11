@@ -30,18 +30,18 @@ def input_requirements() -> list[dict[str, object]]:
             "requirement_id": "SPR07_ACTIVE_ROWS",
             "required_artifact": "activated_scoring_rows_v08.csv",
             "purpose": "Declare exactly which galaxy rows enter train, heldout, challenge, and control scoring",
-            "current_status": "BLOCKED_BY_SOURCE_ROW_AUDIT",
+            "current_status": "BLOCKED_ARTIFACT_PRESENT_NO_ACTIVATED_ROWS",
             "endpoint_scoring_allowed": "false",
-            "blocking_source": "data/derived/activation_blockers_v06.csv",
+            "blocking_source": "data/derived/activated_scoring_rows_v08.csv",
             "claim_boundary": "preflight_only_no_scores",
         },
         {
             "requirement_id": "SPR07_OBSERVED_INPUTS",
             "required_artifact": "scoring_observed_inputs_v08.csv",
             "purpose": "Provide radial grid, observed velocity, uncertainty, and baryonic component inputs",
-            "current_status": "BLOCKED_BY_SOURCE_IMPORT",
+            "current_status": "BLOCKED_ARTIFACT_PRESENT_SOURCE_IMPORT_PENDING",
             "endpoint_scoring_allowed": "false",
-            "blocking_source": "data/source_manifest/source_row_audit_v05.csv",
+            "blocking_source": "data/derived/scoring_observed_inputs_v08.csv",
             "claim_boundary": "preflight_only_no_scores",
         },
         {
@@ -113,7 +113,7 @@ def summary(requirements: list[dict[str, object]], components: list[dict[str, ob
             "formula_policy_components_ready": formula_policy_ready,
             "endpoint_scoring_allowed_anywhere": str(endpoint_allowed).lower(),
             "overall_status": "SCORING_NOT_READY",
-            "next_required_artifact": "activated_scoring_rows_v08.csv",
+            "next_required_artifact": "source_import_and_leakage_audit_v09.csv",
             "claim_boundary": "scoring_preflight_only_no_dark_sector_verdict",
         }
     ]
