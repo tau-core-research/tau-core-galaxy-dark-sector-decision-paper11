@@ -63,6 +63,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_raw_import_recheck_v34.md",
         "docs/post_writer_raw_adapter_recheck_v35.md",
         "docs/post_writer_real_values_gate_recheck_v36.md",
+        "docs/post_writer_leakage_audit_recheck_v37.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -143,6 +144,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_raw_adapter_recheck_summary_v35.csv",
         "data/derived/post_writer_real_values_gate_recheck_v36.csv",
         "data/derived/post_writer_real_values_gate_recheck_summary_v36.csv",
+        "data/derived/post_writer_leakage_audit_recheck_v37.csv",
+        "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -174,6 +177,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_raw_import_recheck.py",
         "scripts/run_post_writer_raw_adapter_recheck.py",
         "scripts/run_post_writer_real_values_gate_recheck.py",
+        "scripts/run_post_writer_leakage_audit_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1293,6 +1297,32 @@ def test_v36_post_writer_real_values_gate_recheck_blocks_activation() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_REAL_VALUES_GATE_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_real_values_gate_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v37_post_writer_leakage_audit_recheck_blocks_activation() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_leakage_audit_recheck_v37.csv").open()))
+    assert len(rows) == 18
+    assert all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in rows)
+    assert all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows)
+    assert all("post_writer_real_values_gate_not_passed" in row["leakage_recheck_blockers"] for row in rows)
+    assert all("v09_leakage_audit_not_passed" in row["leakage_recheck_blockers"] for row in rows)
+    assert all(row["leakage_pass_after_recheck"] == "false" for row in rows)
+    assert all(row["activation_allowed_after_recheck"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_LEAKAGE_AUDIT_RECHECK_V37",
+            "leakage_recheck_rows": "18",
+            "leakage_pass_rows_after_recheck": "0",
+            "leakage_blocked_rows_after_recheck": "18",
+            "activation_allowed_rows_after_recheck": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_LEAKAGE_AUDIT_RECHECK_BLOCKED",
+            "claim_boundary": "post_writer_leakage_audit_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
         }
     ]
 

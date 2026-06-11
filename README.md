@@ -137,6 +137,8 @@ data/derived/post_writer_raw_adapter_recheck_v35.csv
 data/derived/post_writer_raw_adapter_recheck_summary_v35.csv
 data/derived/post_writer_real_values_gate_recheck_v36.csv
 data/derived/post_writer_real_values_gate_recheck_summary_v36.csv
+data/derived/post_writer_leakage_audit_recheck_v37.csv
+data/derived/post_writer_leakage_audit_recheck_summary_v37.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -202,6 +204,7 @@ docs/post_writer_provenance_promotion_recheck_v33.md
 docs/post_writer_raw_import_recheck_v34.md
 docs/post_writer_raw_adapter_recheck_v35.md
 docs/post_writer_real_values_gate_recheck_v36.md
+docs/post_writer_leakage_audit_recheck_v37.md
 ```
 
 ## Reproduce
@@ -291,4 +294,6 @@ zero rows promoted. The v34 post-writer raw import recheck keeps all eighteen
 raw-import rows blocked, with zero raw rows imported. The v35 post-writer raw
 adapter recheck keeps the v12 real-values target unwritten because the raw input
 is still missing. The v36 post-writer real-values gate recheck keeps all
-eighteen rows unactivated, with zero imported numeric rows.
+eighteen rows unactivated, with zero imported numeric rows. The v37 post-writer
+leakage audit recheck keeps all eighteen rows leakage-blocked, with zero
+leakage-pass rows and zero activation-allowed rows.

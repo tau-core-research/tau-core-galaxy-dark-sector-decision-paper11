@@ -48,6 +48,7 @@ def main() -> None:
     run(["python", "scripts/run_post_writer_raw_import_recheck.py"])
     run(["python", "scripts/run_post_writer_raw_adapter_recheck.py"])
     run(["python", "scripts/run_post_writer_real_values_gate_recheck.py"])
+    run(["python", "scripts/run_post_writer_leakage_audit_recheck.py"])
     run(["python", "scripts/run_scoring_preflight.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])
     run(["tectonic", "main.tex"], cwd=SOURCE)

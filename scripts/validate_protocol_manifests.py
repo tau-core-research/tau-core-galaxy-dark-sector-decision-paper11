@@ -1049,6 +1049,41 @@ def validate_post_writer_real_values_gate_recheck_v36() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v36 summary must forbid scoring")
 
 
+def validate_post_writer_leakage_audit_recheck_v37() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_leakage_audit_recheck_v37.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv")
+    require(len(rows) == 18, "v37 leakage recheck must cover eighteen rows")
+    require(
+        all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in rows),
+        "v37 must inherit the blocked v09 leakage status",
+    )
+    require(all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows), "v37 must pass zero value rows")
+    require(
+        all("post_writer_real_values_gate_not_passed" in row["leakage_recheck_blockers"] for row in rows),
+        "v37 must block on the v36 value gate",
+    )
+    require(
+        all("v09_leakage_audit_not_passed" in row["leakage_recheck_blockers"] for row in rows),
+        "v37 must block on the v09 leakage audit",
+    )
+    require(all(row["leakage_pass_after_recheck"] == "false" for row in rows), "v37 cannot pass leakage")
+    require(all(row["activation_allowed_after_recheck"] == "false" for row in rows), "v37 cannot allow activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v37 rows cannot allow scoring")
+    require(len(summary) == 1, "v37 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_LEAKAGE_AUDIT_RECHECK_V37", "v37 summary id mismatch")
+    require(row["leakage_recheck_rows"] == "18", "v37 must summarize eighteen rows")
+    require(row["leakage_pass_rows_after_recheck"] == "0", "v37 must pass zero leakage rows")
+    require(row["leakage_blocked_rows_after_recheck"] == "18", "v37 must block eighteen rows")
+    require(row["activation_allowed_rows_after_recheck"] == "0", "v37 must allow zero activations")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v37 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_LEAKAGE_AUDIT_RECHECK_BLOCKED", "v37 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_leakage_audit_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
+        "v37 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1100,6 +1135,7 @@ def main() -> None:
     validate_post_writer_raw_import_recheck_v34()
     validate_post_writer_raw_adapter_recheck_v35()
     validate_post_writer_real_values_gate_recheck_v36()
+    validate_post_writer_leakage_audit_recheck_v37()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
