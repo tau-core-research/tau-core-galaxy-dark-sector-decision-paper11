@@ -75,6 +75,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_provenance_evidence_payload_draft_v46.md",
         "docs/frontier_provenance_review_package_v47.md",
         "docs/frontier_provenance_review_response_intake_v48.md",
+        "docs/frontier_review_promotion_gate_v49.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -192,6 +193,8 @@ def test_required_files_exist() -> None:
         "review_packages/frontier_provenance_v46_completed_review_response/frontier_provenance_v46_review_validation_log.txt",
         "data/derived/frontier_provenance_review_response_intake_v48.csv",
         "data/derived/frontier_provenance_review_response_intake_summary_v48.csv",
+        "data/derived/frontier_review_promotion_gate_v49.csv",
+        "data/derived/frontier_review_promotion_gate_summary_v49.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -235,6 +238,7 @@ def test_required_files_exist() -> None:
         "scripts/build_frontier_provenance_evidence_payload_draft.py",
         "scripts/build_frontier_provenance_review_package.py",
         "scripts/ingest_frontier_provenance_review_response.py",
+        "scripts/run_frontier_review_promotion_gate.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1766,6 +1770,42 @@ def test_v48_frontier_provenance_review_response_intake_keeps_draft_not_promoted
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "REVIEW_RESPONSE_ACCEPTED_AS_DRAFT_ONLY_NOT_PROMOTED",
             "claim_boundary": "frontier_provenance_review_response_intake_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v49_frontier_review_promotion_gate_blocks_caveated_review_response() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_review_promotion_gate_v49.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_review_promotion_gate_summary_v49.csv").open()))
+    assert len(rows) == 18
+    assert all(row["v48_route_consistency"] == "pass" for row in rows)
+    assert all(
+        row["v48_source_hash_route_status"] == "source_hash_matches_package_candidate_ledger_external_sha_not_recomputed"
+        for row in rows
+    )
+    assert all(row["v48_leakage_evidence_status"] == "pass_prescore_source_route_review_id" for row in rows)
+    assert all(row["v48_reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows)
+    assert all(row["v48_completion_status"] == "PASS_WITH_CAVEAT" for row in rows)
+    assert all(row["external_hash_recomputed"] == "false" for row in rows)
+    assert all("external_source_hash_not_independently_recomputed" in row["promotion_gate_blockers"] for row in rows)
+    assert all("reviewer_decision_keeps_review_required_not_complete" in row["promotion_gate_blockers"] for row in rows)
+    assert all(row["promotion_gate_decision"] == "DO_NOT_PROMOTE_TO_V21_EVIDENCE" for row in rows)
+    assert all(row["may_write_v21_evidence_input_after_gate"] == "false" for row in rows)
+    assert all(row["may_mark_provenance_complete_after_gate"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_REVIEW_PROMOTION_GATE_V49",
+            "review_rows": "18",
+            "promotion_allowed_rows": "0",
+            "promotion_blocked_rows": "18",
+            "v21_evidence_rows_created": "0",
+            "provenance_complete_rows_marked": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_REVIEW_PROMOTION_BLOCKED",
+            "next_required_action": "independently_recompute_external_sparc_hash_and_issue_explicit_promotion_authorization",
+            "claim_boundary": "frontier_review_promotion_gate_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

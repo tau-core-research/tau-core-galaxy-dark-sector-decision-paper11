@@ -325,6 +325,11 @@ response. The response accepts the draft only as review-ready, with eighteen
 route/prescore passes, a hash-recomputation caveat, zero complete evidence rows
 authorized, and zero v21 evidence rows created.
 
+The v49 frontier review-promotion gate checks whether the v48 response can
+promote rows into active v21 provenance evidence. It blocks all eighteen rows
+because the external SPARC hash was not independently recomputed and the
+response did not explicitly authorize v21 copy or provenance completion.
+
 \section{Claim Boundary}
 
 This paper does not claim:

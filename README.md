@@ -166,6 +166,8 @@ review_packages/frontier_provenance_v46_completed_review_response/
 review_packages/frontier_provenance_v46_completed_review_response.zip
 data/derived/frontier_provenance_review_response_intake_v48.csv
 data/derived/frontier_provenance_review_response_intake_summary_v48.csv
+data/derived/frontier_review_promotion_gate_v49.csv
+data/derived/frontier_review_promotion_gate_summary_v49.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -243,6 +245,7 @@ docs/frontier_provenance_source_candidate_ledger_v45.md
 docs/frontier_provenance_evidence_payload_draft_v46.md
 docs/frontier_provenance_review_package_v47.md
 docs/frontier_provenance_review_response_intake_v48.md
+docs/frontier_review_promotion_gate_v49.md
 ```
 
 ## Reproduce
@@ -360,4 +363,8 @@ handoff directory and zip without creating active v21 evidence. The v48
 frontier provenance review-response intake records the completed review
 response as draft-only, with eighteen route/prescore passes,
 `PASS_WITH_CAVEAT`, zero complete evidence rows authorized, and zero v21
-evidence rows created.
+evidence rows created. The v49 frontier review-promotion gate checks whether
+that response can promote rows into active v21 provenance evidence. It blocks
+all eighteen rows because the external SPARC hash was not independently
+recomputed and the response did not explicitly authorize v21 copy or provenance
+completion.

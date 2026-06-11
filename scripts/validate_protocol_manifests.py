@@ -1589,6 +1589,60 @@ def validate_frontier_provenance_review_response_intake_v48() -> None:
     )
 
 
+def validate_frontier_review_promotion_gate_v49() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_review_promotion_gate_v49.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_review_promotion_gate_summary_v49.csv")
+    require(len(rows) == 18, "v49 gate must cover eighteen review rows")
+    require(all(row["v48_route_consistency"] == "pass" for row in rows), "v49 must preserve v48 route pass")
+    require(
+        all(row["v48_source_hash_route_status"] == "source_hash_matches_package_candidate_ledger_external_sha_not_recomputed" for row in rows),
+        "v49 must preserve external source hash caveat",
+    )
+    require(
+        all(row["v48_leakage_evidence_status"] == "pass_prescore_source_route_review_id" for row in rows),
+        "v49 must preserve v48 prescore route pass",
+    )
+    require(
+        all(row["v48_reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows),
+        "v49 reviewer decisions must remain not promoted",
+    )
+    require(all(row["v48_completion_status"] == "PASS_WITH_CAVEAT" for row in rows), "v49 must preserve caveated status")
+    require(all(row["external_hash_recomputed"] == "false" for row in rows), "v49 must preserve hash recomputation caveat")
+    require(
+        all("external_source_hash_not_independently_recomputed" in row["promotion_gate_blockers"] for row in rows),
+        "v49 must block on external hash recomputation",
+    )
+    require(
+        all("reviewer_decision_keeps_review_required_not_complete" in row["promotion_gate_blockers"] for row in rows),
+        "v49 must block on reviewer not-promoted decision",
+    )
+    require(all(row["promotion_gate_decision"] == "DO_NOT_PROMOTE_TO_V21_EVIDENCE" for row in rows), "v49 cannot promote rows")
+    require(all(row["may_write_v21_evidence_input_after_gate"] == "false" for row in rows), "v49 cannot write v21 evidence")
+    require(
+        all(row["may_mark_provenance_complete_after_gate"] == "false" for row in rows),
+        "v49 cannot mark provenance complete",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v49 cannot allow scoring")
+    require(len(summary) == 1, "v49 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_REVIEW_PROMOTION_GATE_V49", "v49 summary id mismatch")
+    require(row["review_rows"] == "18", "v49 must summarize eighteen rows")
+    require(row["promotion_allowed_rows"] == "0", "v49 cannot allow promotion")
+    require(row["promotion_blocked_rows"] == "18", "v49 must block all rows")
+    require(row["v21_evidence_rows_created"] == "0", "v49 cannot create v21 evidence")
+    require(row["provenance_complete_rows_marked"] == "0", "v49 cannot mark provenance complete")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v49 summary must forbid scoring")
+    require(row["overall_status"] == "FRONTIER_REVIEW_PROMOTION_BLOCKED", "v49 summary status mismatch")
+    require(
+        row["next_required_action"] == "independently_recompute_external_sparc_hash_and_issue_explicit_promotion_authorization",
+        "v49 next action mismatch",
+    )
+    require(
+        row["claim_boundary"] == "frontier_review_promotion_gate_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v49 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1652,6 +1706,7 @@ def main() -> None:
     validate_frontier_provenance_evidence_payload_draft_v46()
     validate_frontier_provenance_review_package_v47()
     validate_frontier_provenance_review_response_intake_v48()
+    validate_frontier_review_promotion_gate_v49()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
