@@ -429,6 +429,33 @@ def validate_source_import_contract_v10() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v10 summary must forbid scoring")
 
 
+def validate_leakage_audit_evidence_template_v58() -> None:
+    rows = read_csv(ROOT / "data/input/leakage_audit_evidence_v10_TEMPLATE.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_audit_evidence_template_summary_v58.csv")
+    require(len(rows) == 72, "v58 leakage template must cover 72 galaxy/check rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v58 leakage template must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v58 evidence ids must match v10 leakage contract",
+    )
+    require(all(row["review_decision"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in rows), "v58 rows must be template-only")
+    require(all(row["evidence_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in rows), "v58 evidence cannot be active")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v58 rows cannot allow scoring")
+    require(len(summary) == 1, "v58 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_AUDIT_EVIDENCE_TEMPLATE_V58", "v58 summary id mismatch")
+    require(row["template_rows"] == "72", "v58 summary must report 72 template rows")
+    require(row["galaxies_covered"] == "18", "v58 summary must report eighteen galaxies")
+    require(row["evidence_checks_per_galaxy"] == "4", "v58 must require four checks per galaxy")
+    require(row["leakage_pass_rows_created"] == "0", "v58 must create zero leakage pass rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v58 summary must forbid scoring")
+    require(
+        row["overall_status"] == "LEAKAGE_AUDIT_EVIDENCE_TEMPLATE_READY_NOT_EVIDENCE",
+        "v58 must remain template-only",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2015,6 +2042,7 @@ def main() -> None:
     validate_scoring_input_scaffold_v08()
     validate_source_import_leakage_audit_v09()
     validate_source_import_contract_v10()
+    validate_leakage_audit_evidence_template_v58()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

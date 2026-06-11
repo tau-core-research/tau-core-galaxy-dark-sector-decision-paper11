@@ -37,6 +37,7 @@ def test_required_files_exist() -> None:
         "docs/scoring_input_scaffold_v08.md",
         "docs/source_import_leakage_audit_v09.md",
         "docs/source_import_contract_v10.md",
+        "docs/leakage_audit_evidence_template_v58.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -103,6 +104,8 @@ def test_required_files_exist() -> None:
         "data/derived/observed_input_contract_v10.csv",
         "data/derived/leakage_evidence_contract_v10.csv",
         "data/derived/source_import_contract_summary_v10.csv",
+        "data/input/leakage_audit_evidence_v10_TEMPLATE.csv",
+        "data/derived/leakage_audit_evidence_template_summary_v58.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -239,6 +242,7 @@ def test_required_files_exist() -> None:
         "scripts/build_scoring_input_scaffold.py",
         "scripts/run_source_import_leakage_audit.py",
         "scripts/build_source_import_contract.py",
+        "scripts/build_leakage_audit_evidence_template.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -594,6 +598,37 @@ def test_v10_source_import_contract_declares_required_values_without_importing()
             "overall_status": "SOURCE_IMPORT_CONTRACT_READY_VALUES_MISSING",
             "next_required_artifact": "source_import_values_v11.csv",
             "claim_boundary": "source_import_contract_only_no_scores",
+        }
+    ]
+
+
+def test_v58_leakage_audit_evidence_template_is_not_evidence() -> None:
+    rows = list(csv.DictReader((ROOT / "data/input/leakage_audit_evidence_v10_TEMPLATE.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {
+        "LEC10_SOURCE_ROUTE",
+        "LEC10_OBSERVED_INPUTS",
+        "LEC10_MORPH_LABELS",
+        "LEC10_BENCHMARK_INPUTS",
+    }
+    assert all(row["review_decision"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in rows)
+    assert all(row["evidence_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/leakage_audit_evidence_template_summary_v58.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_AUDIT_EVIDENCE_TEMPLATE_V58",
+            "template_file": "data/input/leakage_audit_evidence_v10_TEMPLATE.csv",
+            "target_evidence_file": "data/input/leakage_audit_evidence_v10.csv",
+            "template_rows": "72",
+            "galaxies_covered": "18",
+            "evidence_checks_per_galaxy": "4",
+            "leakage_pass_rows_created": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "LEAKAGE_AUDIT_EVIDENCE_TEMPLATE_READY_NOT_EVIDENCE",
+            "claim_boundary": "leakage_evidence_template_only_no_pass_no_scores_no_dark_sector_verdict",
         }
     ]
 

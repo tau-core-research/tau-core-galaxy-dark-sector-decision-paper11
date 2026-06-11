@@ -172,6 +172,11 @@ The v10 source-import contract defines the required provenance, source-route,
 observed-input, and leakage-evidence fields for each declared scoring row. The
 contract is present, but all values remain unfilled.
 
+The v58 leakage-audit evidence template expands the v10 leakage contract into
+72 review rows: four leakage checks for each of the eighteen frozen galaxies.
+It is template material only, creates zero leakage-pass rows, and does not open
+endpoint scoring.
+
 The v11 source-import value ledger instantiates those fields row by row. It
 contains placeholders only: no source route, observed numeric value, or leakage
 evidence has been filled.
@@ -209,77 +214,50 @@ The v18 raw-input template supplies the CSV shape for a future SPARC-like raw
 source file. It is template material only and is not used as observed data.
 
 The v19 provenance manifest records the source evidence required before raw
-import can be accepted. In the present package all provenance rows remain
-unfilled, so raw import and scoring remain blocked.
+import can be accepted. The active v21 evidence writer now supplies complete
+provenance rows for all eighteen candidate galaxies.
 
-The v20 provenance audit makes that block executable: zero rows pass provenance
-and raw import remains disallowed for all candidate rows.
+The v20 provenance audit makes that gate executable. With the active v21 input
+present, all eighteen provenance rows pass the raw-import prerequisite while
+endpoint scoring remains disabled.
 
 The v21 provenance evidence template supplies the CSV shape for future source
 evidence. It is template material only, not provenance evidence.
 
 The v22 provenance evidence gate checks for that evidence input. In the present
-package the evidence file is absent, so provenance promotion remains blocked.
+package the evidence file is present and validation remains pending review, so
+promotion is allowed as a source-side protocol step but not as a scoring result.
 
 The v23 provenance-promotion gate prevents the v19 provenance manifest from
 being promoted unless the v22 evidence gate allows it. In the present package
-promotion is blocked and zero provenance rows are promoted.
+all eighteen provenance rows are promoted for raw import, with no scoring
+activation.
 
-The v24 scoring-dependency closure collects the currently blocked provenance,
-raw-import, real-value, leakage, activation, formula, count, control, and
-threshold dependencies into one ledger. It reports the scoring path as blocked
-and does not compute an endpoint score.
+The v24 scoring-dependency closure collects the current provenance, raw-import,
+real-value, leakage, activation, formula, count, control, and threshold
+dependencies into one ledger. It now records seven ready source-side
+dependencies and six blocked downstream dependencies. It does not compute an
+endpoint score.
 
-The v25 scoring-unblock priority ledger orders those blocked dependencies. It
-identifies the current frontier as the provenance-evidence input, not a model
-verdict or a numerical endpoint score.
+The v25 scoring-unblock priority ledger orders those dependencies. It
+identifies the current frontier as leakage-audit evidence, not a model verdict
+or a numerical endpoint score.
 
-The v26 frontier provenance-evidence acceptance checklist records the row-level
-conditions for that first frontier. In the present package no evidence input is
-present, so zero rows are accepted for promotion review and scoring remains
-closed.
+The v26--v34 frontier provenance work-order and post-writer artifacts are kept
+as historical/review protocol artifacts. They do not override the active v55
+provenance writer and do not open endpoint scoring.
 
-The v27 frontier provenance-evidence work order converts that checklist into
-eighteen open source-collection tasks. It remains a planning artifact only and
-does not authorize evidence writes or endpoint scoring.
+The v35 post-writer raw-adapter recheck links the post-writer raw-import state
+to the v15 adapter. The adapter itself writes no v12 target, while the separate
+authorized writer may have already populated the packaged v12 input.
 
-The v28 frontier work-order completion gate prevents open work orders from being
-treated as completed evidence. In the present package zero work orders are
-closed, so the provenance frontier remains blocked.
+The v36 post-writer real-values gate recheck links the v12 target back to
+activation. It sees 450 imported numeric rows and eighteen value-gate passes,
+but zero rows are activated.
 
-The v29 frontier evidence-write authorization gate requires closed work orders
-before the evidence input may be written. Since no work order is closed, the
-target evidence file is not written and scoring remains closed.
-
-The v30 authorized evidence writer records the only current writer path for the
-frontier evidence input. Because v29 blocks authorization, it writes zero rows
-and creates no evidence file.
-
-The v31 post-writer evidence-absence audit checks the filesystem state after
-that writer. It confirms that the target evidence input remains absent, so the
-evidence gate cannot be promoted.
-
-The v32 post-writer evidence-gate recheck links that absence audit back to the
-v22 evidence gate. Provenance promotion remains blocked after the writer path.
-
-The v33 post-writer provenance-promotion recheck links the blocked evidence
-gate back to the v23 promotion gate. All eighteen promotion rows remain blocked
-and zero provenance rows are promoted.
-
-The v34 post-writer raw-import recheck links the blocked promotion state back
-to the raw-import path. All eighteen raw-import rows remain blocked and zero raw
-rows are imported.
-
-The v35 post-writer raw-adapter recheck links that blocked raw-import state to
-the v15 adapter. The v12 real-values target remains unwritten because no valid
-raw input is present.
-
-The v36 post-writer real-values gate recheck links that missing v12 target back
-to activation. Zero numeric rows are imported and zero rows are activated.
-
-The v37 post-writer leakage-audit recheck links the blocked real-values state
-back to source-blindness. Zero rows pass leakage audit and zero rows are allowed
-for activation.
+The v37 post-writer leakage-audit recheck links the real-values state back to
+the leakage gate. Zero rows pass leakage audit and zero rows are allowed for
+activation.
 
 The v38 post-writer scoring-activation recheck links that leakage result back
 to the activation gate. All eighteen rows remain blocked from activation and
@@ -290,22 +268,21 @@ state back to the preflight checklist. All six preflight requirements remain
 blocked and zero requirements are ready after recheck.
 
 The v40 post-writer scoring-dependency closure recheck links that preflight
-state back to the dependency graph. All thirteen scoring dependencies remain
-blocked and zero dependencies are ready after recheck.
+state back to the dependency graph. The post-writer scoring path remains
+blocked because no preflight requirement is ready after activation.
 
 The v41 post-writer scoring-unblock priority recheck links that blocked
-dependency graph back to the unblock ledger. The first frontier remains
-\texttt{SCD24\_PROVENANCE\_EVIDENCE}, requiring
-\texttt{data/input/source\_import\_provenance\_evidence\_v21.csv}.
+dependency graph back to the unblock ledger. The first frontier is
+\texttt{SCD24\_LEAKAGE\_AUDIT}, requiring
+\path{leakage_audit_evidence_v10.csv}.
 
-The v42 post-writer frontier evidence-acceptance recheck links that confirmed
-frontier back to the acceptance checklist. All eighteen rows remain blocked,
-zero evidence input rows are present, and zero rows are accepted for promotion
-review.
+The v42 post-writer frontier evidence-acceptance recheck records that the
+current frontier is no longer provenance evidence. All eighteen rows remain
+blocked for scoring.
 
-The v43 post-writer frontier work-order recheck links the blocked acceptance
-state back to the work orders. All eighteen work orders remain open, zero work
-orders are closed, and zero rows may write the evidence input.
+The v43 post-writer frontier work-order recheck preserves the historical
+provenance work-order state without changing the leakage frontier or allowing
+scoring.
 
 The v44 frontier provenance-evidence intake contract converts that open
 frontier into review rules and a row-level manual collection checklist. It
