@@ -9,14 +9,17 @@ toward a later leakage-evidence ingestion gate.
 - Expected response package:
   `review_packages/leakage_partial_candidate_sufficiency_v71_completed_review_response.zip`
 - Intake rows: 36
-- Completed response present: false
-- Accepted sufficiency rows: 0
-- Blocked or missing rows: 36
+- Completed response present: true
+- Accepted sufficiency rows: 36
+- Blocked or missing rows: 0
+- Next required artifact:
+  `full_leakage_evidence_ingestion_gate_after_accepted_v71_response`
 
 ## Claim Boundary
 
 This intake creates no active leakage evidence, authorizes no leakage pass,
 activates no rows, computes no scores, and makes no dark-sector verdict.
 
-Until a completed v71 sufficiency response is provided and accepted, full
-leakage-evidence ingestion and endpoint scoring remain blocked.
+The completed v71 sufficiency response is accepted only as permission to build
+a later full leakage-evidence ingestion gate. Endpoint scoring remains blocked
+until that separate four-component leakage-evidence gate is created and passes.

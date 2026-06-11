@@ -14,9 +14,9 @@ RESPONSE_ZIP = ROOT / "review_packages/leakage_partial_candidate_sufficiency_v71
 RESPONSE_CSV = "leakage_partial_candidate_sufficiency_v71_review_response.csv"
 REQUIRED_RESPONSE_FILES = {
     RESPONSE_CSV,
-    "leakage_partial_candidate_sufficiency_v71_review_completed_summary.csv",
+    "leakage_partial_candidate_sufficiency_v71_completed_review_summary.csv",
     "leakage_partial_candidate_sufficiency_v71_review_notes.md",
-    "leakage_partial_candidate_sufficiency_v71_review_validation_log.txt",
+    "leakage_partial_candidate_sufficiency_v71_validation_log.txt",
 }
 
 

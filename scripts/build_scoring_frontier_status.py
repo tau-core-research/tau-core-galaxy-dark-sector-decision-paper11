@@ -27,6 +27,25 @@ def frontier_rows() -> list[dict[str, object]]:
     v70 = read_csv(DERIVED / "leakage_evidence_candidate_ingestion_summary_v70.csv")[0]
     v73 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv")[0]
     v74 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv")[0]
+    partial_blocked = int(v73["blocked_or_missing_rows"])
+    rank2_status = (
+        "READY_FOR_FULL_LEAKAGE_EVIDENCE_INGESTION_AFTER_ACCEPTED_V71_RESPONSE"
+        if partial_blocked == 0
+        else "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE"
+    )
+    rank2_blocked = (
+        "full leakage evidence has not yet been ingested even though the partial sufficiency response is accepted"
+        if partial_blocked == 0
+        else "full leakage evidence cannot be created until the two partial components pass sufficiency review"
+    )
+    rank1_blocked = (
+        "partial sufficiency blocker cleared; accepted sufficiency rows still do not create evidence"
+        if partial_blocked == 0
+        else (
+            f"{v73['blocked_or_missing_rows']} morphology-label/benchmark-policy partial rows "
+            "remain blocked or missing completed sufficiency response"
+        )
+    )
     return [
         {
             "frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
@@ -37,10 +56,7 @@ def frontier_rows() -> list[dict[str, object]]:
                 f"{v70['galaxies_with_source_and_observed_candidates']} galaxies have source-route and observed-input "
                 f"draft candidates; {v74['preaudit_review_ready_rows']} partial rows are preaudit review-ready"
             ),
-            "blocked_detail": (
-                f"{v73['blocked_or_missing_rows']} morphology-label/benchmark-policy partial rows "
-                "remain blocked or missing completed sufficiency response"
-            ),
+            "blocked_detail": rank1_blocked,
             "required_before_scoring": "true",
             "next_required_artifact": v73["next_required_artifact"],
             "next_gate_after_artifact": "leakage_evidence_ingestion_gate_recheck_after_v71_response",
@@ -54,9 +70,9 @@ def frontier_rows() -> list[dict[str, object]]:
             "frontier_id": "SFS72_FULL_LEAKAGE_EVIDENCE_INGESTION",
             "frontier_rank": 2,
             "frontier_class": "full_four_component_leakage_evidence_ingestion",
-            "current_status": "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE",
+            "current_status": rank2_status,
             "ready_detail": "source-route and observed-input draft candidates are available for all 18 galaxies",
-            "blocked_detail": "full leakage evidence cannot be created until the two partial components pass sufficiency review",
+            "blocked_detail": rank2_blocked,
             "required_before_scoring": "true",
             "next_required_artifact": "accepted_v71_sufficiency_response_then_full_leakage_evidence_ingestion_gate",
             "next_gate_after_artifact": "source_import_leakage_audit_recheck",
@@ -87,6 +103,13 @@ def frontier_rows() -> list[dict[str, object]]:
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     blocked = [row for row in rows if row["endpoint_scoring_allowed"] == "false"]
+    v73 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv")[0]
+    partial_blocked = v73["blocked_or_missing_rows"]
+    overall_status = (
+        "SCORING_FRONTIER_BLOCKED_ON_FULL_LEAKAGE_EVIDENCE_INGESTION_GATE"
+        if partial_blocked == "0"
+        else "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE"
+    )
     return [
         {
             "summary_id": "SCORING_FRONTIER_STATUS_V72",
@@ -95,14 +118,12 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "first_frontier_id": rows[0]["frontier_id"],
             "first_frontier_artifact": rows[0]["next_required_artifact"],
             "required_components_for_full_scoring_leakage_pass": 4,
-            "partial_candidate_rows_requiring_review": read_csv(
-                DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv"
-            )[0]["blocked_or_missing_rows"],
+            "partial_candidate_rows_requiring_review": partial_blocked,
             "target_evidence_rows_created": 0,
             "leakage_pass_authorized": 0,
             "activation_rows_authorized": 0,
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE",
+            "overall_status": overall_status,
             "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]

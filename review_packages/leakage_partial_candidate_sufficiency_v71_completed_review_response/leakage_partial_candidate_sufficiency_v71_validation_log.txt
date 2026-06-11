@@ -1,0 +1,40 @@
+Validation log: Leakage partial candidate sufficiency v71 completed review
+
+Input package:
+leakage_partial_candidate_sufficiency_v75_response_draft_package(1).zip
+
+Package access:
+PASS - ZIP was present and readable.
+
+Instruction boundary:
+PASS - v75 package was draft-only and required independent review before completed response.
+
+Preaudit row count:
+PASS - v74 preaudit contains 36 rows.
+
+Draft response row count:
+PASS - v75 draft response contains 36 rows.
+
+Preaudit-to-draft consistency:
+PASS - all 36 draft rows match v74 preaudit rows by ingestion gate, candidate id, leakage evidence row id, galaxy id, evidence id, artifact uri/hash, and row selector.
+
+Required source-side fields:
+PASS - all 36 rows have artifact_exists=true, row_selector_found=true, source_side_fields_present=true, endpoint_scoring_disabled_in_source=true, not_active_or_not_run=true, forbidden_input_guard_present=true, and claim_boundary_guard_present=true.
+
+Sufficiency response:
+PASS - all 36 rows accepted as partial candidate sufficient for later ingestion gate.
+
+Forbidden input boundary:
+PASS - artifact_uses_forbidden_inputs=false for all 36 response rows.
+
+Activation boundary:
+PASS - may_activate_row_after_ingestion=false for all 36 response rows.
+
+Endpoint scoring boundary:
+PASS - endpoint_scoring_allowed=false for all 36 response rows.
+
+Decision:
+ACCEPT_PARTIAL_CANDIDATE_SUFFICIENCY_FOR_LATER_INGESTION_GATE_ONLY
+
+Completion status:
+PASS

@@ -1180,40 +1180,43 @@ def validate_leakage_partial_candidate_sufficiency_review_intake_v73() -> None:
         "v73 intake must cover only partial leakage components",
     )
     require(
-        all(row["source_mode"] == "template_absent_completed_response" for row in rows),
-        "v73 must currently run from absent completed response template",
+        all(row["source_mode"] == "completed_response" for row in rows),
+        "v73 must run from completed response after response package is present",
     )
     require(
-        all(row["intake_decision"] == "BLOCKED_COMPLETED_V71_SUFFICIENCY_RESPONSE_ABSENT" for row in rows),
-        "v73 must block rows while completed response is absent",
+        all(row["intake_decision"] == "ACCEPT_PARTIAL_SUFFICIENCY_FOR_LATER_LEAKAGE_EVIDENCE_GATE_NOT_EVIDENCE" for row in rows),
+        "v73 must accept only partial sufficiency for later leakage-evidence ingestion",
     )
     require(
-        all(row["sufficiency_candidate_status"] == "NOT_ACCEPTED_COMPLETED_RESPONSE_ABSENT" for row in rows),
-        "v73 cannot accept rows while completed response is absent",
+        all(row["sufficiency_candidate_status"] == "SUFFICIENCY_ACCEPTED_FOR_LATER_LEAKAGE_EVIDENCE_INGESTION" for row in rows),
+        "v73 accepted rows must remain later-ingestion sufficiency only",
     )
-    require(all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows), "v73 cannot promote")
+    require(
+        all(row["may_promote_to_leakage_evidence_after_ingestion"] == "true" for row in rows),
+        "v73 may only permit later promotion after a separate ingestion gate",
+    )
     require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v73 cannot activate")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v73 cannot allow scoring")
     require(len(summary) == 1, "v73 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "LEAKAGE_PARTIAL_CANDIDATE_SUFFICIENCY_REVIEW_INTAKE_V73", "v73 summary id mismatch")
-    require(row["response_files_present"] == "0", "v73 must record absent response files")
+    require(row["response_files_present"] == "4", "v73 must record four response files")
     require(row["intake_rows"] == "36", "v73 summary must record 36 rows")
     require(row["galaxies_covered"] == "18", "v73 summary must record eighteen galaxies")
     require(row["partial_evidence_components"] == "2", "v73 summary must record two partial components")
-    require(row["completed_response_present"] == "false", "v73 completed response must be absent")
-    require(row["accepted_sufficiency_rows"] == "0", "v73 cannot accept sufficiency rows")
-    require(row["blocked_or_missing_rows"] == "36", "v73 must block 36 rows")
+    require(row["completed_response_present"] == "true", "v73 completed response must be present")
+    require(row["accepted_sufficiency_rows"] == "36", "v73 must accept 36 sufficiency rows")
+    require(row["blocked_or_missing_rows"] == "0", "v73 must clear the completed-response blocker")
     require(row["target_evidence_rows_created"] == "0", "v73 cannot create evidence")
     require(row["leakage_pass_authorized"] == "0", "v73 cannot authorize leakage pass")
     require(row["activation_rows_authorized"] == "0", "v73 cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v73 summary must forbid scoring")
     require(
-        row["overall_status"] == "PARTIAL_SUFFICIENCY_REVIEW_RESPONSE_BLOCKED_OR_ABSENT",
+        row["overall_status"] == "PARTIAL_SUFFICIENCY_REVIEW_READY_FOR_LATER_LEAKAGE_EVIDENCE_GATE",
         "v73 status mismatch",
     )
     require(
-        row["next_required_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+        row["next_required_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response",
         "v73 next artifact mismatch",
     )
 
@@ -1789,20 +1792,20 @@ def validate_scoring_frontier_status_v72() -> None:
     require(all(row["activation_rows_authorized"] == "0" for row in rows), "v72 cannot authorize activation")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v72 cannot allow scoring")
     require(
-        rows[0]["next_required_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+        rows[0]["next_required_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response",
         "v72 first frontier artifact mismatch",
     )
     require(
-        rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_RESPONSE_BLOCKED_OR_ABSENT",
-        "v72 first frontier must reflect absent v73 response",
+        rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_READY_FOR_LATER_LEAKAGE_EVIDENCE_GATE",
+        "v72 first frontier must reflect accepted v73 response",
     )
     require(
         "36 partial rows are preaudit review-ready" in rows[0]["ready_detail"],
         "v72 first frontier must expose v74 preaudit readiness",
     )
     require(
-        rows[1]["current_status"] == "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE",
-        "v72 second frontier must wait on rank 1",
+        rows[1]["current_status"] == "READY_FOR_FULL_LEAKAGE_EVIDENCE_INGESTION_AFTER_ACCEPTED_V71_RESPONSE",
+        "v72 second frontier must move to leakage-evidence ingestion",
     )
     require(
         rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION",
@@ -1815,17 +1818,17 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+        row["first_frontier_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
-    require(row["partial_candidate_rows_requiring_review"] == "36", "v72 must carry 36-row partial blocker")
+    require(row["partial_candidate_rows_requiring_review"] == "0", "v72 must clear the 36-row partial blocker")
     require(row["target_evidence_rows_created"] == "0", "v72 summary cannot create evidence")
     require(row["leakage_pass_authorized"] == "0", "v72 summary cannot authorize leakage pass")
     require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
     require(
-        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE",
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_FULL_LEAKAGE_EVIDENCE_INGESTION_GATE",
         "v72 status mismatch",
     )
 

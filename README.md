@@ -118,6 +118,8 @@ data/derived/leakage_partial_candidate_sufficiency_policy_v71.csv
 data/derived/leakage_partial_candidate_sufficiency_policy_summary_v71.csv
 review_packages/leakage_partial_candidate_sufficiency_v71_review_package/
 review_packages/leakage_partial_candidate_sufficiency_v71_review_package.zip
+review_packages/leakage_partial_candidate_sufficiency_v71_completed_review_response/
+review_packages/leakage_partial_candidate_sufficiency_v71_completed_review_response.zip
 data/derived/leakage_partial_candidate_sufficiency_review_intake_v73.csv
 data/derived/leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv
 data/derived/leakage_partial_candidate_sufficiency_preaudit_v74.csv
@@ -497,13 +499,13 @@ the 36 blocked morphology-label and benchmark-policy rows for separate
 sufficiency review, while creating zero evidence rows, zero activation rows,
 and zero endpoint scores.
 The v72 scoring-frontier status refines the next scoring blocker after v71:
-the first required artifact is now the completed v71 sufficiency response,
-followed by full leakage-evidence ingestion and only then activation recheck.
-It remains status-only and non-scoring.
+the completed v71 sufficiency response is now ingested, so the first required
+artifact moves to full leakage-evidence ingestion, followed only then by
+activation recheck. It remains status-only and non-scoring.
 The v73 sufficiency-response intake installs that first frontier as an
-executable gate. With no completed v71 response present, all 36 partial rows
-remain blocked; the gate creates zero evidence rows, zero leakage pass, zero
-activation rows, and zero scores.
+executable gate. The completed v71 response accepts all 36 partial sufficiency
+rows for later leakage-evidence ingestion, but creates zero evidence rows, zero
+leakage pass, zero activation rows, and zero scores.
 The v74 preaudit checks those 36 partial rows against the local source/policy
 manifests and marks all 36 as review-ready but not accepted. It is a reviewer
 aid only: zero sufficiency rows are accepted and scoring remains disabled.
