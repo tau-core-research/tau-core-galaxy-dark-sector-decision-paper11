@@ -978,6 +978,29 @@ def validate_post_writer_provenance_promotion_recheck_v33() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v33 summary must forbid scoring")
 
 
+def validate_post_writer_raw_import_recheck_v34() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_raw_import_recheck_v34.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_raw_import_recheck_summary_v34.csv")
+    require(len(rows) == 18, "v34 raw import recheck must cover eighteen rows")
+    require(all(row["v20_raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows), "v34 must inherit v20 no-import")
+    require(all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows), "v34 must inherit zero promoted provenance rows")
+    require(
+        all("post_writer_provenance_promotion_not_allowed" in row["raw_import_recheck_blockers"] for row in rows),
+        "v34 must block on v33 no-promotion",
+    )
+    require(all(row["raw_import_allowed_after_recheck"] == "false" for row in rows), "v34 cannot allow raw import")
+    require(all(row["raw_rows_imported_after_recheck"] == "0" for row in rows), "v34 must import zero raw rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v34 rows cannot allow scoring")
+    require(len(summary) == 1, "v34 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "POST_WRITER_RAW_IMPORT_RECHECK_BLOCKED", "v34 summary must block")
+    require(row["raw_import_recheck_rows"] == "18", "v34 must summarize eighteen rows")
+    require(row["raw_import_allowed_rows_after_recheck"] == "0", "v34 must allow zero raw imports")
+    require(row["raw_import_blocked_rows_after_recheck"] == "18", "v34 must block eighteen raw imports")
+    require(row["raw_rows_imported_after_recheck"] == "0", "v34 must import zero raw rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v34 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1026,6 +1049,7 @@ def main() -> None:
     validate_frontier_post_writer_evidence_absence_audit_v31()
     validate_post_writer_evidence_gate_recheck_v32()
     validate_post_writer_provenance_promotion_recheck_v33()
+    validate_post_writer_raw_import_recheck_v34()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

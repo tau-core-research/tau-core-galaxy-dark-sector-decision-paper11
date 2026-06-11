@@ -60,6 +60,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_post_writer_evidence_absence_audit_v31.md",
         "docs/post_writer_evidence_gate_recheck_v32.md",
         "docs/post_writer_provenance_promotion_recheck_v33.md",
+        "docs/post_writer_raw_import_recheck_v34.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -134,6 +135,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv",
         "data/derived/post_writer_provenance_promotion_recheck_v33.csv",
         "data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv",
+        "data/derived/post_writer_raw_import_recheck_v34.csv",
+        "data/derived/post_writer_raw_import_recheck_summary_v34.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -162,6 +165,7 @@ def test_required_files_exist() -> None:
         "scripts/run_frontier_post_writer_evidence_absence_audit.py",
         "scripts/run_post_writer_evidence_gate_recheck.py",
         "scripts/run_post_writer_provenance_promotion_recheck.py",
+        "scripts/run_post_writer_raw_import_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1196,6 +1200,31 @@ def test_v33_post_writer_provenance_promotion_recheck_blocks_all_rows() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_provenance_promotion_recheck_only_no_promotion_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v34_post_writer_raw_import_recheck_blocks_all_rows() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_raw_import_recheck_v34.csv").open()))
+    assert len(rows) == 18
+    assert all(row["v20_raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows)
+    assert all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows)
+    assert all("post_writer_provenance_promotion_not_allowed" in row["raw_import_recheck_blockers"] for row in rows)
+    assert all(row["raw_import_allowed_after_recheck"] == "false" for row in rows)
+    assert all(row["raw_rows_imported_after_recheck"] == "0" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_raw_import_recheck_summary_v34.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_RAW_IMPORT_RECHECK_V34",
+            "raw_import_recheck_rows": "18",
+            "raw_import_allowed_rows_after_recheck": "0",
+            "raw_import_blocked_rows_after_recheck": "18",
+            "raw_rows_imported_after_recheck": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_RAW_IMPORT_RECHECK_BLOCKED",
+            "claim_boundary": "post_writer_raw_import_recheck_only_no_raw_import_no_scores_no_dark_sector_verdict",
         }
     ]
 
