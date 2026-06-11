@@ -89,6 +89,8 @@ data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv
 data/derived/leakage_prescore_artifact_work_order_summary_v61.csv
 review_packages/leakage_prescore_artifact_v61_collection_package/
 review_packages/leakage_prescore_artifact_v61_collection_package.zip
+review_packages/leakage_prescore_artifact_v61_completed_collection_response/
+review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip
 data/derived/leakage_prescore_artifact_collection_intake_v63.csv
 data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv
 data/derived/source_import_values_v11.csv
@@ -417,7 +419,6 @@ work order converts that no-go into 72 concrete prescore artifact tasks across
 the four leakage checks; all remain open and non-scoring. The v62 collection
 package turns those tasks into a fillable prescore artifact response template,
 while still creating zero leakage evidence, zero activation rows, and zero
-endpoint scores. The v63 intake gate now defines how a future completed v62
-response will be checked. Since that completed response is absent, all 72 rows
-remain blocked and the next required artifact is the completed collection
-response zip.
+endpoint scores. The v63 intake gate records the completed v62 response as a
+no-go response: it is present and readable, but provides zero reviewed prescore
+artifact identifiers or hash/accession values. All 72 rows remain blocked.

@@ -11,12 +11,12 @@ DERIVED = ROOT / "data/derived"
 PACKAGE_ROOT = ROOT / "review_packages/leakage_prescore_artifact_v61_collection_package"
 RESPONSE_DIR = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response"
 RESPONSE_ZIP = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip"
-RESPONSE_CSV = "leakage_prescore_artifact_collection_response.csv"
+RESPONSE_CSV = "leakage_prescore_artifact_v61_collection_response.csv"
 REQUIRED_RESPONSE_FILES = {
     RESPONSE_CSV,
-    "leakage_prescore_artifact_collection_completed_summary.csv",
-    "leakage_prescore_artifact_collection_review_notes.md",
-    "leakage_prescore_artifact_collection_validation_log.txt",
+    "leakage_prescore_artifact_v61_collection_completed_summary.csv",
+    "leakage_prescore_artifact_v61_collection_notes.md",
+    "leakage_prescore_artifact_v61_collection_validation_log.txt",
 }
 
 
@@ -120,6 +120,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     blocked_rows = len(rows) - candidate_rows
     response_files = response_files_present()
     response_present = response_files == len(REQUIRED_RESPONSE_FILES)
+    all_candidates = response_present and candidate_rows == len(rows)
     return [
         {
             "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_COLLECTION_INTAKE_V63",
@@ -135,10 +136,14 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "activation_rows_authorized": 0,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "PRESCORE_ARTIFACT_RESPONSE_READY_FOR_LATER_LEAKAGE_EVIDENCE_GATE"
-            if response_present and candidate_rows == len(rows)
+            if all_candidates
+            else "PRESCORE_ARTIFACT_RESPONSE_PRESENT_BUT_BLOCKED"
+            if response_present
             else "PRESCORE_ARTIFACT_RESPONSE_BLOCKED_OR_ABSENT",
             "next_required_artifact": "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip"
             if not response_present
+            else "reviewed_prescore_artifact_uri_and_hash_or_accession_for_each_open_LEC10_row"
+            if not all_candidates
             else "data/input/leakage_audit_evidence_v10.csv",
             "claim_boundary": "leakage_prescore_artifact_collection_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
         }

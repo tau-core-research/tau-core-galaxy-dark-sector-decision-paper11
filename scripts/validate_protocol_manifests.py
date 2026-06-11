@@ -655,6 +655,21 @@ def validate_leakage_prescore_artifact_collection_package_v62() -> None:
 def validate_leakage_prescore_artifact_collection_intake_v63() -> None:
     rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_collection_intake_v63.csv")
     summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv")
+    response_dir = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip"
+    required = {
+        "leakage_prescore_artifact_v61_collection_response.csv",
+        "leakage_prescore_artifact_v61_collection_completed_summary.csv",
+        "leakage_prescore_artifact_v61_collection_notes.md",
+        "leakage_prescore_artifact_v61_collection_validation_log.txt",
+    }
+    require(response_zip.exists(), "v63 completed collection response zip must exist")
+    require(response_dir.exists(), "v63 completed collection response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v63 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v63 response zip missing required files")
     require(len(rows) == 72, "v63 intake must cover 72 work-order rows")
     require(len({row["galaxy_id"] for row in rows}) == 18, "v63 intake must cover eighteen galaxies")
     require(
@@ -663,16 +678,16 @@ def validate_leakage_prescore_artifact_collection_intake_v63() -> None:
         "v63 evidence ids must match leakage contract",
     )
     require(
-        all(row["source_mode"] == "template_absent_completed_response" for row in rows),
-        "v63 must currently run from template because completed response is absent",
+        all(row["source_mode"] == "completed_response" for row in rows),
+        "v63 must run from completed response once response package is present",
     )
     require(
-        all(row["intake_decision"] == "BLOCKED_COMPLETED_PRESCORE_ARTIFACT_RESPONSE_ABSENT" for row in rows),
-        "v63 rows must remain blocked while completed response is absent",
+        all(row["intake_decision"] == "BLOCKED_PRESCORE_ARTIFACT_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows),
+        "v63 rows must remain blocked when completed response provides no prescore artifacts",
     )
     require(
-        all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_COMPLETED_RESPONSE_ABSENT" for row in rows),
-        "v63 cannot mark leakage evidence candidates without completed response",
+        all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows),
+        "v63 cannot mark leakage evidence candidates without reviewed prescore artifacts",
     )
     require(
         all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows),
@@ -683,15 +698,15 @@ def validate_leakage_prescore_artifact_collection_intake_v63() -> None:
     require(len(summary) == 1, "v63 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_COLLECTION_INTAKE_V63", "v63 summary id mismatch")
-    require(row["expected_response_files_present"] == "0", "v63 must record absent completed response files")
+    require(row["expected_response_files_present"] == "4", "v63 must record four completed response files")
     require(row["intake_rows"] == "72", "v63 summary must record 72 intake rows")
-    require(row["completed_response_present"] == "false", "v63 completed response must be absent")
+    require(row["completed_response_present"] == "true", "v63 completed response must be present")
     require(row["candidate_rows_for_later_leakage_evidence"] == "0", "v63 cannot create candidates yet")
     require(row["blocked_or_missing_rows"] == "72", "v63 must keep all rows blocked")
     require(row["leakage_evidence_rows_created"] == "0", "v63 cannot create leakage evidence")
     require(row["activation_rows_authorized"] == "0", "v63 cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v63 summary must forbid scoring")
-    require(row["overall_status"] == "PRESCORE_ARTIFACT_RESPONSE_BLOCKED_OR_ABSENT", "v63 must remain blocked")
+    require(row["overall_status"] == "PRESCORE_ARTIFACT_RESPONSE_PRESENT_BUT_BLOCKED", "v63 must remain blocked")
 
 
 def validate_source_import_values_v11() -> None:

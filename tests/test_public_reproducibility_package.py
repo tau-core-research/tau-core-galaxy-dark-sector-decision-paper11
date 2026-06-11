@@ -142,6 +142,11 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_prescore_artifact_v61_collection_package/data/leakage_audit_evidence_template_summary_v58.csv",
         "review_packages/leakage_prescore_artifact_v61_collection_package/templates/leakage_prescore_artifact_collection_response_TEMPLATE.csv",
         "review_packages/leakage_prescore_artifact_v61_collection_package.zip",
+        "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip",
+        "review_packages/leakage_prescore_artifact_v61_completed_collection_response/leakage_prescore_artifact_v61_collection_response.csv",
+        "review_packages/leakage_prescore_artifact_v61_completed_collection_response/leakage_prescore_artifact_v61_collection_completed_summary.csv",
+        "review_packages/leakage_prescore_artifact_v61_completed_collection_response/leakage_prescore_artifact_v61_collection_notes.md",
+        "review_packages/leakage_prescore_artifact_v61_completed_collection_response/leakage_prescore_artifact_v61_collection_validation_log.txt",
         "data/derived/leakage_prescore_artifact_collection_intake_v63.csv",
         "data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv",
         "data/derived/source_import_values_v11.csv",
@@ -848,11 +853,27 @@ def test_v62_leakage_prescore_artifact_collection_package_is_not_evidence() -> N
     assert {f"leakage_prescore_artifact_v61_collection_package/{rel}" for rel in required}.issubset(names)
 
 
-def test_v63_leakage_prescore_artifact_collection_intake_is_blocked_without_response() -> None:
+def test_v63_leakage_prescore_artifact_collection_intake_is_no_go_not_evidence() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_collection_intake_v63.csv").open()))
     summary = list(
         csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv").open())
     )
+    response_dir = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip"
+    required = {
+        "leakage_prescore_artifact_v61_collection_response.csv",
+        "leakage_prescore_artifact_v61_collection_completed_summary.csv",
+        "leakage_prescore_artifact_v61_collection_notes.md",
+        "leakage_prescore_artifact_v61_collection_validation_log.txt",
+    }
+    assert response_zip.exists()
+    assert response_dir.exists()
+    for rel in required:
+        assert (response_dir / rel).exists(), rel
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    assert required.issubset(names)
+
     assert len(rows) == 72
     assert len({row["galaxy_id"] for row in rows}) == 18
     assert {row["evidence_id"] for row in rows} == {
@@ -861,9 +882,9 @@ def test_v63_leakage_prescore_artifact_collection_intake_is_blocked_without_resp
         "LEC10_MORPH_LABELS",
         "LEC10_BENCHMARK_INPUTS",
     }
-    assert all(row["source_mode"] == "template_absent_completed_response" for row in rows)
-    assert all(row["intake_decision"] == "BLOCKED_COMPLETED_PRESCORE_ARTIFACT_RESPONSE_ABSENT" for row in rows)
-    assert all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_COMPLETED_RESPONSE_ABSENT" for row in rows)
+    assert all(row["source_mode"] == "completed_response" for row in rows)
+    assert all(row["intake_decision"] == "BLOCKED_PRESCORE_ARTIFACT_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows)
+    assert all(row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_REVIEW_INCOMPLETE_OR_UNSAFE" for row in rows)
     assert all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows)
     assert all(row["may_activate_row_after_ingestion"] == "false" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
@@ -872,18 +893,18 @@ def test_v63_leakage_prescore_artifact_collection_intake_is_blocked_without_resp
         {
             "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_COLLECTION_INTAKE_V63",
             "expected_response_zip": "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip",
-            "expected_response_files_present": "0",
+            "expected_response_files_present": "4",
             "intake_rows": "72",
             "galaxies_covered": "18",
             "evidence_checks_per_galaxy": "4",
-            "completed_response_present": "false",
+            "completed_response_present": "true",
             "candidate_rows_for_later_leakage_evidence": "0",
             "blocked_or_missing_rows": "72",
             "leakage_evidence_rows_created": "0",
             "activation_rows_authorized": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "PRESCORE_ARTIFACT_RESPONSE_BLOCKED_OR_ABSENT",
-            "next_required_artifact": "review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip",
+            "overall_status": "PRESCORE_ARTIFACT_RESPONSE_PRESENT_BUT_BLOCKED",
+            "next_required_artifact": "reviewed_prescore_artifact_uri_and_hash_or_accession_for_each_open_LEC10_row",
             "claim_boundary": "leakage_prescore_artifact_collection_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
