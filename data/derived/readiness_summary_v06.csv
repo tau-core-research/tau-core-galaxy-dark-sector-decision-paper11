@@ -1,0 +1,2 @@
+summary_id,blocked_galaxy_rows,unfilled_formula_tables,blocked_numeric_counts,unimplemented_control_runners,endpoint_scoring_allowed_anywhere,overall_status,claim_boundary
+READINESS_V06,18,8,7,6,false,ENDPOINT_SCORING_BLOCKED,readiness_audit_only_no_dark_sector_verdict

@@ -32,6 +32,12 @@ def test_required_files_exist() -> None:
         "docs/source_row_audit_v05.md",
         "docs/family_formula_table_v05.md",
         "docs/numeric_count_readiness_v05.md",
+        "docs/readiness_audit_v06.md",
+        "data/derived/activation_blockers_v06.csv",
+        "data/derived/formula_and_count_blockers_v06.csv",
+        "data/derived/control_runner_blockers_v06.csv",
+        "data/derived/readiness_summary_v06.csv",
+        "scripts/run_readiness_audit.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -178,6 +184,36 @@ def test_v05_readiness_ledgers_block_activation_and_counts() -> None:
     assert {"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in count_rows})
     assert all(row["endpoint_scoring_allowed"] == "false" for row in count_rows)
     assert all(row["count_readiness_status"] == "COUNT_NOT_READY" for row in count_rows)
+
+
+def test_v06_readiness_audit_blocks_endpoint_scoring() -> None:
+    activation_rows = list(csv.DictReader((ROOT / "data/derived/activation_blockers_v06.csv").open()))
+    assert len(activation_rows) == 18
+    assert all(row["activation_status"] == "ACTIVATION_BLOCKED" for row in activation_rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in activation_rows)
+
+    formula_rows = list(csv.DictReader((ROOT / "data/derived/formula_and_count_blockers_v06.csv").open()))
+    assert any(row["blocker_type"] == "formula_table" for row in formula_rows)
+    assert any(row["blocker_type"] == "numeric_count" for row in formula_rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in formula_rows)
+
+    runner_rows = list(csv.DictReader((ROOT / "data/derived/control_runner_blockers_v06.csv").open()))
+    assert len(runner_rows) == 6
+    assert all(row["execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED" for row in runner_rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/readiness_summary_v06.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "READINESS_V06",
+            "blocked_galaxy_rows": "18",
+            "unfilled_formula_tables": "8",
+            "blocked_numeric_counts": "7",
+            "unimplemented_control_runners": "6",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "ENDPOINT_SCORING_BLOCKED",
+            "claim_boundary": "readiness_audit_only_no_dark_sector_verdict",
+        }
+    ]
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

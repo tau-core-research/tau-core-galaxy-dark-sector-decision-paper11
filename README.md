@@ -57,6 +57,10 @@ data/source_manifest/control_runner_contract_v04.csv
 data/source_manifest/source_row_audit_v05.csv
 data/source_manifest/family_formula_table_v05.csv
 data/source_manifest/numeric_count_readiness_v05.csv
+data/derived/activation_blockers_v06.csv
+data/derived/formula_and_count_blockers_v06.csv
+data/derived/control_runner_blockers_v06.csv
+data/derived/readiness_summary_v06.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -91,6 +95,7 @@ docs/control_runner_contract_v04.md
 docs/source_row_audit_v05.md
 docs/family_formula_table_v05.md
 docs/numeric_count_readiness_v05.md
+docs/readiness_audit_v06.md
 ```
 
 ## Reproduce
@@ -125,4 +130,5 @@ freeze, plus v04 source-field, formula-registry, and control-runner contracts.
 It also includes v05 row-level source-audit, family formula-table readiness,
 and numeric-count readiness ledgers. The next target is source import, leakage
 audit, concrete family formula tables, numeric parameter counts, and executable
-control runners, not a response formula or physical readout claim.
+control runners, not a response formula or physical readout claim. The v06
+readiness audit is executable and currently reports `ENDPOINT_SCORING_BLOCKED`.

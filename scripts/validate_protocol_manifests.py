@@ -275,6 +275,28 @@ def validate_numeric_count_readiness_v05() -> None:
         require(row["minimum_completion_condition"], f"{row['readiness_id']} missing completion condition")
 
 
+def validate_readiness_audit_v06() -> None:
+    activation = read_csv(ROOT / "data/derived/activation_blockers_v06.csv")
+    formula = read_csv(ROOT / "data/derived/formula_and_count_blockers_v06.csv")
+    runners = read_csv(ROOT / "data/derived/control_runner_blockers_v06.csv")
+    summary = read_csv(ROOT / "data/derived/readiness_summary_v06.csv")
+    require(len(activation) == 18, "v06 activation audit must cover eighteen galaxy rows")
+    require(all(row["activation_status"] == "ACTIVATION_BLOCKED" for row in activation), "v06 activation rows must be blocked")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in activation), "v06 activation cannot allow scoring")
+    require(any(row["blocker_type"] == "formula_table" for row in formula), "v06 formula blockers missing")
+    require(any(row["blocker_type"] == "numeric_count" for row in formula), "v06 numeric count blockers missing")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in formula), "v06 formula/count cannot allow scoring")
+    require(len(runners) == 6, "v06 runner audit must cover six controls")
+    require(
+        all(row["execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED" for row in runners),
+        "v06 runners must remain unimplemented",
+    )
+    require(len(summary) == 1, "v06 readiness summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "ENDPOINT_SCORING_BLOCKED", "v06 readiness must block endpoint scoring")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v06 summary must forbid endpoint scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -295,6 +317,7 @@ def main() -> None:
     validate_source_row_audit_v05()
     validate_family_formula_table_v05()
     validate_numeric_count_readiness_v05()
+    validate_readiness_audit_v06()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

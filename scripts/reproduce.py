@@ -18,6 +18,7 @@ def run(cmd: list[str], cwd: Path = ROOT) -> None:
 def main() -> None:
     env = os.environ.copy()
     env.setdefault("SOURCE_DATE_EPOCH", "1781136000")
+    run(["python", "scripts/run_readiness_audit.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])
     run(["tectonic", "main.tex"], cwd=SOURCE)
     run(["python", "scripts/build_arxiv_source.py"])
