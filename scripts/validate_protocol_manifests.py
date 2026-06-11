@@ -1025,6 +1025,30 @@ def validate_post_writer_raw_adapter_recheck_v35() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v35 summary must forbid scoring")
 
 
+def validate_post_writer_real_values_gate_recheck_v36() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_real_values_gate_recheck_v36.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_real_values_gate_recheck_summary_v36.csv")
+    require(len(rows) == 18, "v36 real-values recheck must cover eighteen rows")
+    require(all(row["v12_input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in rows), "v36 v12 input must remain missing")
+    require(all(row["v12_imported_numeric_rows"] == "0" for row in rows), "v36 must import zero numeric rows")
+    require(all(row["v12_real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in rows), "v36 gate status mismatch")
+    require(
+        all("post_writer_raw_adapter_did_not_write_v12" in row["real_value_recheck_blockers"] for row in rows),
+        "v36 must block on v35 no-write",
+    )
+    require(all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows), "v36 must pass zero rows")
+    require(all(row["activation_decision_after_recheck"] == "DO_NOT_ACTIVATE" for row in rows), "v36 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v36 rows cannot allow scoring")
+    require(len(summary) == 1, "v36 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "POST_WRITER_REAL_VALUES_GATE_RECHECK_BLOCKED", "v36 summary must block")
+    require(row["real_value_recheck_rows"] == "18", "v36 must summarize eighteen rows")
+    require(row["imported_numeric_rows_after_recheck"] == "0", "v36 must import zero numeric rows")
+    require(row["rows_passing_value_gate_after_recheck"] == "0", "v36 must pass zero rows")
+    require(row["rows_activated_after_recheck"] == "0", "v36 must activate zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v36 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1075,6 +1099,7 @@ def main() -> None:
     validate_post_writer_provenance_promotion_recheck_v33()
     validate_post_writer_raw_import_recheck_v34()
     validate_post_writer_raw_adapter_recheck_v35()
+    validate_post_writer_real_values_gate_recheck_v36()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
