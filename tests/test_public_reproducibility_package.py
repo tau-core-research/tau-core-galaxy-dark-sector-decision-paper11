@@ -73,6 +73,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_provenance_evidence_intake_contract_v44.md",
         "docs/frontier_provenance_source_candidate_ledger_v45.md",
         "docs/frontier_provenance_evidence_payload_draft_v46.md",
+        "docs/frontier_provenance_review_package_v47.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -176,6 +177,13 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_provenance_evidence_payload_draft_v46.csv",
         "data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv",
         "data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv",
+        "review_packages/frontier_provenance_v46_review_package/README.md",
+        "review_packages/frontier_provenance_v46_review_package/DO_NOT_COPY_WITHOUT_REVIEW.md",
+        "review_packages/frontier_provenance_v46_review_package/REVIEW_MANIFEST.csv",
+        "review_packages/frontier_provenance_v46_review_package/data/frontier_provenance_evidence_payload_draft_v46.csv",
+        "review_packages/frontier_provenance_v46_review_package/data/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "review_packages/frontier_provenance_v46_review_package/data/frontier_provenance_evidence_payload_draft_summary_v46.csv",
+        "review_packages/frontier_provenance_v46_review_package.zip",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -217,6 +225,7 @@ def test_required_files_exist() -> None:
         "scripts/build_frontier_provenance_evidence_intake_contract.py",
         "scripts/build_frontier_provenance_source_candidate_ledger.py",
         "scripts/build_frontier_provenance_evidence_payload_draft.py",
+        "scripts/build_frontier_provenance_review_package.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1665,6 +1674,41 @@ def test_v46_frontier_provenance_evidence_payload_draft_is_review_required() -> 
             "claim_boundary": "frontier_provenance_evidence_payload_draft_only_no_v21_write_no_scores_no_dark_sector_verdict",
         }
     ]
+
+
+def test_v47_frontier_provenance_review_package_contains_review_artifacts() -> None:
+    package_root = ROOT / "review_packages/frontier_provenance_v46_review_package"
+    zip_path = ROOT / "review_packages/frontier_provenance_v46_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/frontier_provenance_evidence_intake_contract_v44.csv",
+        "data/frontier_provenance_evidence_intake_checklist_v44.csv",
+        "data/frontier_provenance_source_candidate_ledger_v45.csv",
+        "data/frontier_provenance_source_candidate_coverage_v45.csv",
+        "data/frontier_provenance_evidence_payload_draft_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_summary_v46.csv",
+        "templates/source_import_provenance_evidence_v21_TEMPLATE.csv",
+    }
+    assert package_root.exists()
+    assert zip_path.exists()
+    for rel in required:
+        assert (package_root / rel).exists(), rel
+
+    manifest = list(csv.DictReader((package_root / "REVIEW_MANIFEST.csv").open()))
+    assert len(manifest) == len(required) - 1
+    assert {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"}
+    assert all(row["claim_boundary"] == "review_package_only_no_evidence_no_scores" for row in manifest)
+
+    draft = list(csv.DictReader((package_root / "data/frontier_provenance_evidence_payload_draft_v46.csv").open()))
+    assert len(draft) == 18
+    assert all(row["provenance_evidence_status"] == "REVIEW_REQUIRED_NOT_COMPLETE" for row in draft)
+
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    assert {f"frontier_provenance_v46_review_package/{rel}" for rel in required}.issubset(names)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

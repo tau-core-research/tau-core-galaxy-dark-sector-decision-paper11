@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1496,6 +1497,43 @@ def validate_frontier_provenance_evidence_payload_draft_v46() -> None:
     )
 
 
+def validate_frontier_provenance_review_package_v47() -> None:
+    package_root = ROOT / "review_packages/frontier_provenance_v46_review_package"
+    zip_path = ROOT / "review_packages/frontier_provenance_v46_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/frontier_provenance_evidence_intake_contract_v44.csv",
+        "data/frontier_provenance_evidence_intake_checklist_v44.csv",
+        "data/frontier_provenance_source_candidate_ledger_v45.csv",
+        "data/frontier_provenance_source_candidate_coverage_v45.csv",
+        "data/frontier_provenance_evidence_payload_draft_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_review_v46.csv",
+        "data/frontier_provenance_evidence_payload_draft_summary_v46.csv",
+        "templates/source_import_provenance_evidence_v21_TEMPLATE.csv",
+    }
+    require(package_root.exists(), "v47 review package directory must exist")
+    require(zip_path.exists(), "v47 review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v47 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v47 manifest row count mismatch")
+    manifest_paths = {row["package_path"] for row in manifest}
+    require(required - {"REVIEW_MANIFEST.csv"} == manifest_paths, "v47 manifest paths mismatch")
+    require(all(row["claim_boundary"] == "review_package_only_no_evidence_no_scores" for row in manifest), "v47 claim boundary mismatch")
+    draft = read_csv(package_root / "data/frontier_provenance_evidence_payload_draft_v46.csv")
+    require(len(draft) == 18, "v47 packaged draft must have eighteen rows")
+    require(
+        all(row["provenance_evidence_status"] == "REVIEW_REQUIRED_NOT_COMPLETE" for row in draft),
+        "v47 packaged draft must remain review-required",
+    )
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    zipped_required = {f"frontier_provenance_v46_review_package/{rel}" for rel in required}
+    require(zipped_required.issubset(names), "v47 zip missing required package files")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1557,6 +1595,7 @@ def main() -> None:
     validate_frontier_provenance_evidence_intake_contract_v44()
     validate_frontier_provenance_source_candidate_ledger_v45()
     validate_frontier_provenance_evidence_payload_draft_v46()
+    validate_frontier_provenance_review_package_v47()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

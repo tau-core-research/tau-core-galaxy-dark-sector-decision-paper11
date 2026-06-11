@@ -160,6 +160,8 @@ data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv
 data/derived/frontier_provenance_evidence_payload_draft_v46.csv
 data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv
 data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv
+review_packages/frontier_provenance_v46_review_package/
+review_packages/frontier_provenance_v46_review_package.zip
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -235,6 +237,7 @@ docs/post_writer_frontier_work_order_recheck_v43.md
 docs/frontier_provenance_evidence_intake_contract_v44.md
 docs/frontier_provenance_source_candidate_ledger_v45.md
 docs/frontier_provenance_evidence_payload_draft_v46.md
+docs/frontier_provenance_review_package_v47.md
 ```
 
 ## Reproduce
@@ -346,4 +349,6 @@ candidate ledger records SPARC Table1 and MassModels source candidates and
 identifies candidate source rows for all eighteen frozen galaxies, while still
 creating zero v21 evidence rows. The v46 frontier provenance evidence payload
 draft converts those candidates into eighteen review-required draft rows with
-the v21 column shape, while still writing zero v21 evidence rows.
+the v21 column shape, while still writing zero v21 evidence rows. The v47
+frontier provenance review package bundles the v44-v46 review artifacts into a
+handoff directory and zip without creating active v21 evidence.
