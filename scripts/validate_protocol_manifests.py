@@ -652,6 +652,26 @@ def validate_source_import_provenance_audit_v20() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v20 summary must forbid scoring")
 
 
+def validate_source_import_provenance_template_v21() -> None:
+    template = read_csv(ROOT / "data/input/source_import_provenance_evidence_v21_TEMPLATE.csv")
+    columns = read_csv(ROOT / "data/derived/source_import_provenance_template_columns_v21.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_provenance_template_summary_v21.csv")
+    require(len(template) == 18, "v21 provenance template must include one placeholder row per candidate galaxy")
+    require(
+        all(row["provenance_evidence_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in template),
+        "v21 template rows must not be importable",
+    )
+    require(len(columns) == 9, "v21 provenance template must document nine fields")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in columns), "v21 columns cannot allow scoring")
+    require(len(summary) == 1, "v21 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "PROVENANCE_TEMPLATE_READY_NOT_DATA", "v21 must remain template-only")
+    require(row["template_rows"] == "18", "v21 summary must report eighteen rows")
+    require(row["required_columns"] == "9", "v21 summary must report nine columns")
+    require(row["evidence_input_file_present"] == "false", "v21 must not include real evidence input")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v21 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -687,6 +707,7 @@ def main() -> None:
     validate_source_import_raw_template_v18()
     validate_source_import_provenance_v19()
     validate_source_import_provenance_audit_v20()
+    validate_source_import_provenance_template_v21()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

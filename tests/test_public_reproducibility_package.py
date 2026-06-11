@@ -47,6 +47,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_raw_template_v18.md",
         "docs/source_import_provenance_manifest_v19.md",
         "docs/source_import_provenance_audit_v20.md",
+        "docs/source_import_provenance_template_v21.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -94,6 +95,9 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_provenance_summary_v19.csv",
         "data/derived/source_import_provenance_audit_v20.csv",
         "data/derived/source_import_provenance_audit_summary_v20.csv",
+        "data/input/source_import_provenance_evidence_v21_TEMPLATE.csv",
+        "data/derived/source_import_provenance_template_columns_v21.csv",
+        "data/derived/source_import_provenance_template_summary_v21.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -109,6 +113,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_raw_template.py",
         "scripts/build_source_import_provenance_manifest.py",
         "scripts/run_source_import_provenance_audit.py",
+        "scripts/build_source_import_provenance_template.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -742,6 +747,42 @@ def test_v20_source_import_provenance_audit_blocks_raw_import() -> None:
             "overall_status": "RAW_IMPORT_BLOCKED_BY_PROVENANCE",
             "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "provenance_audit_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v21_source_import_provenance_template_is_not_evidence() -> None:
+    template = list(csv.DictReader((ROOT / "data/input/source_import_provenance_evidence_v21_TEMPLATE.csv").open()))
+    assert len(template) == 18
+    assert all(row["provenance_evidence_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in template)
+    assert all(row["catalog"] == "FILL_SOURCE_CATALOG" for row in template)
+
+    columns = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_template_columns_v21.csv").open()))
+    assert {row["field_name"] for row in columns} == {
+        "galaxy_id",
+        "catalog",
+        "table_or_file",
+        "version_or_date",
+        "row_id",
+        "sha256_or_external_accession",
+        "source_route",
+        "leakage_evidence_id",
+        "provenance_evidence_status",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in columns)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_template_summary_v21.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_PROVENANCE_TEMPLATE_V21",
+            "template_file": "data/input/source_import_provenance_evidence_v21_TEMPLATE.csv",
+            "target_evidence_file": "data/input/source_import_provenance_evidence_v21.csv",
+            "template_rows": "18",
+            "required_columns": "9",
+            "evidence_input_file_present": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PROVENANCE_TEMPLATE_READY_NOT_DATA",
+            "claim_boundary": "provenance_template_only_no_source_import_no_scores",
         }
     ]
 
