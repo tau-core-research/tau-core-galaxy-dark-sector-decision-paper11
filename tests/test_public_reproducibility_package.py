@@ -51,6 +51,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_evidence_gate_v22.md",
         "docs/source_import_provenance_promotion_gate_v23.md",
         "docs/scoring_dependency_closure_v24.md",
+        "docs/scoring_unblock_priority_v25.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -107,6 +108,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_provenance_promotion_summary_v23.csv",
         "data/derived/scoring_dependency_closure_v24.csv",
         "data/derived/scoring_dependency_closure_summary_v24.csv",
+        "data/derived/scoring_unblock_priority_v25.csv",
+        "data/derived/scoring_unblock_priority_summary_v25.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -126,6 +129,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_provenance_evidence_gate.py",
         "scripts/run_source_import_provenance_promotion_gate.py",
         "scripts/build_scoring_dependency_closure.py",
+        "scripts/build_scoring_unblock_priority.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -895,6 +899,33 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_v25.csv").open()))
+    assert len(rows) == 13
+    assert [row["priority_rank"] for row in rows] == [str(i) for i in range(1, 14)]
+    assert all(row["dependency_decision"] == "BLOCKED" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    frontier = [row for row in rows if row["frontier_now"] == "true"]
+    assert len(frontier) == 1
+    assert frontier[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE"
+    assert frontier[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv"
+
+    summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SCORING_UNBLOCK_PRIORITY_V25",
+            "priority_rows": "13",
+            "blocked_priority_rows": "13",
+            "frontier_now_rows": "1",
+            "first_frontier_dependency": "SCD24_PROVENANCE_EVIDENCE",
+            "first_frontier_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
+            "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
         }
     ]
 

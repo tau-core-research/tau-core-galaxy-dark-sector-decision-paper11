@@ -113,6 +113,8 @@ data/derived/source_import_provenance_promotion_gate_v23.csv
 data/derived/source_import_provenance_promotion_summary_v23.csv
 data/derived/scoring_dependency_closure_v24.csv
 data/derived/scoring_dependency_closure_summary_v24.csv
+data/derived/scoring_unblock_priority_v25.csv
+data/derived/scoring_unblock_priority_summary_v25.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -166,6 +168,7 @@ docs/source_import_provenance_template_v21.md
 docs/source_import_provenance_evidence_gate_v22.md
 docs/source_import_provenance_promotion_gate_v23.md
 docs/scoring_dependency_closure_v24.md
+docs/scoring_unblock_priority_v25.md
 ```
 
 ## Reproduce
@@ -235,4 +238,7 @@ The v23 provenance promotion gate makes that downstream block explicit:
 source import or scoring path is activated. The v24 scoring dependency closure
 collects thirteen current pre-score dependencies and reports
 `SCORING_DEPENDENCY_CLOSURE_BLOCKED`; no dependency is currently ready for
-endpoint scoring.
+endpoint scoring. The v25 scoring unblock priority ledger identifies the first
+frontier as `SCD24_PROVENANCE_EVIDENCE`, with
+`data/input/source_import_provenance_evidence_v21.csv` as the next required
+artifact.

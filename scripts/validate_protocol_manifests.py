@@ -757,6 +757,31 @@ def validate_scoring_dependency_closure_v24() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
 
 
+def validate_scoring_unblock_priority_v25() -> None:
+    rows = read_csv(ROOT / "data/derived/scoring_unblock_priority_v25.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv")
+    require(len(rows) == 13, "v25 priority ledger must cover thirteen dependencies")
+    ranks = [int(row["priority_rank"]) for row in rows]
+    require(ranks == list(range(1, 14)), f"v25 ranks must be contiguous: {ranks}")
+    require(all(row["dependency_decision"] == "BLOCKED" for row in rows), "v25 must preserve blocked dependencies")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
+    frontier = [row for row in rows if row["frontier_now"] == "true"]
+    require(len(frontier) == 1, "v25 must identify exactly one current frontier")
+    require(frontier[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE", "v25 first frontier must be provenance evidence")
+    require(
+        frontier[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv",
+        "v25 frontier artifact must be provenance evidence input",
+    )
+    require(len(summary) == 1, "v25 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
+    require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
+    require(row["blocked_priority_rows"] == "13", "v25 must preserve thirteen blocked rows")
+    require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
+    require(row["first_frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE", "v25 frontier dependency mismatch")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -796,6 +821,7 @@ def main() -> None:
     validate_source_import_provenance_evidence_gate_v22()
     validate_source_import_provenance_promotion_gate_v23()
     validate_scoring_dependency_closure_v24()
+    validate_scoring_unblock_priority_v25()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
