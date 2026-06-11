@@ -37,6 +37,7 @@ def test_required_files_exist() -> None:
         "docs/scoring_input_scaffold_v08.md",
         "docs/source_import_leakage_audit_v09.md",
         "docs/source_import_contract_v10.md",
+        "docs/source_import_values_v11.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -56,11 +57,16 @@ def test_required_files_exist() -> None:
         "data/derived/observed_input_contract_v10.csv",
         "data/derived/leakage_evidence_contract_v10.csv",
         "data/derived/source_import_contract_summary_v10.csv",
+        "data/derived/source_import_values_v11.csv",
+        "data/derived/observed_numeric_values_v11.csv",
+        "data/derived/leakage_evidence_values_v11.csv",
+        "data/derived/source_import_values_summary_v11.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
         "scripts/run_source_import_leakage_audit.py",
         "scripts/build_source_import_contract.py",
+        "scripts/build_source_import_values.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -307,19 +313,19 @@ def test_v08_scoring_input_scaffold_declares_shapes_without_data() -> None:
 def test_v09_source_import_leakage_audit_blocks_activation() -> None:
     audit = list(csv.DictReader((ROOT / "data/derived/source_import_and_leakage_audit_v09.csv").open()))
     assert len(audit) == 18
-    assert all(row["source_import_status"] == "SOURCE_ROUTE_REQUIRED_NOT_FILLED" for row in audit)
+    assert all(row["source_import_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in audit)
     assert all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit)
     assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in audit)
 
     requirements = list(csv.DictReader((ROOT / "data/derived/source_import_requirements_v09.csv").open()))
     assert {row["required_artifact"] for row in requirements} == {
-        "source_import_table_v10.csv",
+        "source_import_values_v11.csv",
         "scoring_observed_inputs_v10.csv",
         "leakage_audit_evidence_v10.csv",
         "activated_scoring_rows_v10.csv",
     }
-    assert {row["current_status"] for row in requirements} == {"PENDING", "CONTRACT_PRESENT_VALUES_PENDING"}
+    assert {row["current_status"] for row in requirements} == {"PENDING", "VALUES_LEDGER_PRESENT_VALUES_PENDING"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in requirements)
 
     findings = list(csv.DictReader((ROOT / "data/derived/leakage_audit_findings_v09.csv").open()))
@@ -336,7 +342,7 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
             "activated_rows": "0",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED",
-            "next_required_artifact": "source_import_values_v11.csv",
+            "next_required_artifact": "source_import_real_values_v12.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }
     ]
@@ -369,6 +375,40 @@ def test_v10_source_import_contract_declares_required_values_without_importing()
             "overall_status": "SOURCE_IMPORT_CONTRACT_READY_VALUES_MISSING",
             "next_required_artifact": "source_import_values_v11.csv",
             "claim_boundary": "source_import_contract_only_no_scores",
+        }
+    ]
+
+
+def test_v11_source_import_values_are_declared_but_unfilled() -> None:
+    source_values = list(csv.DictReader((ROOT / "data/derived/source_import_values_v11.csv").open()))
+    assert len(source_values) == 18
+    assert all(row["source_route_value_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in source_values)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in source_values)
+
+    observed_values = list(csv.DictReader((ROOT / "data/derived/observed_numeric_values_v11.csv").open()))
+    assert len(observed_values) == 18
+    assert all(row["observed_value_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in observed_values)
+    assert all(row["v_obs_km_s"] == "VALUE_REQUIRED_NOT_FILLED" for row in observed_values)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in observed_values)
+
+    leakage_values = list(csv.DictReader((ROOT / "data/derived/leakage_evidence_values_v11.csv").open()))
+    assert len(leakage_values) == 4
+    assert all(row["evidence_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in leakage_values)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_values_summary_v11.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_VALUES_V11",
+            "source_value_rows": "18",
+            "source_routes_filled": "0",
+            "observed_value_rows": "18",
+            "observed_numeric_rows_filled": "0",
+            "leakage_evidence_rows": "4",
+            "leakage_evidence_filled": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SOURCE_IMPORT_VALUES_DECLARED_NOT_FILLED",
+            "next_required_artifact": "source_import_real_values_v12.csv",
+            "claim_boundary": "source_import_values_placeholder_only_no_scores",
         }
     ]
 

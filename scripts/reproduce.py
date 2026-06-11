@@ -21,6 +21,7 @@ def main() -> None:
     run(["python", "scripts/run_readiness_audit.py"])
     run(["python", "scripts/build_scoring_input_scaffold.py"])
     run(["python", "scripts/build_source_import_contract.py"])
+    run(["python", "scripts/build_source_import_values.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_preflight.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])

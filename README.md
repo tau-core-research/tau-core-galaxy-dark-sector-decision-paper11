@@ -76,6 +76,10 @@ data/derived/source_import_table_v10.csv
 data/derived/observed_input_contract_v10.csv
 data/derived/leakage_evidence_contract_v10.csv
 data/derived/source_import_contract_summary_v10.csv
+data/derived/source_import_values_v11.csv
+data/derived/observed_numeric_values_v11.csv
+data/derived/leakage_evidence_values_v11.csv
+data/derived/source_import_values_summary_v11.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -115,6 +119,7 @@ docs/scoring_preflight_v07.md
 docs/scoring_input_scaffold_v08.md
 docs/source_import_leakage_audit_v09.md
 docs/source_import_contract_v10.md
+docs/source_import_values_v11.md
 ```
 
 ## Reproduce
@@ -157,4 +162,5 @@ and observed-input table shapes, but activates no rows and imports no observed
 numeric data. The v09 source-import/leakage audit currently reports
 `SOURCE_IMPORT_AND_LEAKAGE_BLOCKED`. The v10 source-import contract is present,
 but all source routes, observed numeric values, and leakage evidence are still
-unfilled.
+unfilled. The v11 value ledger exists, and every value remains
+`VALUE_REQUIRED_NOT_FILLED`.

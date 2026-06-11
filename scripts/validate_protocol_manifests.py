@@ -356,7 +356,11 @@ def validate_source_import_leakage_audit_v09() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_leakage_summary_v09.csv")
     require(len(audit) == 18, "v09 source/leakage audit must cover eighteen rows")
     require(
-        all(row["source_import_status"] in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED"} for row in audit),
+        all(
+            row["source_import_status"]
+            in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED", "VALUE_REQUIRED_NOT_FILLED"}
+            for row in audit
+        ),
         "v09 source import must remain blocked",
     )
     require(all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit), "v09 leakage cannot pass")
@@ -366,14 +370,14 @@ def validate_source_import_leakage_audit_v09() -> None:
     require(
         required_artifacts
         == {
-            "source_import_table_v10.csv",
+            "source_import_values_v11.csv",
             "scoring_observed_inputs_v10.csv",
             "leakage_audit_evidence_v10.csv",
             "activated_scoring_rows_v10.csv",
         },
         f"v09 requirement mismatch: {required_artifacts}",
     )
-    allowed_requirement_statuses = {"PENDING", "CONTRACT_PRESENT_VALUES_PENDING"}
+    allowed_requirement_statuses = {"PENDING", "CONTRACT_PRESENT_VALUES_PENDING", "VALUES_LEDGER_PRESENT_VALUES_PENDING"}
     require(
         all(row["current_status"] in allowed_requirement_statuses for row in requirements),
         "v09 requirements must remain pending or contract-present",
@@ -385,7 +389,7 @@ def validate_source_import_leakage_audit_v09() -> None:
     require(row["overall_status"] == "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED", "v09 status must remain blocked")
     require(row["activated_rows"] == "0", "v09 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
-    require(row["next_required_artifact"] == "source_import_values_v11.csv", "v09 must point to source import values")
+    require(row["next_required_artifact"] == "source_import_real_values_v12.csv", "v09 must point to real source import values")
 
 
 def validate_source_import_contract_v10() -> None:
@@ -416,6 +420,37 @@ def validate_source_import_contract_v10() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v10 summary must forbid scoring")
 
 
+def validate_source_import_values_v11() -> None:
+    source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
+    observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
+    leakage = read_csv(ROOT / "data/derived/leakage_evidence_values_v11.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_values_summary_v11.csv")
+    require(len(source_rows) == 18, "v11 source value ledger must cover eighteen rows")
+    require(
+        all(row["source_route_value_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in source_rows),
+        "v11 source route values must remain unfilled",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in source_rows), "v11 source values cannot allow scoring")
+    require(len(observed) == 18, "v11 observed value ledger must cover eighteen rows")
+    require(
+        all(row["observed_value_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in observed),
+        "v11 observed values must remain unfilled",
+    )
+    require(all(row["v_obs_km_s"] == "VALUE_REQUIRED_NOT_FILLED" for row in observed), "v11 observed velocities must be unfilled")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in observed), "v11 observed values cannot allow scoring")
+    require(len(leakage) == 4, "v11 leakage evidence ledger must have four rows")
+    require(all(row["evidence_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in leakage), "v11 leakage evidence must be unfilled")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in leakage), "v11 leakage values cannot allow scoring")
+    require(len(summary) == 1, "v11 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SOURCE_IMPORT_VALUES_DECLARED_NOT_FILLED", "v11 status must keep values unfilled")
+    require(row["source_routes_filled"] == "0", "v11 must fill zero source routes")
+    require(row["observed_numeric_rows_filled"] == "0", "v11 must fill zero numeric observed rows")
+    require(row["leakage_evidence_filled"] == "0", "v11 must fill zero leakage evidence rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v11 summary must forbid scoring")
+    require(row["next_required_artifact"] == "source_import_real_values_v12.csv", "v11 must point to real value import")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -441,6 +476,7 @@ def main() -> None:
     validate_scoring_input_scaffold_v08()
     validate_source_import_leakage_audit_v09()
     validate_source_import_contract_v10()
+    validate_source_import_values_v11()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

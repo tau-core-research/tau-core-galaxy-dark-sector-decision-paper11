@@ -30,16 +30,24 @@ def row_audit() -> list[dict[str, object]]:
     source_import = {}
     if source_import_path.exists():
         source_import = {row["galaxy_id"]: row for row in read_csv(source_import_path)}
+    source_values_path = DERIVED / "source_import_values_v11.csv"
+    source_values = {}
+    if source_values_path.exists():
+        source_values = {row["galaxy_id"]: row for row in read_csv(source_values_path)}
     out: list[dict[str, object]] = []
     for row in scoring_rows:
         obs = observed[row["galaxy_id"]]
         source_row = source_import.get(row["galaxy_id"], {})
+        source_value_row = source_values.get(row["galaxy_id"], {})
         missing = [
             field
             for field in ("radius_kpc", "v_obs_km_s", "sigma_v_km_s", "v_gas_km_s", "v_disk_km_s", "source_route")
             if obs[field] == "PENDING_SOURCE_IMPORT"
         ]
-        source_status = source_row.get("source_route_status", "SOURCE_IMPORT_PENDING")
+        source_status = source_value_row.get(
+            "source_route_value_status",
+            source_row.get("source_route_status", "SOURCE_IMPORT_PENDING"),
+        )
         out.append(
             {
                 "audit_id": row["scoring_row_id"].replace("ASR08", "SIL09"),
@@ -61,9 +69,9 @@ def requirements() -> list[dict[str, object]]:
     return [
         {
             "requirement_id": "SIL09_SOURCE_ROUTE",
-            "required_artifact": "source_import_table_v10.csv",
+            "required_artifact": "source_import_values_v11.csv",
             "purpose": "Provide reproducible source route and file/hash provenance for every activated galaxy row",
-            "current_status": "CONTRACT_PRESENT_VALUES_PENDING",
+            "current_status": "VALUES_LEDGER_PRESENT_VALUES_PENDING",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "requirement_only_no_source_claim",
         },
@@ -113,7 +121,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     source_import_blocked = sum(
         1
         for row in rows
-        if row["source_import_status"] in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED"}
+        if row["source_import_status"] in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED", "VALUE_REQUIRED_NOT_FILLED"}
     )
     return [
         {
@@ -124,7 +132,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "activated_rows": 0,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED",
-            "next_required_artifact": "source_import_values_v11.csv",
+            "next_required_artifact": "source_import_real_values_v12.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }
     ]
