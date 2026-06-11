@@ -72,6 +72,10 @@ data/derived/source_import_and_leakage_audit_v09.csv
 data/derived/source_import_requirements_v09.csv
 data/derived/leakage_audit_findings_v09.csv
 data/derived/source_import_leakage_summary_v09.csv
+data/derived/source_import_table_v10.csv
+data/derived/observed_input_contract_v10.csv
+data/derived/leakage_evidence_contract_v10.csv
+data/derived/source_import_contract_summary_v10.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -110,6 +114,7 @@ docs/readiness_audit_v06.md
 docs/scoring_preflight_v07.md
 docs/scoring_input_scaffold_v08.md
 docs/source_import_leakage_audit_v09.md
+docs/source_import_contract_v10.md
 ```
 
 ## Reproduce
@@ -150,4 +155,6 @@ The v07 scoring preflight is also executable and currently reports
 `SCORING_NOT_READY`. The v08 scoring-input scaffold declares the scoring row
 and observed-input table shapes, but activates no rows and imports no observed
 numeric data. The v09 source-import/leakage audit currently reports
-`SOURCE_IMPORT_AND_LEAKAGE_BLOCKED`.
+`SOURCE_IMPORT_AND_LEAKAGE_BLOCKED`. The v10 source-import contract is present,
+but all source routes, observed numeric values, and leakage evidence are still
+unfilled.

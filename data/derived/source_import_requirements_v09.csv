@@ -1,5 +1,5 @@
 requirement_id,required_artifact,purpose,current_status,endpoint_scoring_allowed,claim_boundary
-SIL09_SOURCE_ROUTE,source_import_table_v10.csv,Provide reproducible source route and file/hash provenance for every activated galaxy row,PENDING,false,requirement_only_no_source_claim
+SIL09_SOURCE_ROUTE,source_import_table_v10.csv,Provide reproducible source route and file/hash provenance for every activated galaxy row,CONTRACT_PRESENT_VALUES_PENDING,false,requirement_only_no_source_claim
 SIL09_NUMERIC_OBSERVED_ROWS,scoring_observed_inputs_v10.csv,Replace placeholder observed rows with numeric radial-grid and baryonic-component rows,PENDING,false,requirement_only_no_observed_data_claim
 SIL09_LEAKAGE_CHECK,leakage_audit_evidence_v10.csv,"Show no endpoint residual, best-fit curve, held-out score, or family winner entered source fields",PENDING,false,requirement_only_no_leakage_pass_claim
 SIL09_ACTIVATION_DECISION,activated_scoring_rows_v10.csv,"Activate only rows that have source import, observed inputs, benchmark inputs, and leakage audit pass",PENDING,false,requirement_only_no_activation_claim

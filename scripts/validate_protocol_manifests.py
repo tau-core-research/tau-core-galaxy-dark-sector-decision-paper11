@@ -355,7 +355,10 @@ def validate_source_import_leakage_audit_v09() -> None:
     findings = read_csv(ROOT / "data/derived/leakage_audit_findings_v09.csv")
     summary = read_csv(ROOT / "data/derived/source_import_leakage_summary_v09.csv")
     require(len(audit) == 18, "v09 source/leakage audit must cover eighteen rows")
-    require(all(row["source_import_status"] == "SOURCE_IMPORT_PENDING" for row in audit), "v09 source import must remain pending")
+    require(
+        all(row["source_import_status"] in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED"} for row in audit),
+        "v09 source import must remain blocked",
+    )
     require(all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit), "v09 leakage cannot pass")
     require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit), "v09 must not activate rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in audit), "v09 audit cannot allow scoring")
@@ -370,7 +373,11 @@ def validate_source_import_leakage_audit_v09() -> None:
         },
         f"v09 requirement mismatch: {required_artifacts}",
     )
-    require(all(row["current_status"] == "PENDING" for row in requirements), "v09 requirements must remain pending")
+    allowed_requirement_statuses = {"PENDING", "CONTRACT_PRESENT_VALUES_PENDING"}
+    require(
+        all(row["current_status"] in allowed_requirement_statuses for row in requirements),
+        "v09 requirements must remain pending or contract-present",
+    )
     require(len(findings) == 18, "v09 leakage findings must cover eighteen rows")
     require(all(row["leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in findings), "v09 findings cannot pass leakage")
     require(len(summary) == 1, "v09 summary must have one row")
@@ -378,6 +385,35 @@ def validate_source_import_leakage_audit_v09() -> None:
     require(row["overall_status"] == "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED", "v09 status must remain blocked")
     require(row["activated_rows"] == "0", "v09 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
+    require(row["next_required_artifact"] == "source_import_values_v11.csv", "v09 must point to source import values")
+
+
+def validate_source_import_contract_v10() -> None:
+    source_rows = read_csv(ROOT / "data/derived/source_import_table_v10.csv")
+    observed = read_csv(ROOT / "data/derived/observed_input_contract_v10.csv")
+    leakage = read_csv(ROOT / "data/derived/leakage_evidence_contract_v10.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_contract_summary_v10.csv")
+    require(len(source_rows) == 18, "v10 source import contract must cover eighteen rows")
+    require(
+        all(row["source_route_status"] == "SOURCE_ROUTE_REQUIRED_NOT_FILLED" for row in source_rows),
+        "v10 source routes must remain unfilled",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in source_rows), "v10 source rows cannot allow scoring")
+    fields = {row["field_name"] for row in observed}
+    require({"radius_kpc", "v_obs_km_s", "sigma_v_km_s"}.issubset(fields), "v10 observed contract incomplete")
+    require(
+        all(row["source_import_status"] == "CONTRACT_DECLARED_VALUE_PENDING" for row in observed),
+        "v10 observed contract values must remain pending",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in observed), "v10 observed contract cannot allow scoring")
+    require(len(leakage) == 4, "v10 leakage contract must have four rows")
+    require(all(row["status"] == "EVIDENCE_REQUIRED_NOT_FILLED" for row in leakage), "v10 leakage evidence must be unfilled")
+    require(len(summary) == 1, "v10 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SOURCE_IMPORT_CONTRACT_READY_VALUES_MISSING", "v10 status must keep values missing")
+    require(row["source_routes_filled"] == "0", "v10 must fill zero source routes")
+    require(row["numeric_observed_rows_filled"] == "0", "v10 must fill zero numeric observed rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v10 summary must forbid scoring")
 
 
 def main() -> None:
@@ -404,6 +440,7 @@ def main() -> None:
     validate_scoring_preflight_v07()
     validate_scoring_input_scaffold_v08()
     validate_source_import_leakage_audit_v09()
+    validate_source_import_contract_v10()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

@@ -26,20 +26,26 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 def row_audit() -> list[dict[str, object]]:
     scoring_rows = read_csv(DERIVED / "activated_scoring_rows_v08.csv")
     observed = {row["galaxy_id"]: row for row in read_csv(DERIVED / "scoring_observed_inputs_v08.csv")}
+    source_import_path = DERIVED / "source_import_table_v10.csv"
+    source_import = {}
+    if source_import_path.exists():
+        source_import = {row["galaxy_id"]: row for row in read_csv(source_import_path)}
     out: list[dict[str, object]] = []
     for row in scoring_rows:
         obs = observed[row["galaxy_id"]]
+        source_row = source_import.get(row["galaxy_id"], {})
         missing = [
             field
             for field in ("radius_kpc", "v_obs_km_s", "sigma_v_km_s", "v_gas_km_s", "v_disk_km_s", "source_route")
             if obs[field] == "PENDING_SOURCE_IMPORT"
         ]
+        source_status = source_row.get("source_route_status", "SOURCE_IMPORT_PENDING")
         out.append(
             {
                 "audit_id": row["scoring_row_id"].replace("ASR08", "SIL09"),
                 "galaxy_id": row["galaxy_id"],
                 "proposed_split": row["proposed_split"],
-                "source_import_status": "SOURCE_IMPORT_PENDING",
+                "source_import_status": source_status,
                 "missing_required_fields": ";".join(missing),
                 "leakage_audit_status": "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING",
                 "activation_decision": "DO_NOT_ACTIVATE",
@@ -57,7 +63,7 @@ def requirements() -> list[dict[str, object]]:
             "requirement_id": "SIL09_SOURCE_ROUTE",
             "required_artifact": "source_import_table_v10.csv",
             "purpose": "Provide reproducible source route and file/hash provenance for every activated galaxy row",
-            "current_status": "PENDING",
+            "current_status": "CONTRACT_PRESENT_VALUES_PENDING",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "requirement_only_no_source_claim",
         },
@@ -104,16 +110,21 @@ def leakage_findings(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    source_import_blocked = sum(
+        1
+        for row in rows
+        if row["source_import_status"] in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED"}
+    )
     return [
         {
             "summary_id": "SOURCE_IMPORT_LEAKAGE_AUDIT_V09",
             "audited_rows": len(rows),
-            "source_import_pending_rows": sum(1 for row in rows if row["source_import_status"] == "SOURCE_IMPORT_PENDING"),
+            "source_import_pending_rows": source_import_blocked,
             "leakage_pass_rows": 0,
             "activated_rows": 0,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED",
-            "next_required_artifact": "source_import_table_v10.csv",
+            "next_required_artifact": "source_import_values_v11.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }
     ]
