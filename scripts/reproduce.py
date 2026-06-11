@@ -23,6 +23,7 @@ def main() -> None:
     run(["python", "scripts/build_source_import_contract.py"])
     run(["python", "scripts/build_source_import_values.py"])
     run(["python", "scripts/build_source_import_real_values_template.py"])
+    run(["python", "scripts/run_source_import_raw_adapter.py"])
     run(["python", "scripts/run_source_import_real_values_gate.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])

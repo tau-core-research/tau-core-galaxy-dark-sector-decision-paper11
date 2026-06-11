@@ -89,6 +89,9 @@ data/derived/scoring_activation_summary_v13.csv
 data/input/source_import_real_values_v12_TEMPLATE.csv
 data/derived/source_import_template_columns_v14.csv
 data/derived/source_import_template_summary_v14.csv
+data/derived/source_import_raw_adapter_schema_v15.csv
+data/derived/source_import_raw_adapter_gate_v15.csv
+data/derived/source_import_raw_adapter_summary_v15.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -132,6 +135,7 @@ docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
 docs/source_import_real_values_template_v14.md
+docs/source_import_raw_adapter_v15.md
 ```
 
 ## Reproduce
@@ -182,4 +186,6 @@ activation gate is also executable and currently reports
 `SCORING_ACTIVATION_BLOCKED`: zero rows are activated, and formula tables,
 numeric counts, controls, and thresholds remain blocked. The v14 source-import
 template is present as `data/input/source_import_real_values_v12_TEMPLATE.csv`,
-but it is not data and cannot activate scoring rows.
+but it is not data and cannot activate scoring rows. The v15 raw adapter
+declares a machine-readable path from a SPARC-like raw input into the v12 real
+input shape, and currently reports `RAW_ADAPTER_READY_INPUT_MISSING`.

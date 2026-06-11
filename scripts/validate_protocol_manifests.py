@@ -531,6 +531,28 @@ def validate_source_import_template_v14() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v14 summary must forbid scoring")
 
 
+def validate_source_import_raw_adapter_v15() -> None:
+    schema = read_csv(ROOT / "data/derived/source_import_raw_adapter_schema_v15.csv")
+    gate = read_csv(ROOT / "data/derived/source_import_raw_adapter_gate_v15.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_raw_adapter_summary_v15.csv")
+    require(len(schema) == 16, "v15 raw adapter schema must map sixteen target fields")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v15 schema cannot allow scoring")
+    require(len(gate) == 1, "v15 raw adapter gate must have one row")
+    gate_row = gate[0]
+    require(gate_row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v15 raw input must remain absent")
+    require(gate_row["raw_rows_seen"] == "0", "v15 must see zero raw rows")
+    require(gate_row["valid_raw_rows"] == "0", "v15 must validate zero raw rows")
+    require(gate_row["target_file_written"] == "false", "v15 must not write the target input")
+    require(gate_row["endpoint_scoring_allowed"] == "false", "v15 gate cannot allow scoring")
+    require(len(summary) == 1, "v15 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "RAW_ADAPTER_READY_INPUT_MISSING", "v15 must remain raw-input missing")
+    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v15 summary must report missing raw input")
+    require(row["target_input_file_present"] == "false", "v15 target input must remain absent")
+    require(row["target_file_written_by_adapter"] == "false", "v15 adapter must not write target file")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v15 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -560,6 +582,7 @@ def main() -> None:
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()
+    validate_source_import_raw_adapter_v15()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

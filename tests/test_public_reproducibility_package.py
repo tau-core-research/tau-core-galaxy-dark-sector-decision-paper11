@@ -41,6 +41,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
         "docs/source_import_real_values_template_v14.md",
+        "docs/source_import_raw_adapter_v15.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -73,6 +74,9 @@ def test_required_files_exist() -> None:
         "data/input/source_import_real_values_v12_TEMPLATE.csv",
         "data/derived/source_import_template_columns_v14.csv",
         "data/derived/source_import_template_summary_v14.csv",
+        "data/derived/source_import_raw_adapter_schema_v15.csv",
+        "data/derived/source_import_raw_adapter_gate_v15.csv",
+        "data/derived/source_import_raw_adapter_summary_v15.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -82,6 +86,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
         "scripts/build_source_import_real_values_template.py",
+        "scripts/run_source_import_raw_adapter.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -518,6 +523,46 @@ def test_v14_source_import_template_is_not_data() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_TEMPLATE_READY_NOT_DATA",
             "claim_boundary": "template_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v15_raw_adapter_is_ready_but_has_no_raw_input() -> None:
+    schema = list(csv.DictReader((ROOT / "data/derived/source_import_raw_adapter_schema_v15.csv").open()))
+    assert len(schema) == 16
+    assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "import_status"}.issubset(
+        {row["target_field_name"] for row in schema}
+    )
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in schema)
+
+    gate = list(csv.DictReader((ROOT / "data/derived/source_import_raw_adapter_gate_v15.csv").open()))
+    assert gate == [
+        {
+            "adapter_gate_id": "SIRA15_RAW_TO_V12",
+            "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
+            "target_input_file": "data/input/source_import_real_values_v12.csv",
+            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "raw_rows_seen": "0",
+            "valid_raw_rows": "0",
+            "galaxies_with_valid_raw_rows": "0",
+            "target_file_written": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "raw_adapter_gate_only_no_source_import_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_raw_adapter_summary_v15.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_RAW_ADAPTER_V15",
+            "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
+            "target_input_file": "data/input/source_import_real_values_v12.csv",
+            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "target_input_file_present": "false",
+            "target_file_written_by_adapter": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "RAW_ADAPTER_READY_INPUT_MISSING",
+            "claim_boundary": "raw_adapter_only_no_source_import_no_scores",
         }
     ]
 
