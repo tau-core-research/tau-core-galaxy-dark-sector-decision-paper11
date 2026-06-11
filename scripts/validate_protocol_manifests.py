@@ -1282,6 +1282,55 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     )
 
 
+def validate_post_writer_frontier_work_order_recheck_v43() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_frontier_work_order_recheck_v43.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_frontier_work_order_recheck_summary_v43.csv")
+    require(len(rows) == 18, "v43 work-order recheck must cover eighteen rows")
+    require(
+        all(row["v42_accepted_for_promotion_review_after_recheck"] == "false" for row in rows),
+        "v43 must inherit zero accepted rows",
+    )
+    require(
+        all(row["v27_work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows),
+        "v43 must inherit open v27 work orders",
+    )
+    require(all(row["v27_may_write_evidence_input"] == "false" for row in rows), "v43 must inherit no-write v27 status")
+    require(
+        all("post_writer_frontier_acceptance_not_passed" in row["work_order_recheck_blockers"] for row in rows),
+        "v43 must block on v42 acceptance",
+    )
+    require(
+        all("v27_work_order_not_closed" in row["work_order_recheck_blockers"] for row in rows),
+        "v43 must block on open v27 work orders",
+    )
+    require(
+        all("v27_evidence_write_not_allowed" in row["work_order_recheck_blockers"] for row in rows),
+        "v43 must block on v27 no-write",
+    )
+    require(
+        all(row["work_order_status_after_recheck"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows),
+        "v43 work orders must remain open",
+    )
+    require(
+        all(row["may_write_evidence_input_after_recheck"] == "false" for row in rows),
+        "v43 must not authorize evidence writes",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v43 rows cannot allow scoring")
+    require(len(summary) == 1, "v43 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_FRONTIER_WORK_ORDER_RECHECK_V43", "v43 summary id mismatch")
+    require(row["work_order_recheck_rows"] == "18", "v43 must summarize eighteen rows")
+    require(row["open_work_order_rows_after_recheck"] == "18", "v43 must keep eighteen work orders open")
+    require(row["closed_work_order_rows_after_recheck"] == "0", "v43 must close zero work orders")
+    require(row["may_write_evidence_input_rows_after_recheck"] == "0", "v43 must allow zero evidence writes")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v43 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_FRONTIER_WORK_ORDER_RECHECK_BLOCKED", "v43 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_frontier_work_order_recheck_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v43 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1339,6 +1388,7 @@ def main() -> None:
     validate_post_writer_scoring_dependency_closure_recheck_v40()
     validate_post_writer_scoring_unblock_priority_recheck_v41()
     validate_post_writer_frontier_evidence_acceptance_recheck_v42()
+    validate_post_writer_frontier_work_order_recheck_v43()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
