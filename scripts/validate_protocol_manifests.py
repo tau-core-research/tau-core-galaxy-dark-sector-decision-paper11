@@ -1260,6 +1260,70 @@ def validate_leakage_partial_candidate_sufficiency_preaudit_v74() -> None:
     )
 
 
+def validate_leakage_partial_candidate_sufficiency_response_draft_v75() -> None:
+    package_root = ROOT / "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package"
+    zip_path = ROOT / "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package.zip"
+    summary = read_csv(ROOT / "data/derived/leakage_partial_candidate_sufficiency_response_draft_summary_v75.csv")
+    required = {
+        "README.md",
+        "DO_NOT_INGEST_WITHOUT_INDEPENDENT_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "templates/leakage_partial_candidate_sufficiency_v71_review_response_DRAFT.csv",
+        "data/leakage_partial_candidate_sufficiency_response_draft_summary_v75.csv",
+        "data/leakage_partial_candidate_sufficiency_preaudit_v74.csv",
+        "data/leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv",
+    }
+    require(package_root.exists(), "v75 draft package directory must exist")
+    require(zip_path.exists(), "v75 draft package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v75 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v75 manifest row count mismatch")
+    require(
+        {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"},
+        "v75 manifest package paths mismatch",
+    )
+    require(
+        all(row["claim_boundary"] == "leakage_partial_candidate_sufficiency_response_draft_only_no_evidence_no_scores" for row in manifest),
+        "v75 manifest claim boundary mismatch",
+    )
+    rows = read_csv(package_root / "templates/leakage_partial_candidate_sufficiency_v71_review_response_DRAFT.csv")
+    require(len(rows) == 36, "v75 draft response must cover 36 rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v75 draft response must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v75 draft must cover only partial components",
+    )
+    require(
+        all(row["sufficiency_review_decision"] == "ACCEPT_PARTIAL_CANDIDATE_SUFFICIENT_FOR_LATER_INGESTION_GATE" for row in rows),
+        "v75 draft must propose accept decisions",
+    )
+    require(all(row["partial_candidate_sufficient_for_later_ingestion"] == "true" for row in rows), "v75 draft must propose sufficiency")
+    require(all(row["minimal_required_fields_covered"] == "true" for row in rows), "v75 draft must propose field coverage")
+    require(all(row["artifact_is_prescore"] == "true" for row in rows), "v75 draft must keep prescore status")
+    require(all(row["artifact_uses_forbidden_inputs"] == "false" for row in rows), "v75 draft must propose no forbidden inputs")
+    require(all(row["may_promote_to_leakage_evidence_after_ingestion"] == "true" for row in rows), "v75 draft must propose later ingestion only")
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v75 draft cannot activate")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v75 draft cannot score")
+    require(len(summary) == 1, "v75 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PARTIAL_CANDIDATE_SUFFICIENCY_RESPONSE_DRAFT_V75", "v75 summary id mismatch")
+    require(row["draft_rows"] == "36", "v75 summary must record 36 draft rows")
+    require(row["proposed_accept_rows"] == "36", "v75 must propose 36 accept rows")
+    require(row["proposed_block_rows"] == "0", "v75 must propose zero blocked rows")
+    require(row["completed_response_created"] == "false", "v75 must not create completed response")
+    require(row["target_evidence_rows_created"] == "0", "v75 cannot create evidence")
+    require(row["leakage_pass_authorized"] == "0", "v75 cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v75 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v75 summary must forbid scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    require(
+        {f"leakage_partial_candidate_sufficiency_v75_response_draft_package/{rel}" for rel in required}.issubset(names),
+        "v75 zip missing required package files",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2922,6 +2986,7 @@ def main() -> None:
     validate_leakage_partial_candidate_sufficiency_review_package_v71()
     validate_leakage_partial_candidate_sufficiency_review_intake_v73()
     validate_leakage_partial_candidate_sufficiency_preaudit_v74()
+    validate_leakage_partial_candidate_sufficiency_response_draft_v75()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

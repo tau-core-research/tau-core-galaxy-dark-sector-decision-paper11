@@ -122,6 +122,9 @@ data/derived/leakage_partial_candidate_sufficiency_review_intake_v73.csv
 data/derived/leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv
 data/derived/leakage_partial_candidate_sufficiency_preaudit_v74.csv
 data/derived/leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv
+data/derived/leakage_partial_candidate_sufficiency_response_draft_summary_v75.csv
+review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/
+review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package.zip
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -291,6 +294,7 @@ docs/leakage_evidence_candidate_ingestion_gate_v70.md
 docs/leakage_partial_candidate_sufficiency_review_package_v71.md
 docs/leakage_partial_candidate_sufficiency_review_intake_v73.md
 docs/leakage_partial_candidate_sufficiency_preaudit_v74.md
+docs/leakage_partial_candidate_sufficiency_response_draft_v75.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -503,3 +507,7 @@ activation rows, and zero scores.
 The v74 preaudit checks those 36 partial rows against the local source/policy
 manifests and marks all 36 as review-ready but not accepted. It is a reviewer
 aid only: zero sufficiency rows are accepted and scoring remains disabled.
+The v75 response-draft package turns the v74 preaudit into a proposed v71
+sufficiency response for independent review. It proposes 36 accept rows, but it
+is explicitly not a completed response and cannot be ingested or scored without
+separate review.
