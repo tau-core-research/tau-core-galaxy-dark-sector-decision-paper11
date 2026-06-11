@@ -105,6 +105,7 @@ def global_blockers() -> list[dict[str, object]]:
 def summary(rows: list[dict[str, object]], blockers: list[dict[str, object]]) -> list[dict[str, object]]:
     activated = sum(1 for row in rows if row["activation_decision"] == "ACTIVATE_FOR_SCORING")
     blocked_global = sum(1 for row in blockers if row["current_status"] == "BLOCKED")
+    value_ready = all(row["real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in rows)
     return [
         {
             "summary_id": "SCORING_ACTIVATION_GATE_V13",
@@ -114,7 +115,9 @@ def summary(rows: list[dict[str, object]], blockers: list[dict[str, object]]) ->
             "global_blockers": blocked_global,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_ACTIVATION_BLOCKED",
-            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
+            "next_required_artifact": "data/derived/source_import_leakage_summary_v09.csv"
+            if value_ready
+            else "data/input/source_import_real_values_v12.csv",
             "claim_boundary": "activation_gate_only_no_dark_sector_verdict",
         }
     ]

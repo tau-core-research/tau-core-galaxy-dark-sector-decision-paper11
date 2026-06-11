@@ -1,7 +1,7 @@
 # Source Import Write Authorization v16
 
-**Doc class:** guarded write-authorization gate  
-**Status:** write blocked; no target input written; no scoring allowed  
+**Doc class:** guarded write-authorization gate
+**Status:** write authorization ready; no scoring allowed
 
 Script:
 
@@ -25,13 +25,12 @@ authorization before any target file may be written.
 The expected status is:
 
 ```text
-WRITE_AUTHORIZATION_BLOCKED
+WRITE_AUTHORIZATION_READY
 ```
 
-The current package has a valid raw input file, but no explicit write
-authorization. The next required authorization is
-`PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1`, and no
-`data/input/source_import_real_values_v12.csv` file is written.
+The current package has a valid raw input file and an explicit v57 write
+authorization. The v16 gate authorizes the v17 writer path but does not itself
+write `data/input/source_import_real_values_v12.csv`.
 
 ## Claim Boundary
 

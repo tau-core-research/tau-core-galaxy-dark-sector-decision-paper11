@@ -30,10 +30,11 @@ The expected status is:
 SCORING_DEPENDENCY_CLOSURE_BLOCKED
 ```
 
-The current package has blocked dependencies across provenance evidence,
-provenance promotion, raw import, write authorization, observed real values,
-leakage audit, row activation, formula tables, numeric counts, controls, and
-decision thresholds.
+The current package has seven ready source-side dependencies: provenance
+evidence, provenance promotion, provenance audit, raw adapter input, write
+authorization, authorized writer, and real values. Six dependencies remain
+blocked: leakage audit, row activation, formula tables, numeric counts,
+controls, and decision thresholds.
 
 ## Claim Boundary
 

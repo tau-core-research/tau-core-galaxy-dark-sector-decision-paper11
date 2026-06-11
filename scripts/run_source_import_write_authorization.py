@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 TARGET_INPUT = ROOT / "data/input/source_import_real_values_v12.csv"
+AUTH_INPUT = ROOT / "data/input/source_import_real_values_write_authorization_v57.csv"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -27,22 +28,24 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 def authorization_row() -> list[dict[str, object]]:
     adapter = read_csv(DERIVED / "source_import_raw_adapter_gate_v15.csv")[0]
-    explicit_write = os.environ.get("PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE") == "1"
+    auth_rows = read_csv(AUTH_INPUT) if AUTH_INPUT.exists() else []
+    file_authorized = any(
+        row.get("write_authorization") == "AUTHORIZE_V12_WRITE_FROM_ACTIVE_V15_RAW" for row in auth_rows
+    )
+    explicit_write = os.environ.get("PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE") == "1" or file_authorized
     raw_valid = adapter["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW"
-    target_absent = not TARGET_INPUT.exists()
-    authorized = explicit_write and raw_valid and target_absent
+    authorized = explicit_write and raw_valid
     blockers = []
     if not explicit_write:
         blockers.append("explicit_write_authorization_missing")
     if not raw_valid:
         blockers.append("raw_input_not_validated")
-    if not target_absent:
-        blockers.append("target_input_already_present")
     return [
         {
             "authorization_id": "SIWA16_WRITE_V12",
             "source_adapter_gate": "source_import_raw_adapter_gate_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
+            "authorization_file": "data/input/source_import_real_values_write_authorization_v57.csv",
             "explicit_write_authorization": str(explicit_write).lower(),
             "raw_input_status": adapter["raw_input_status"],
             "target_input_file_present": str(TARGET_INPUT.exists()).lower(),
@@ -58,10 +61,13 @@ def authorization_row() -> list[dict[str, object]]:
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     row = rows[0]
     next_required = (
-        "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+        "data/input/source_import_real_values_v12.csv"
+        if row["write_authorized"] == "true"
+        else "data/input/source_import_real_values_write_authorization_v57.csv"
         if row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW"
         else "data/input/source_import_raw_sparc_like_v15.csv"
     )
+    overall_status = "WRITE_AUTHORIZATION_READY" if row["write_authorized"] == "true" else "WRITE_AUTHORIZATION_BLOCKED"
     return [
         {
             "summary_id": "SOURCE_IMPORT_WRITE_AUTHORIZATION_V16",
@@ -69,7 +75,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "target_file_written": row["target_file_written"],
             "target_input_file_present": row["target_input_file_present"],
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
+            "overall_status": overall_status,
             "next_required_artifact": next_required,
             "claim_boundary": "write_authorization_only_no_source_import_no_scores",
         }
@@ -86,6 +92,7 @@ def main() -> None:
             "authorization_id",
             "source_adapter_gate",
             "target_input_file",
+            "authorization_file",
             "explicit_write_authorization",
             "raw_input_status",
             "target_input_file_present",

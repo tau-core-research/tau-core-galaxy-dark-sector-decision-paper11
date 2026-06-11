@@ -32,13 +32,13 @@ SCORING_UNBLOCK_FRONTIER_IDENTIFIED
 The first frontier dependency is:
 
 ```text
-SCD24_PROVENANCE_EVIDENCE
+SCD24_LEAKAGE_AUDIT
 ```
 
 The first required artifact is:
 
 ```text
-data/input/source_import_provenance_evidence_v21.csv
+leakage_audit_evidence_v10.csv
 ```
 
 ## Claim Boundary

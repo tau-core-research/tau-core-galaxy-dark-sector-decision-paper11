@@ -29,11 +29,12 @@ The expected status is:
 POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED
 ```
 
-The raw input file is present and 450 rows validate for review, but no v12
-target is written and scoring remains closed.
+The raw input file is present and 450 rows validate for review. The adapter
+itself writes no v12 target, but the packaged real-values input may exist after
+the separate authorized writer. Scoring remains closed.
 
 ## Claim Boundary
 
 This recheck is not a raw data import and not a scoring result. It only records
-that the raw adapter remains blocked after the current writer and raw-import
-path.
+that the raw adapter itself remains non-writing after the current writer and
+raw-import path.

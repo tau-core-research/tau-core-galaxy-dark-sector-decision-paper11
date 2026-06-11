@@ -59,7 +59,7 @@ def writer_result() -> list[dict[str, object]]:
     target_preexisting = TARGET_INPUT.exists()
     rows_written = 0
     writer_status = "WRITER_BLOCKED_BY_AUTHORIZATION"
-    if authorized and raw_present and not target_preexisting:
+    if authorized and raw_present:
         rows = target_rows_from_raw()
         write_csv(TARGET_INPUT, rows, TARGET_COLUMNS)
         rows_written = len(rows)
@@ -84,11 +84,12 @@ def writer_result() -> list[dict[str, object]]:
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     row = rows[0]
-    next_required = (
-        "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+    next_required = "data/input/source_import_real_values_v12.csv" if row["target_file_written"] == "true" else (
+        "data/input/source_import_real_values_write_authorization_v57.csv"
         if row["raw_input_present"] == "true" and row["write_authorized"] == "false"
         else "data/input/source_import_raw_sparc_like_v15.csv"
     )
+    overall_status = "AUTHORIZED_WRITER_WROTE_TARGET_INPUT" if row["target_file_written"] == "true" else "AUTHORIZED_WRITER_BLOCKED"
     return [
         {
             "summary_id": "SOURCE_IMPORT_AUTHORIZED_WRITER_V17",
@@ -97,7 +98,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "rows_written": row["rows_written"],
             "target_input_file_present_after_writer": str(TARGET_INPUT.exists()).lower(),
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "AUTHORIZED_WRITER_BLOCKED",
+            "overall_status": overall_status,
             "next_required_artifact": next_required,
             "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
         }

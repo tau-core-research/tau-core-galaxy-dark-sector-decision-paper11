@@ -1,7 +1,7 @@
 # Source Import and Leakage Audit v09
 
-**Doc class:** executable source-import/leakage gate  
-**Status:** audit runner implemented; source import pending; no rows activated  
+**Doc class:** executable source-import/leakage gate
+**Status:** source values present; leakage pending; no rows activated
 
 Script:
 
@@ -18,16 +18,16 @@ data/derived/leakage_audit_findings_v09.csv
 data/derived/source_import_leakage_summary_v09.csv
 ```
 
-This layer audits the v08 scoring-input scaffold. It does not import observed
-data. It marks every row as blocked until source routes, numeric observed
-inputs, and leakage evidence are present.
+This layer audits the v08 scoring-input scaffold. It now sees the v12
+real-values input, but it keeps every row blocked until leakage evidence has
+passed review.
 
 ## Current Result
 
 The expected status is:
 
 ```text
-SOURCE_IMPORT_AND_LEAKAGE_BLOCKED
+SOURCE_IMPORT_READY_LEAKAGE_PENDING
 ```
 
 No row passes leakage audit and no row is activated for scoring.
@@ -40,5 +40,5 @@ does not produce a dark-sector verdict.
 Next honest target:
 
 ```text
-SOURCE_IMPORT_TABLE_V10
+leakage_audit_evidence_v10.csv
 ```

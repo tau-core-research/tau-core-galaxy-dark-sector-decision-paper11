@@ -125,7 +125,9 @@ def gate_rows() -> list[dict[str, object]]:
             "input_file_status": header_status,
             "imported_numeric_rows": counts[row["galaxy_id"]],
             "real_value_gate_status": statuses[row["galaxy_id"]],
-            "activation_decision": "DO_NOT_ACTIVATE",
+            "activation_decision": "VALUE_GATE_PASSED_PENDING_LEAKAGE"
+            if statuses[row["galaxy_id"]] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE"
+            else "DO_NOT_ACTIVATE",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "real_value_import_gate_only_no_scores",
         }
@@ -136,16 +138,21 @@ def gate_rows() -> list[dict[str, object]]:
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     imported = sum(int(row["imported_numeric_rows"]) for row in rows)
     galaxies_with_rows = sum(1 for row in rows if int(row["imported_numeric_rows"]) > 0)
+    passing = sum(row["activation_decision"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE" for row in rows)
     return [
         {
             "summary_id": "SOURCE_IMPORT_REAL_VALUES_GATE_V12",
             "expected_galaxy_rows": len(rows),
             "galaxies_with_imported_rows": galaxies_with_rows,
             "imported_numeric_rows": imported,
-            "rows_passing_value_gate": 0,
+            "rows_passing_value_gate": passing,
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SOURCE_IMPORT_REAL_VALUES_BLOCKED",
-            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
+            "overall_status": "SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE"
+            if passing == len(rows)
+            else "SOURCE_IMPORT_REAL_VALUES_BLOCKED",
+            "next_required_artifact": "data/derived/source_import_leakage_summary_v09.csv"
+            if passing == len(rows)
+            else "data/input/source_import_real_values_v12.csv",
             "claim_boundary": "real_value_import_gate_only_no_dark_sector_verdict",
         }
     ]

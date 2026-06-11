@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
+TARGET_INPUT = ROOT / "data/input/source_import_real_values_v12.csv"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -33,6 +34,7 @@ def recheck_rows() -> list[dict[str, object]]:
         blockers.append("zero_raw_rows_imported_after_recheck")
     if adapter["raw_input_status"] != "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW":
         blockers.append("raw_adapter_input_not_present")
+    real_values_present = TARGET_INPUT.exists()
     return [
         {
             "recheck_id": "PWRAR35_POST_WRITER_RAW_ADAPTER_RECHECK",
@@ -44,7 +46,7 @@ def recheck_rows() -> list[dict[str, object]]:
             "raw_rows_imported_after_recheck": raw_recheck["raw_rows_imported_after_recheck"],
             "adapter_recheck_blockers": ";".join(blockers),
             "target_file_written_after_recheck": "false",
-            "real_values_input_may_exist_after_recheck": "false",
+            "real_values_input_may_exist_after_recheck": str(real_values_present).lower(),
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "post_writer_raw_adapter_recheck_only_no_v12_write_no_scores",
         }

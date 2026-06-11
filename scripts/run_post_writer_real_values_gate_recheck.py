@@ -33,6 +33,7 @@ def recheck_rows() -> list[dict[str, object]]:
             blockers.append("post_writer_raw_adapter_did_not_write_v12")
         if row["input_file_status"] == "REAL_VALUE_FILE_MISSING":
             blockers.append("real_value_file_missing")
+        value_gate_passed = row["activation_decision"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE"
         if row["activation_decision"] == "DO_NOT_ACTIVATE":
             blockers.append("v12_activation_decision_not_activate")
         out.append(
@@ -45,8 +46,10 @@ def recheck_rows() -> list[dict[str, object]]:
                 "v12_imported_numeric_rows": row["imported_numeric_rows"],
                 "v12_real_value_gate_status": row["real_value_gate_status"],
                 "real_value_recheck_blockers": ";".join(blockers),
-                "rows_passing_value_gate_after_recheck": 0,
-                "activation_decision_after_recheck": "DO_NOT_ACTIVATE",
+                "rows_passing_value_gate_after_recheck": 1 if value_gate_passed and not blockers else 0,
+                "activation_decision_after_recheck": "VALUE_GATE_PASSED_PENDING_LEAKAGE"
+                if value_gate_passed and not blockers
+                else "DO_NOT_ACTIVATE",
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_real_values_gate_recheck_only_no_activation_no_scores",
             }

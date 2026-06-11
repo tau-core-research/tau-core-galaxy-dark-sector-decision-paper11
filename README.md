@@ -94,6 +94,9 @@ data/derived/source_import_raw_adapter_gate_v15.csv
 data/derived/source_import_raw_adapter_summary_v15.csv
 data/input/source_import_raw_sparc_like_v15.csv
 data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv
+data/input/source_import_real_values_write_authorization_v57.csv
+data/derived/active_v12_real_values_write_authorization_summary_v57.csv
+data/input/source_import_real_values_v12.csv
 data/derived/source_import_write_authorization_v16.csv
 data/derived/source_import_write_authorization_summary_v16.csv
 data/derived/source_import_authorized_writer_v17.csv
@@ -230,6 +233,7 @@ docs/scoring_activation_gate_v13.md
 docs/source_import_real_values_template_v14.md
 docs/source_import_raw_adapter_v15.md
 docs/active_v15_raw_sparc_like_input_writer_v56.md
+docs/active_v12_real_values_write_authorization_v57.md
 docs/source_import_write_authorization_v16.md
 docs/source_import_authorized_writer_v17.md
 docs/source_import_raw_template_v18.md
@@ -302,56 +306,46 @@ sample/scoring/control/threshold pre-registration, v02 galaxy-role plus
 scoring-formula freeze, and v03 family-budget plus control-implementation
 freeze, plus v04 source-field, formula-registry, and control-runner contracts.
 It also includes v05 row-level source-audit, family formula-table readiness,
-and numeric-count readiness ledgers. The next target is source import, leakage
-audit, concrete family formula tables, numeric parameter counts, and executable
-control runners, not a response formula or physical readout claim. The v06
-readiness audit is executable and currently reports `ENDPOINT_SCORING_BLOCKED`.
-The v07 scoring preflight is also executable and currently reports
-`SCORING_NOT_READY`. The v08 scoring-input scaffold declares the scoring row
-and observed-input table shapes, but activates no rows and imports no observed
-numeric data. The v09 source-import/leakage audit currently reports
-`SOURCE_IMPORT_AND_LEAKAGE_BLOCKED`. The v10 source-import contract is present,
-but all source routes, observed numeric values, and leakage evidence are still
-unfilled. The v11 value ledger exists, and every value remains
-`VALUE_REQUIRED_NOT_FILLED`. The v12 real-value import gate is executable and
-currently reports `SOURCE_IMPORT_REAL_VALUES_BLOCKED`, because the package does
-not yet include `data/input/source_import_real_values_v12.csv`. The v13 scoring
-activation gate is also executable and currently reports
-`SCORING_ACTIVATION_BLOCKED`: zero rows are activated, and formula tables,
-numeric counts, controls, and thresholds remain blocked. The v14 source-import
-template is present as `data/input/source_import_real_values_v12_TEMPLATE.csv`,
-but it is not data and cannot activate scoring rows. The v15 raw adapter
-declares a machine-readable path from a SPARC-like raw input into the v12 real
-input shape, and now reports `RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW`.
-The v16 write-authorization gate currently reports
-`WRITE_AUTHORIZATION_BLOCKED`, so no real v12 input file is written. The v17
-authorized writer path is implemented but currently reports
-`AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18 raw-input template is
-present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`, but it
-is not data and cannot be used for scoring. The v19 provenance manifest still
-declares the provenance requirements, and v21 keeps the provenance evidence
-column contract. The active v21 input is now present via v55. With that input
-in place, v22 reports `PROVENANCE_EVIDENCE_READY_FOR_PROMOTION`, v23 promotes
-all eighteen provenance rows, and v20 reports `RAW_IMPORT_READY_BY_PROVENANCE`.
-The v56 active raw SPARC-like input writer extracts 450 MassModels rows for the
-eighteen frozen galaxies into `data/input/source_import_raw_sparc_like_v15.csv`;
-this is raw source input only and does not write v12 real values. The v24
-scoring dependency closure now has four ready source-side dependencies and nine
+and numeric-count readiness ledgers. The next target is leakage audit, concrete
+family formula tables, numeric parameter counts, and executable control
+runners, not a response formula or physical readout claim. The v06 readiness
+audit is executable and currently reports `ENDPOINT_SCORING_BLOCKED`. The v07
+scoring preflight is also executable and currently reports `SCORING_NOT_READY`.
+The v08 scoring-input scaffold declares the scoring row and observed-input
+table shapes, but activates no rows.
+
+The active source-side chain is now explicit. The active v21 input is present
+via v55. With that input in place, v22 reports
+`PROVENANCE_EVIDENCE_READY_FOR_PROMOTION`, v23 promotes all eighteen provenance
+rows, and v20 reports `RAW_IMPORT_READY_BY_PROVENANCE`. The v56 active raw
+SPARC-like input writer extracts 450 MassModels rows for the eighteen frozen
+galaxies into `data/input/source_import_raw_sparc_like_v15.csv`. The v57
+authorization records an explicit permission to write v12 real values from that
+active v15 raw input. The v16 gate reports `WRITE_AUTHORIZATION_READY`, the v17
+authorized writer writes 450 rows into
+`data/input/source_import_real_values_v12.csv`, and the v12 real-value gate
+reports `SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE`.
+
+The v09 source-import/leakage audit now reports
+`SOURCE_IMPORT_READY_LEAKAGE_PENDING`: source-side values are present, but no
+leakage-evidence artifact has passed review and zero rows are activated. The
+v13 scoring activation gate remains blocked with zero activated rows. The v24
+scoring dependency closure now has seven ready source-side dependencies and six
 blocked downstream dependencies. The v25 scoring unblock priority ledger
-identifies the first current frontier as `SCD24_WRITE_AUTHORIZATION`, with
-`PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1` as the next required authorization.
+identifies the first current frontier as `SCD24_LEAKAGE_AUDIT`, with
+`leakage_audit_evidence_v10.csv` as the next required artifact.
 The legacy v26-v30 frontier-provenance work-order/writer path remains
 review-only and write-blocked; it does not override the separate active v55
 writer. The v31 audit records the active v55 provenance input as present, v32
 allows evidence-gate promotion, v33 promotes all eighteen provenance rows on
 recheck, and v34 allows raw import in principle while importing zero raw rows.
-The v35 post-writer raw adapter recheck is therefore the current source-side
-blocker: raw input is present and valid for review, but the v12 real-values
-target remains unwritten until explicit write authorization is supplied. The
-v36-v39 post-writer rechecks keep real values, leakage audit, scoring
-activation, and scoring preflight blocked. The v40 recheck keeps all
+The v35 post-writer raw adapter recheck still records that the adapter itself
+does not write v12, while the packaged v12 input may exist after the authorized
+writer. The v36 recheck sees the real-value gate as ready, and v37-v39 keep
+leakage audit, scoring activation, and scoring preflight blocked. The v40
+recheck keeps all
 endpoint-scoring paths blocked because preflight readiness is still zero, and
-v41 confirms the current frontier as `SCD24_WRITE_AUTHORIZATION`. The v42-v43
+v41 confirms the current frontier as `SCD24_LEAKAGE_AUDIT`. The v42-v43
 frontier-evidence rechecks remain blocked/bypassed with respect to scoring
 because the active frontier is no longer provenance evidence. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen

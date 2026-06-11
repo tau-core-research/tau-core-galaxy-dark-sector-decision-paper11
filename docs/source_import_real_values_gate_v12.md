@@ -1,7 +1,7 @@
 # Source Import Real Values Gate v12
 
-**Doc class:** executable source-value import gate  
-**Status:** input file missing; no real values imported; no scoring allowed  
+**Doc class:** executable source-value import gate
+**Status:** real values present; leakage pending; no scoring allowed
 
 Script:
 
@@ -32,21 +32,23 @@ leakage-evidence values.
 The expected status is:
 
 ```text
-SOURCE_IMPORT_REAL_VALUES_BLOCKED
+SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE
 ```
 
-The reproducibility package intentionally contains no real observed galaxy
-values. The v12 gate therefore imports zero numeric rows, activates zero rows,
-and keeps endpoint scoring disabled.
+The authorized writer has populated
+`data/input/source_import_real_values_v12.csv` from the active v15 raw input.
+The v12 gate imports 450 numeric rows for eighteen frozen galaxies and marks
+all value gates as ready for leakage review. It activates zero rows and keeps
+endpoint scoring disabled.
 
 ## Claim Boundary
 
-This gate does not import SPARC data, pass leakage audit, activate rows,
-compute scores, compare model families, or decide whether the Tau dark-sector
-response layer is necessary.
+This gate does not pass leakage audit, activate rows, compute scores, compare
+model families, or decide whether the Tau dark-sector response layer is
+necessary.
 
 Next honest target:
 
 ```text
-data/input/source_import_real_values_v12.csv
+data/derived/source_import_leakage_summary_v09.csv
 ```

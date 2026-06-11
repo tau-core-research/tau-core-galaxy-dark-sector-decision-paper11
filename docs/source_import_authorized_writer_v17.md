@@ -1,7 +1,7 @@
 # Source Import Authorized Writer v17
 
-**Doc class:** guarded target-input writer  
-**Status:** writer implemented; write blocked; no target input written  
+**Doc class:** guarded target-input writer
+**Status:** writer authorized; v12 target input written; no scoring allowed
 
 Script:
 
@@ -24,15 +24,14 @@ the v12 real-value target input.
 The expected status is:
 
 ```text
-AUTHORIZED_WRITER_BLOCKED
+AUTHORIZED_WRITER_WROTE_TARGET_INPUT
 ```
 
-The current package has a valid raw input but no write authorization. The
-writer therefore writes zero rows and does not create
-`data/input/source_import_real_values_v12.csv`.
+The current package has a valid raw input and explicit v57 write authorization.
+The writer writes 450 rows into `data/input/source_import_real_values_v12.csv`.
+This does not pass leakage audit or activate scoring rows.
 
 ## Claim Boundary
 
-This writer does not import observed data in the current package, pass leakage
-audit, activate rows, compute scores, compare model families, or decide
-dark-sector necessity.
+This writer does not pass leakage audit, activate rows, compute scores, compare
+model families, or decide dark-sector necessity.

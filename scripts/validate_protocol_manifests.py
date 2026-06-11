@@ -357,14 +357,13 @@ def validate_source_import_leakage_audit_v09() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_leakage_summary_v09.csv")
     require(len(audit) == 18, "v09 source/leakage audit must cover eighteen rows")
     require(
-        all(
-            row["source_import_status"]
-            in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED", "VALUE_REQUIRED_NOT_FILLED"}
-            for row in audit
-        ),
-        "v09 source import must remain blocked",
+        all(row["source_import_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in audit),
+        "v09 source import must be present pending leakage",
     )
-    require(all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit), "v09 leakage cannot pass")
+    require(
+        all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in audit),
+        "v09 leakage must be pending review",
+    )
     require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit), "v09 must not activate rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in audit), "v09 audit cannot allow scoring")
     required_artifacts = {row["required_artifact"] for row in requirements}
@@ -382,20 +381,24 @@ def validate_source_import_leakage_audit_v09() -> None:
         "PENDING",
         "CONTRACT_PRESENT_VALUES_PENDING",
         "VALUES_LEDGER_PRESENT_VALUES_PENDING",
-        "REAL_VALUE_GATE_PRESENT_INPUT_MISSING",
+        "REAL_VALUE_GATE_PRESENT_INPUT_READY_FOR_LEAKAGE",
     }
     require(
         all(row["current_status"] in allowed_requirement_statuses for row in requirements),
         "v09 requirements must remain pending or contract-present",
     )
     require(len(findings) == 18, "v09 leakage findings must cover eighteen rows")
-    require(all(row["leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in findings), "v09 findings cannot pass leakage")
+    require(
+        all(row["leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in findings),
+        "v09 findings must be leakage-pending",
+    )
     require(len(summary) == 1, "v09 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED", "v09 status must remain blocked")
+    require(row["overall_status"] == "SOURCE_IMPORT_READY_LEAKAGE_PENDING", "v09 status must be leakage-pending")
+    require(row["source_import_pending_rows"] == "0", "v09 source import must have zero pending rows")
     require(row["activated_rows"] == "0", "v09 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
-    require(row["next_required_artifact"] == "source_import_real_values_v12.csv", "v09 must point to real source import values")
+    require(row["next_required_artifact"] == "leakage_audit_evidence_v10.csv", "v09 must point to leakage evidence")
 
 
 def validate_source_import_contract_v10() -> None:
@@ -477,20 +480,26 @@ def validate_source_import_real_values_gate_v12() -> None:
     require(required.issubset(fields), f"v12 source import schema incomplete: {required - fields}")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v12 schema cannot allow scoring")
     require(len(gates) == 18, "v12 real-value gate must cover eighteen scoring rows")
-    require(all(row["input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in gates), "v12 input file must remain absent in package")
-    require(all(row["imported_numeric_rows"] == "0" for row in gates), "v12 must import zero numeric rows")
-    require(all(row["real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in gates), "v12 gate must remain file-missing")
-    require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates), "v12 must not activate rows")
+    require(all(row["input_file_status"] == "REAL_VALUE_HEADER_OK" for row in gates), "v12 input file must be present")
+    require(sum(int(row["imported_numeric_rows"]) for row in gates) == 450, "v12 must import 450 numeric rows")
+    require(
+        all(row["real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in gates),
+        "v12 gate must be leakage-pending",
+    )
+    require(
+        all(row["activation_decision"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE" for row in gates),
+        "v12 value gate must pass pending leakage",
+    )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in gates), "v12 gates cannot allow scoring")
     require(len(summary) == 1, "v12 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SOURCE_IMPORT_REAL_VALUES_BLOCKED", "v12 real-value import must remain blocked")
+    require(row["overall_status"] == "SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE", "v12 real-value import must be leakage-ready")
     require(row["expected_galaxy_rows"] == "18", "v12 summary must expect eighteen rows")
-    require(row["galaxies_with_imported_rows"] == "0", "v12 must import zero galaxies")
-    require(row["imported_numeric_rows"] == "0", "v12 must import zero numeric rows")
-    require(row["rows_passing_value_gate"] == "0", "v12 must pass zero value gates")
+    require(row["galaxies_with_imported_rows"] == "18", "v12 must import eighteen galaxies")
+    require(row["imported_numeric_rows"] == "450", "v12 must import 450 numeric rows")
+    require(row["rows_passing_value_gate"] == "18", "v12 must pass eighteen value gates")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v12 summary must forbid scoring")
-    require(row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv", "v12 must point to the input file")
+    require(row["next_required_artifact"] == "data/derived/source_import_leakage_summary_v09.csv", "v12 must point to leakage audit")
 
 
 def validate_scoring_activation_gate_v13() -> None:
@@ -500,7 +509,7 @@ def validate_scoring_activation_gate_v13() -> None:
     require(len(gates) == 18, "v13 activation gate must cover eighteen rows")
     require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates), "v13 must activate zero rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in gates), "v13 row gates cannot allow scoring")
-    require(all("real_source_values_missing" in row["blocking_requirements"] for row in gates), "v13 rows must be blocked by missing real values")
+    require(all("real_source_values_missing" not in row["blocking_requirements"] for row in gates), "v13 rows must not be blocked by missing real values")
     require(all("leakage_audit_not_passed" in row["blocking_requirements"] for row in gates), "v13 rows must be blocked by leakage")
     require(len(blockers) == 4, "v13 must list four global blockers")
     require(all(row["current_status"] == "BLOCKED" for row in blockers), "v13 global blockers must remain blocked")
@@ -512,6 +521,10 @@ def validate_scoring_activation_gate_v13() -> None:
     require(row["rows_activated_for_scoring"] == "0", "v13 must activate zero rows")
     require(row["row_level_blocked_rows"] == "18", "v13 must block eighteen rows")
     require(row["global_blockers"] == "4", "v13 must report four global blockers")
+    require(
+        row["next_required_artifact"] == "data/derived/source_import_leakage_summary_v09.csv",
+        "v13 must point to leakage audit",
+    )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
 
 
@@ -528,7 +541,7 @@ def validate_source_import_template_v14() -> None:
     require(row["overall_status"] == "SOURCE_IMPORT_TEMPLATE_READY_NOT_DATA", "v14 must remain template-only")
     require(row["template_rows"] == "18", "v14 summary must report eighteen template rows")
     require(row["required_columns"] == "16", "v14 summary must report sixteen columns")
-    require(row["real_input_file_present"] == "false", "v14 must not include the real input file")
+    require(row["real_input_file_present"] == "true", "v14 must report the packaged real input file")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v14 summary must forbid scoring")
 
 
@@ -556,7 +569,7 @@ def validate_source_import_raw_adapter_v15() -> None:
         "v15 must be raw-input validation-pending",
     )
     require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v15 summary must report raw input")
-    require(row["target_input_file_present"] == "false", "v15 target input must remain absent")
+    require(row["target_input_file_present"] == "true", "v15 must report the packaged target input")
     require(row["target_file_written_by_adapter"] == "false", "v15 adapter must not write target file")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v15 summary must forbid scoring")
 
@@ -566,23 +579,24 @@ def validate_source_import_write_authorization_v16() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_write_authorization_summary_v16.csv")
     require(len(rows) == 1, "v16 write authorization must have one row")
     row = rows[0]
-    require(row["explicit_write_authorization"] == "false", "v16 explicit write authorization must be absent")
+    require(row["authorization_file"] == "data/input/source_import_real_values_write_authorization_v57.csv", "v16 auth file mismatch")
+    require(row["explicit_write_authorization"] == "true", "v16 explicit write authorization must be present")
     require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v16 raw input must be present")
-    require(row["target_input_file_present"] == "false", "v16 target input must remain absent")
-    require(row["write_authorized"] == "false", "v16 write authorization must be blocked")
-    require("explicit_write_authorization_missing" in row["write_blockers"], "v16 must require explicit authorization")
+    require(row["target_input_file_present"] == "true", "v16 must report the packaged target input")
+    require(row["write_authorized"] == "true", "v16 write authorization must be ready")
+    require(row["write_blockers"] == "none", "v16 must have no write blockers")
     require("raw_input_not_validated" not in row["write_blockers"], "v16 must not block on raw validation")
     require(row["target_file_written"] == "false", "v16 must not write target input")
     require(row["endpoint_scoring_allowed"] == "false", "v16 row cannot allow scoring")
     require(len(summary) == 1, "v16 summary must have one row")
     summary_row = summary[0]
-    require(summary_row["overall_status"] == "WRITE_AUTHORIZATION_BLOCKED", "v16 write authorization must remain blocked")
-    require(summary_row["write_authorized"] == "false", "v16 summary must block writing")
+    require(summary_row["overall_status"] == "WRITE_AUTHORIZATION_READY", "v16 write authorization must be ready")
+    require(summary_row["write_authorized"] == "true", "v16 summary must authorize writing")
     require(summary_row["target_file_written"] == "false", "v16 summary must not write target file")
-    require(summary_row["target_input_file_present"] == "false", "v16 summary must report absent target file")
+    require(summary_row["target_input_file_present"] == "true", "v16 summary must report present target file")
     require(
-        summary_row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
-        "v16 next required artifact must be explicit write authorization",
+        summary_row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv",
+        "v16 next required artifact must be v12 target",
     )
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v16 summary must forbid scoring")
 
@@ -592,22 +606,21 @@ def validate_source_import_authorized_writer_v17() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_authorized_writer_summary_v17.csv")
     require(len(rows) == 1, "v17 authorized writer must have one row")
     row = rows[0]
-    require(row["write_authorized"] == "false", "v17 write authorization must remain false")
+    require(row["write_authorized"] == "true", "v17 write authorization must be true")
     require(row["raw_input_present"] == "true", "v17 raw input must be present")
-    require(row["target_preexisting"] == "false", "v17 target input must not preexist")
-    require(row["target_file_written"] == "false", "v17 must not write target input")
-    require(row["rows_written"] == "0", "v17 must write zero rows")
-    require(row["writer_status"] == "WRITER_BLOCKED_BY_AUTHORIZATION", "v17 writer must be authorization-blocked")
+    require(row["target_file_written"] == "true", "v17 must write target input")
+    require(row["rows_written"] == "450", "v17 must write 450 rows")
+    require(row["writer_status"] == "TARGET_INPUT_WRITTEN_FROM_AUTHORIZED_RAW", "v17 writer must write target")
     require(row["endpoint_scoring_allowed"] == "false", "v17 row cannot allow scoring")
     require(len(summary) == 1, "v17 summary must have one row")
     summary_row = summary[0]
-    require(summary_row["overall_status"] == "AUTHORIZED_WRITER_BLOCKED", "v17 summary must remain blocked")
-    require(summary_row["target_file_written"] == "false", "v17 summary must not write target input")
-    require(summary_row["rows_written"] == "0", "v17 summary must write zero rows")
-    require(summary_row["target_input_file_present_after_writer"] == "false", "v17 target input must remain absent after writer")
+    require(summary_row["overall_status"] == "AUTHORIZED_WRITER_WROTE_TARGET_INPUT", "v17 summary must write target")
+    require(summary_row["target_file_written"] == "true", "v17 summary must write target input")
+    require(summary_row["rows_written"] == "450", "v17 summary must write 450 rows")
+    require(summary_row["target_input_file_present_after_writer"] == "true", "v17 target input must be present after writer")
     require(
-        summary_row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
-        "v17 next required artifact must be explicit write authorization",
+        summary_row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv",
+        "v17 next required artifact must be v12 target",
     )
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v17 summary must forbid scoring")
 
@@ -628,6 +641,24 @@ def validate_active_v15_raw_sparc_like_input_writer_v56() -> None:
     require(row["target_file_written"] == "true", "v56 target file must be written")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v56 summary must forbid scoring")
     require(row["overall_status"] == "ACTIVE_V15_RAW_SPARC_LIKE_INPUT_WRITTEN", "v56 status mismatch")
+
+
+def validate_active_v12_real_values_write_authorization_v57() -> None:
+    rows = read_csv(ROOT / "data/input/source_import_real_values_write_authorization_v57.csv")
+    summary = read_csv(ROOT / "data/derived/active_v12_real_values_write_authorization_summary_v57.csv")
+    require(len(rows) == 1, "v57 authorization must have one row")
+    row = rows[0]
+    require(row["authorization_id"] == "ARV57_WRITE_REAL_VALUES_FROM_V15_RAW", "v57 authorization id mismatch")
+    require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v57 raw status mismatch")
+    require(row["write_authorization"] == "AUTHORIZE_V12_WRITE_FROM_ACTIVE_V15_RAW", "v57 must authorize v12 write")
+    require(row["endpoint_scoring_allowed"] == "false", "v57 cannot allow scoring")
+    require(len(summary) == 1, "v57 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["summary_id"] == "ACTIVE_V12_REAL_VALUES_WRITE_AUTHORIZATION_V57", "v57 summary id mismatch")
+    require(summary_row["write_authorized"] == "true", "v57 summary must authorize write")
+    require(summary_row["target_file_written"] == "false", "v57 itself must not write target")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v57 summary cannot allow scoring")
+    require(summary_row["overall_status"] == "ACTIVE_V12_WRITE_AUTHORIZATION_GRANTED", "v57 status mismatch")
 
 
 def validate_source_import_raw_template_v18() -> None:
@@ -786,6 +817,9 @@ def validate_scoring_dependency_closure_v24() -> None:
             "SCD24_PROVENANCE_PROMOTION",
             "SCD24_PROVENANCE_AUDIT",
             "SCD24_RAW_ADAPTER_INPUT",
+            "SCD24_WRITE_AUTHORIZATION",
+            "SCD24_AUTHORIZED_WRITER",
+            "SCD24_REAL_VALUES",
         },
         f"v24 ready ids mismatch: {ready_ids}",
     )
@@ -796,9 +830,9 @@ def validate_scoring_dependency_closure_v24() -> None:
     row = summary[0]
     require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
-    require(row["ready_dependencies"] == "4", "v24 must have four ready dependencies")
-    require(row["blocked_dependencies"] == "9", "v24 must block nine dependencies")
-    require(row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1", "v24 next artifact mismatch")
+    require(row["ready_dependencies"] == "7", "v24 must have seven ready dependencies")
+    require(row["blocked_dependencies"] == "6", "v24 must block six dependencies")
+    require(row["next_required_artifact"] == "leakage_audit_evidence_v10.csv", "v24 next artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
 
 
@@ -816,25 +850,28 @@ def validate_scoring_unblock_priority_v25() -> None:
             "SCD24_PROVENANCE_PROMOTION",
             "SCD24_PROVENANCE_AUDIT",
             "SCD24_RAW_ADAPTER_INPUT",
+            "SCD24_WRITE_AUTHORIZATION",
+            "SCD24_AUTHORIZED_WRITER",
+            "SCD24_REAL_VALUES",
         },
         f"v25 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
-    require(frontier[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION", "v25 first frontier must be write authorization")
+    require(frontier[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT", "v25 first frontier must be leakage audit")
     require(
-        frontier[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
-        "v25 frontier artifact must be explicit write authorization",
+        frontier[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv",
+        "v25 frontier artifact must be leakage evidence",
     )
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
     require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
-    require(row["blocked_priority_rows"] == "9", "v25 must preserve nine blocked rows")
+    require(row["blocked_priority_rows"] == "6", "v25 must preserve six blocked rows")
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
-    require(row["first_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION", "v25 frontier dependency mismatch")
-    require(row["first_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1", "v25 frontier artifact mismatch")
+    require(row["first_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT", "v25 frontier dependency mismatch")
+    require(row["first_frontier_artifact"] == "leakage_audit_evidence_v10.csv", "v25 frontier artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
@@ -1070,7 +1107,7 @@ def validate_post_writer_raw_adapter_recheck_v35() -> None:
     require("zero_raw_rows_imported_after_recheck" in row["adapter_recheck_blockers"], "v35 must block on zero raw rows")
     require("raw_adapter_input_not_present" not in row["adapter_recheck_blockers"], "v35 must not block on raw input")
     require(row["target_file_written_after_recheck"] == "false", "v35 must not write v12 target")
-    require(row["real_values_input_may_exist_after_recheck"] == "false", "v35 cannot allow real values input")
+    require(row["real_values_input_may_exist_after_recheck"] == "true", "v35 must see v12 real values input")
     require(row["endpoint_scoring_allowed"] == "false", "v35 row cannot allow scoring")
     require(len(summary) == 1, "v35 summary must have one row")
     summary_row = summary[0]
@@ -1078,7 +1115,7 @@ def validate_post_writer_raw_adapter_recheck_v35() -> None:
     require(summary_row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v35 summary raw input mismatch")
     require(summary_row["valid_raw_rows"] == "450", "v35 summary must validate 450 rows")
     require(summary_row["target_file_written_after_recheck"] == "false", "v35 summary must not write target")
-    require(summary_row["real_values_input_may_exist_after_recheck"] == "false", "v35 summary cannot allow real values")
+    require(summary_row["real_values_input_may_exist_after_recheck"] == "true", "v35 summary must see v12 real values")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v35 summary must forbid scoring")
 
 
@@ -1086,22 +1123,28 @@ def validate_post_writer_real_values_gate_recheck_v36() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_real_values_gate_recheck_v36.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_real_values_gate_recheck_summary_v36.csv")
     require(len(rows) == 18, "v36 real-values recheck must cover eighteen rows")
-    require(all(row["v12_input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in rows), "v36 v12 input must remain missing")
-    require(all(row["v12_imported_numeric_rows"] == "0" for row in rows), "v36 must import zero numeric rows")
-    require(all(row["v12_real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in rows), "v36 gate status mismatch")
+    require(all(row["v12_input_file_status"] == "REAL_VALUE_HEADER_OK" for row in rows), "v36 v12 input must be present")
+    require(sum(int(row["v12_imported_numeric_rows"]) for row in rows) == 450, "v36 must import 450 numeric rows")
     require(
-        all("post_writer_raw_adapter_did_not_write_v12" in row["real_value_recheck_blockers"] for row in rows),
-        "v36 must block on v35 no-write",
+        all(row["v12_real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in rows),
+        "v36 gate status mismatch",
     )
-    require(all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows), "v36 must pass zero rows")
-    require(all(row["activation_decision_after_recheck"] == "DO_NOT_ACTIVATE" for row in rows), "v36 cannot activate rows")
+    require(
+        all("post_writer_raw_adapter_did_not_write_v12" not in row["real_value_recheck_blockers"] for row in rows),
+        "v36 must not block on v35 no-write",
+    )
+    require(all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows), "v36 must pass eighteen rows")
+    require(
+        all(row["activation_decision_after_recheck"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE" for row in rows),
+        "v36 must pass value gate pending leakage",
+    )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v36 rows cannot allow scoring")
     require(len(summary) == 1, "v36 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "POST_WRITER_REAL_VALUES_GATE_RECHECK_BLOCKED", "v36 summary must block")
+    require(row["overall_status"] == "POST_WRITER_REAL_VALUES_GATE_RECHECK_READY", "v36 summary must be ready")
     require(row["real_value_recheck_rows"] == "18", "v36 must summarize eighteen rows")
-    require(row["imported_numeric_rows_after_recheck"] == "0", "v36 must import zero numeric rows")
-    require(row["rows_passing_value_gate_after_recheck"] == "0", "v36 must pass zero rows")
+    require(row["imported_numeric_rows_after_recheck"] == "450", "v36 must import 450 numeric rows")
+    require(row["rows_passing_value_gate_after_recheck"] == "18", "v36 must pass eighteen rows")
     require(row["rows_activated_after_recheck"] == "0", "v36 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v36 summary must forbid scoring")
 
@@ -1111,13 +1154,13 @@ def validate_post_writer_leakage_audit_recheck_v37() -> None:
     summary = read_csv(ROOT / "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv")
     require(len(rows) == 18, "v37 leakage recheck must cover eighteen rows")
     require(
-        all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in rows),
-        "v37 must inherit the blocked v09 leakage status",
+        all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in rows),
+        "v37 must inherit the pending v09 leakage status",
     )
-    require(all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows), "v37 must pass zero value rows")
+    require(all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows), "v37 must pass value rows")
     require(
-        all("post_writer_real_values_gate_not_passed" in row["leakage_recheck_blockers"] for row in rows),
-        "v37 must block on the v36 value gate",
+        all("post_writer_real_values_gate_not_passed" not in row["leakage_recheck_blockers"] for row in rows),
+        "v37 must not block on the v36 value gate",
     )
     require(
         all("v09_leakage_audit_not_passed" in row["leakage_recheck_blockers"] for row in rows),
@@ -1150,7 +1193,7 @@ def validate_post_writer_scoring_activation_recheck_v38() -> None:
         all(row["v37_activation_allowed_after_recheck"] == "false" for row in rows),
         "v38 must inherit zero activation-allowed rows",
     )
-    require(all(row["v13_activation_decision"] == "DO_NOT_ACTIVATE" for row in rows), "v38 must inherit v13 blocks")
+    require(all(row["v13_activation_decision"] == "DO_NOT_ACTIVATE" for row in rows), "v38 must inherit v13 no-activation")
     require(
         all("post_writer_leakage_audit_not_passed" in row["activation_recheck_blockers"] for row in rows),
         "v38 must block on v37 leakage failure",
@@ -1222,8 +1265,8 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
     require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
-    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 4, "v40 must inherit four ready v24 dependencies")
-    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 9, "v40 must inherit nine blocked v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 7, "v40 must inherit seven ready v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 6, "v40 must inherit six blocked v24 dependencies")
     require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
     require(
         all(
@@ -1268,10 +1311,10 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(
         all(
             ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 5)
+            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 8)
             for row in rows
         ),
-        "v41 must flag v25 dependency blockers for the write-authorization frontier and later blocked priorities",
+        "v41 must flag v25 dependency blockers for the leakage frontier and later blocked priorities",
     )
     require(
         all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
@@ -1283,9 +1326,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     )
     require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
-    require(frontier_rows[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION", "v41 frontier row must be write authorization")
+    require(frontier_rows[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT", "v41 frontier row must be leakage audit")
     require(
-        frontier_rows[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+        frontier_rows[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -1295,9 +1338,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
     require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
-    require(row["first_frontier_dependency_after_recheck"] == "SCD24_WRITE_AUTHORIZATION", "v41 frontier dependency mismatch")
+    require(row["first_frontier_dependency_after_recheck"] == "SCD24_LEAKAGE_AUDIT", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+        row["first_frontier_artifact_after_recheck"] == "leakage_audit_evidence_v10.csv",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -1312,9 +1355,9 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
-    require(all(row["v41_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION" for row in rows), "v42 must inherit the write-authorization frontier")
+    require(all(row["v41_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT" for row in rows), "v42 must inherit the leakage frontier")
     require(
-        all(row["v41_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1" for row in rows),
+        all(row["v41_frontier_artifact"] == "leakage_audit_evidence_v10.csv" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -1978,6 +2021,7 @@ def main() -> None:
     validate_source_import_template_v14()
     validate_active_v15_raw_sparc_like_input_writer_v56()
     validate_source_import_raw_adapter_v15()
+    validate_active_v12_real_values_write_authorization_v57()
     validate_source_import_write_authorization_v16()
     validate_source_import_authorized_writer_v17()
     validate_source_import_raw_template_v18()

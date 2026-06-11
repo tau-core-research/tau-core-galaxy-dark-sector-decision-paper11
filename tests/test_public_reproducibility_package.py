@@ -43,6 +43,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_real_values_template_v14.md",
         "docs/source_import_raw_adapter_v15.md",
         "docs/active_v15_raw_sparc_like_input_writer_v56.md",
+        "docs/active_v12_real_values_write_authorization_v57.md",
         "docs/source_import_write_authorization_v16.md",
         "docs/source_import_authorized_writer_v17.md",
         "docs/source_import_raw_template_v18.md",
@@ -120,6 +121,9 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_raw_adapter_summary_v15.csv",
         "data/input/source_import_raw_sparc_like_v15.csv",
         "data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv",
+        "data/input/source_import_real_values_write_authorization_v57.csv",
+        "data/derived/active_v12_real_values_write_authorization_summary_v57.csv",
+        "data/input/source_import_real_values_v12.csv",
         "data/derived/source_import_write_authorization_v16.csv",
         "data/derived/source_import_write_authorization_summary_v16.csv",
         "data/derived/source_import_authorized_writer_v17.csv",
@@ -241,6 +245,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_real_values_template.py",
         "scripts/run_source_import_raw_adapter.py",
         "scripts/run_active_v15_raw_sparc_like_input_writer.py",
+        "scripts/run_active_v12_real_values_write_authorization.py",
         "scripts/run_source_import_write_authorization.py",
         "scripts/run_source_import_authorized_writer.py",
         "scripts/build_source_import_raw_template.py",
@@ -527,8 +532,8 @@ def test_v08_scoring_input_scaffold_declares_shapes_without_data() -> None:
 def test_v09_source_import_leakage_audit_blocks_activation() -> None:
     audit = list(csv.DictReader((ROOT / "data/derived/source_import_and_leakage_audit_v09.csv").open()))
     assert len(audit) == 18
-    assert all(row["source_import_status"] == "VALUE_REQUIRED_NOT_FILLED" for row in audit)
-    assert all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in audit)
+    assert all(row["source_import_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in audit)
+    assert all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in audit)
     assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in audit)
 
@@ -539,24 +544,24 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
         "leakage_audit_evidence_v10.csv",
         "activated_scoring_rows_v10.csv",
     }
-    assert {row["current_status"] for row in requirements} == {"PENDING", "REAL_VALUE_GATE_PRESENT_INPUT_MISSING"}
+    assert {row["current_status"] for row in requirements} == {"PENDING", "REAL_VALUE_GATE_PRESENT_INPUT_READY_FOR_LEAKAGE"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in requirements)
 
     findings = list(csv.DictReader((ROOT / "data/derived/leakage_audit_findings_v09.csv").open()))
     assert len(findings) == 18
-    assert all(row["leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in findings)
+    assert all(row["leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in findings)
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_leakage_summary_v09.csv").open()))
     assert summary == [
         {
             "summary_id": "SOURCE_IMPORT_LEAKAGE_AUDIT_V09",
             "audited_rows": "18",
-            "source_import_pending_rows": "18",
+            "source_import_pending_rows": "0",
             "leakage_pass_rows": "0",
             "activated_rows": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED",
-            "next_required_artifact": "source_import_real_values_v12.csv",
+            "overall_status": "SOURCE_IMPORT_READY_LEAKAGE_PENDING",
+            "next_required_artifact": "leakage_audit_evidence_v10.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }
     ]
@@ -636,10 +641,10 @@ def test_v12_real_value_import_gate_blocks_until_input_file_exists() -> None:
 
     gates = list(csv.DictReader((ROOT / "data/derived/source_import_real_values_gate_v12.csv").open()))
     assert len(gates) == 18
-    assert all(row["input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in gates)
-    assert all(row["imported_numeric_rows"] == "0" for row in gates)
-    assert all(row["real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in gates)
-    assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates)
+    assert all(row["input_file_status"] == "REAL_VALUE_HEADER_OK" for row in gates)
+    assert sum(int(row["imported_numeric_rows"]) for row in gates) == 450
+    assert all(row["real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in gates)
+    assert all(row["activation_decision"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE" for row in gates)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in gates)
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_real_values_summary_v12.csv").open()))
@@ -647,12 +652,12 @@ def test_v12_real_value_import_gate_blocks_until_input_file_exists() -> None:
         {
             "summary_id": "SOURCE_IMPORT_REAL_VALUES_GATE_V12",
             "expected_galaxy_rows": "18",
-            "galaxies_with_imported_rows": "0",
-            "imported_numeric_rows": "0",
-            "rows_passing_value_gate": "0",
+            "galaxies_with_imported_rows": "18",
+            "imported_numeric_rows": "450",
+            "rows_passing_value_gate": "18",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SOURCE_IMPORT_REAL_VALUES_BLOCKED",
-            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
+            "overall_status": "SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE",
+            "next_required_artifact": "data/derived/source_import_leakage_summary_v09.csv",
             "claim_boundary": "real_value_import_gate_only_no_dark_sector_verdict",
         }
     ]
@@ -662,8 +667,9 @@ def test_v13_scoring_activation_gate_blocks_all_rows() -> None:
     gates = list(csv.DictReader((ROOT / "data/derived/scoring_activation_gate_v13.csv").open()))
     assert len(gates) == 18
     assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates)
-    assert all("real_source_values_missing" in row["blocking_requirements"] for row in gates)
+    assert all("real_source_values_missing" not in row["blocking_requirements"] for row in gates)
     assert all("leakage_audit_not_passed" in row["blocking_requirements"] for row in gates)
+    assert all("source_row_not_activated" in row["blocking_requirements"] for row in gates)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in gates)
 
     blockers = list(csv.DictReader((ROOT / "data/derived/scoring_activation_global_blockers_v13.csv").open()))
@@ -686,7 +692,7 @@ def test_v13_scoring_activation_gate_blocks_all_rows() -> None:
             "global_blockers": "4",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_ACTIVATION_BLOCKED",
-            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
+            "next_required_artifact": "data/derived/source_import_leakage_summary_v09.csv",
             "claim_boundary": "activation_gate_only_no_dark_sector_verdict",
         }
     ]
@@ -713,7 +719,7 @@ def test_v14_source_import_template_is_not_data() -> None:
             "target_real_input_file": "data/input/source_import_real_values_v12.csv",
             "template_rows": "18",
             "required_columns": "16",
-            "real_input_file_present": "false",
+            "real_input_file_present": "true",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_TEMPLATE_READY_NOT_DATA",
             "claim_boundary": "template_only_no_source_import_no_scores",
@@ -752,7 +758,7 @@ def test_v15_raw_adapter_validates_raw_input_without_writing_v12() -> None:
             "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
             "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
-            "target_input_file_present": "false",
+            "target_input_file_present": "true",
             "target_file_written_by_adapter": "false",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW",
@@ -785,69 +791,84 @@ def test_v56_active_raw_sparc_like_writer_outputs_frozen_rows() -> None:
     ]
 
 
-def test_v16_write_authorization_blocks_target_input_creation() -> None:
-    rows = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_v16.csv").open()))
+def test_v57_active_v12_real_values_write_authorization_grants_write_without_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/input/source_import_real_values_write_authorization_v57.csv").open()))
     assert rows == [
         {
-            "authorization_id": "SIWA16_WRITE_V12",
-            "source_adapter_gate": "source_import_raw_adapter_gate_v15.csv",
+            "authorization_id": "ARV57_WRITE_REAL_VALUES_FROM_V15_RAW",
+            "source_raw_adapter_summary": "data/derived/source_import_raw_adapter_summary_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
-            "explicit_write_authorization": "false",
             "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
-            "target_input_file_present": "false",
-            "write_authorized": "false",
-            "write_blockers": "explicit_write_authorization_missing",
-            "target_file_written": "false",
+            "raw_input_review_status": "RAW_INPUT_REVIEW_ACCEPTED_FOR_V12_WRITE",
+            "write_authorization": "AUTHORIZE_V12_WRITE_FROM_ACTIVE_V15_RAW",
             "endpoint_scoring_allowed": "false",
-            "claim_boundary": "write_authorization_only_no_source_import_no_scores",
+            "claim_boundary": "active_v12_write_authorization_only_no_leakage_pass_no_scores_no_dark_sector_verdict",
         }
     ]
 
-    summary = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_summary_v16.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/active_v12_real_values_write_authorization_summary_v57.csv").open()))
     assert summary == [
         {
-            "summary_id": "SOURCE_IMPORT_WRITE_AUTHORIZATION_V16",
-            "write_authorized": "false",
-            "target_file_written": "false",
-            "target_input_file_present": "false",
-            "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
-            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
-            "claim_boundary": "write_authorization_only_no_source_import_no_scores",
-        }
-    ]
-
-
-def test_v17_authorized_writer_is_implemented_but_blocked() -> None:
-    rows = list(csv.DictReader((ROOT / "data/derived/source_import_authorized_writer_v17.csv").open()))
-    assert rows == [
-        {
-            "writer_id": "SIAW17_AUTHORIZED_RAW_TO_V12",
-            "authorization_source": "source_import_write_authorization_v16.csv",
-            "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
+            "summary_id": "ACTIVE_V12_REAL_VALUES_WRITE_AUTHORIZATION_V57",
+            "authorization_file": "data/input/source_import_real_values_write_authorization_v57.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
-            "write_authorized": "false",
-            "raw_input_present": "true",
-            "target_preexisting": "false",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "write_authorized": "true",
             "target_file_written": "false",
-            "rows_written": "0",
-            "writer_status": "WRITER_BLOCKED_BY_AUTHORIZATION",
-            "endpoint_scoring_allowed": "false",
-            "claim_boundary": "authorized_writer_only_no_scores_no_verdict",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "ACTIVE_V12_WRITE_AUTHORIZATION_GRANTED",
+            "claim_boundary": "active_v12_write_authorization_only_no_v12_write_no_scores_no_dark_sector_verdict",
         }
     ]
+
+
+def test_v16_write_authorization_allows_target_input_creation_without_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_v16.csv").open()))
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["authorization_id"] == "SIWA16_WRITE_V12"
+    assert row["authorization_file"] == "data/input/source_import_real_values_write_authorization_v57.csv"
+    assert row["explicit_write_authorization"] == "true"
+    assert row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW"
+    assert row["write_authorized"] == "true"
+    assert row["write_blockers"] == "none"
+    assert row["target_file_written"] == "false"
+    assert row["endpoint_scoring_allowed"] == "false"
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_summary_v16.csv").open()))
+    assert len(summary) == 1
+    summary_row = summary[0]
+    assert summary_row["write_authorized"] == "true"
+    assert summary_row["target_file_written"] == "false"
+    assert summary_row["endpoint_scoring_allowed_anywhere"] == "false"
+    assert summary_row["overall_status"] == "WRITE_AUTHORIZATION_READY"
+    assert summary_row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv"
+    assert summary_row["claim_boundary"] == "write_authorization_only_no_source_import_no_scores"
+
+
+def test_v17_authorized_writer_writes_real_values_without_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/source_import_authorized_writer_v17.csv").open()))
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["writer_id"] == "SIAW17_AUTHORIZED_RAW_TO_V12"
+    assert row["write_authorized"] == "true"
+    assert row["raw_input_present"] == "true"
+    assert row["target_file_written"] == "true"
+    assert row["rows_written"] == "450"
+    assert row["writer_status"] == "TARGET_INPUT_WRITTEN_FROM_AUTHORIZED_RAW"
+    assert row["endpoint_scoring_allowed"] == "false"
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_authorized_writer_summary_v17.csv").open()))
     assert summary == [
         {
             "summary_id": "SOURCE_IMPORT_AUTHORIZED_WRITER_V17",
-            "writer_status": "WRITER_BLOCKED_BY_AUTHORIZATION",
-            "target_file_written": "false",
-            "rows_written": "0",
-            "target_input_file_present_after_writer": "false",
+            "writer_status": "TARGET_INPUT_WRITTEN_FROM_AUTHORIZED_RAW",
+            "target_file_written": "true",
+            "rows_written": "450",
+            "target_input_file_present_after_writer": "true",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "AUTHORIZED_WRITER_BLOCKED",
-            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+            "overall_status": "AUTHORIZED_WRITER_WROTE_TARGET_INPUT",
+            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
             "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
         }
     ]
@@ -1064,6 +1085,9 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         "SCD24_PROVENANCE_PROMOTION",
         "SCD24_PROVENANCE_AUDIT",
         "SCD24_RAW_ADAPTER_INPUT",
+        "SCD24_WRITE_AUTHORIZATION",
+        "SCD24_AUTHORIZED_WRITER",
+        "SCD24_REAL_VALUES",
     }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
     assert any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows)
@@ -1074,11 +1098,11 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         {
             "summary_id": "SCORING_DEPENDENCY_CLOSURE_V24",
             "dependencies_checked": "13",
-            "ready_dependencies": "4",
-            "blocked_dependencies": "9",
+            "ready_dependencies": "7",
+            "blocked_dependencies": "6",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
-            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+            "next_required_artifact": "leakage_audit_evidence_v10.csv",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1094,22 +1118,25 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
         "SCD24_PROVENANCE_PROMOTION",
         "SCD24_PROVENANCE_AUDIT",
         "SCD24_RAW_ADAPTER_INPUT",
+        "SCD24_WRITE_AUTHORIZATION",
+        "SCD24_AUTHORIZED_WRITER",
+        "SCD24_REAL_VALUES",
     }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     assert len(frontier) == 1
-    assert frontier[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION"
-    assert frontier[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+    assert frontier[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT"
+    assert frontier[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv"
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
     assert summary == [
         {
             "summary_id": "SCORING_UNBLOCK_PRIORITY_V25",
             "priority_rows": "13",
-            "blocked_priority_rows": "9",
+            "blocked_priority_rows": "6",
             "frontier_now_rows": "1",
-            "first_frontier_dependency": "SCD24_WRITE_AUTHORIZATION",
-            "first_frontier_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+            "first_frontier_dependency": "SCD24_LEAKAGE_AUDIT",
+            "first_frontier_artifact": "leakage_audit_evidence_v10.csv",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
@@ -1395,7 +1422,7 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
             "raw_rows_imported_after_recheck": "0",
             "adapter_recheck_blockers": "zero_raw_rows_imported_after_recheck",
             "target_file_written_after_recheck": "false",
-            "real_values_input_may_exist_after_recheck": "false",
+            "real_values_input_may_exist_after_recheck": "true",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "post_writer_raw_adapter_recheck_only_no_v12_write_no_scores",
         }
@@ -1408,7 +1435,7 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
             "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
             "valid_raw_rows": "450",
             "target_file_written_after_recheck": "false",
-            "real_values_input_may_exist_after_recheck": "false",
+            "real_values_input_may_exist_after_recheck": "true",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_raw_adapter_recheck_only_no_v12_write_no_scores_no_dark_sector_verdict",
@@ -1419,12 +1446,11 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
 def test_v36_post_writer_real_values_gate_recheck_blocks_activation() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_real_values_gate_recheck_v36.csv").open()))
     assert len(rows) == 18
-    assert all(row["v12_input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in rows)
-    assert all(row["v12_imported_numeric_rows"] == "0" for row in rows)
-    assert all(row["v12_real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in rows)
-    assert all("post_writer_raw_adapter_did_not_write_v12" in row["real_value_recheck_blockers"] for row in rows)
-    assert all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows)
-    assert all(row["activation_decision_after_recheck"] == "DO_NOT_ACTIVATE" for row in rows)
+    assert all(row["v12_input_file_status"] == "REAL_VALUE_HEADER_OK" for row in rows)
+    assert sum(int(row["v12_imported_numeric_rows"]) for row in rows) == 450
+    assert all(row["v12_real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in rows)
+    assert all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows)
+    assert all(row["activation_decision_after_recheck"] == "VALUE_GATE_PASSED_PENDING_LEAKAGE" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_real_values_gate_recheck_summary_v36.csv").open()))
@@ -1432,11 +1458,11 @@ def test_v36_post_writer_real_values_gate_recheck_blocks_activation() -> None:
         {
             "summary_id": "POST_WRITER_REAL_VALUES_GATE_RECHECK_V36",
             "real_value_recheck_rows": "18",
-            "imported_numeric_rows_after_recheck": "0",
-            "rows_passing_value_gate_after_recheck": "0",
+            "imported_numeric_rows_after_recheck": "450",
+            "rows_passing_value_gate_after_recheck": "18",
             "rows_activated_after_recheck": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "POST_WRITER_REAL_VALUES_GATE_RECHECK_BLOCKED",
+            "overall_status": "POST_WRITER_REAL_VALUES_GATE_RECHECK_READY",
             "claim_boundary": "post_writer_real_values_gate_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1445,9 +1471,9 @@ def test_v36_post_writer_real_values_gate_recheck_blocks_activation() -> None:
 def test_v37_post_writer_leakage_audit_recheck_blocks_activation() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_leakage_audit_recheck_v37.csv").open()))
     assert len(rows) == 18
-    assert all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING" for row in rows)
-    assert all(row["rows_passing_value_gate_after_recheck"] == "0" for row in rows)
-    assert all("post_writer_real_values_gate_not_passed" in row["leakage_recheck_blockers"] for row in rows)
+    assert all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in rows)
+    assert all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows)
+    assert all("post_writer_real_values_gate_not_passed" not in row["leakage_recheck_blockers"] for row in rows)
     assert all("v09_leakage_audit_not_passed" in row["leakage_recheck_blockers"] for row in rows)
     assert all(row["leakage_pass_after_recheck"] == "false" for row in rows)
     assert all(row["activation_allowed_after_recheck"] == "false" for row in rows)
@@ -1524,8 +1550,8 @@ def test_v39_post_writer_scoring_preflight_recheck_blocks_scoring() -> None:
 def test_v40_post_writer_scoring_dependency_closure_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv").open()))
     assert len(rows) == 13
-    assert sum(row["v24_dependency_decision"] == "READY" for row in rows) == 4
-    assert sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 9
+    assert sum(row["v24_dependency_decision"] == "READY" for row in rows) == 7
+    assert sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 6
     assert all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows)
     assert all(
         ("v24_dependency_not_ready" in row["dependency_recheck_blockers"])
@@ -1557,15 +1583,15 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
     assert all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows)
     assert all(
         ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-        == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 5)
+        == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 8)
         for row in rows
     )
     assert all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows)
     assert all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows)
     assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
     frontier = [row for row in rows if row["frontier_now_after_recheck"] == "true"][0]
-    assert frontier["dependency_id"] == "SCD24_WRITE_AUTHORIZATION"
-    assert frontier["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+    assert frontier["dependency_id"] == "SCD24_LEAKAGE_AUDIT"
+    assert frontier["next_required_artifact"] == "leakage_audit_evidence_v10.csv"
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
@@ -1575,8 +1601,8 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
             "priority_rows_rechecked": "13",
             "blocked_priority_rows_after_recheck": "13",
             "frontier_now_rows_after_recheck": "1",
-            "first_frontier_dependency_after_recheck": "SCD24_WRITE_AUTHORIZATION",
-            "first_frontier_artifact_after_recheck": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+            "first_frontier_dependency_after_recheck": "SCD24_LEAKAGE_AUDIT",
+            "first_frontier_artifact_after_recheck": "leakage_audit_evidence_v10.csv",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
             "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
@@ -1587,8 +1613,8 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
 def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv").open()))
     assert len(rows) == 18
-    assert all(row["v41_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION" for row in rows)
-    assert all(row["v41_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1" for row in rows)
+    assert all(row["v41_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT" for row in rows)
+    assert all(row["v41_frontier_artifact"] == "leakage_audit_evidence_v10.csv" for row in rows)
     assert all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
     assert all(row["v26_evidence_input_present"] == "true" for row in rows)
     assert all(row["v26_accepted_for_promotion_review"] == "true" for row in rows)

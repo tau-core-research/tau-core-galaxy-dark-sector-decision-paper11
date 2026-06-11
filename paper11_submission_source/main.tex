@@ -164,9 +164,9 @@ imports zero observed numeric rows, so scoring remains blocked pending source
 import and leakage audit.
 
 The v09 source-import and leakage audit evaluates the v08 placeholders. It
-finds source import pending for all declared scoring rows, no leakage-audit
-passes, and zero activated rows. This is a scoring gate result only: it does
-not import data, compute scores, or compare model families.
+now finds source-side values present but leakage review pending. No
+leakage-audit row passes and zero rows are activated. This is a scoring gate
+result only: it does not compute scores or compare model families.
 
 The v10 source-import contract defines the required provenance, source-route,
 observed-input, and leakage-evidence fields for each declared scoring row. The
@@ -176,10 +176,11 @@ The v11 source-import value ledger instantiates those fields row by row. It
 contains placeholders only: no source route, observed numeric value, or leakage
 evidence has been filled.
 
-The v12 real-value import gate defines the external input file required for a
-future source import. In the present package that file is absent, so the gate
-imports zero numeric rows, passes zero value gates, and activates no scoring
-rows.
+The v12 real-value import gate defines the external input file required for
+source import. In the present package the authorized writer has populated that
+file from the active v15 raw SPARC-like input. The gate imports 450 numeric
+rows for the eighteen frozen galaxies and marks the value gate ready for
+leakage review, but it activates no scoring rows.
 
 The v13 scoring-activation gate combines row-level source/leakage status with
 global formula, parameter-count, control-runner, and threshold prerequisites.
@@ -191,16 +192,18 @@ real-value input file. It is template material only, not observed data, and it
 does not change the blocked scoring status.
 
 The v15 raw-source adapter declares the machine-readable route from a
-SPARC-like raw input table into the v12 real-value input shape. The raw input
-file is not present in this package, so no target input file is written.
+SPARC-like raw input table into the v12 real-value input shape. The active v56
+writer provides 450 raw MassModels rows for review. The adapter itself still
+writes no v12 target file.
 
 The v16 write-authorization gate separates raw-source validation from writing
-the real v12 input file. In the current package write authorization is blocked,
-so no real source-import target is produced.
+the real v12 input file. In the current package v57 supplies explicit write
+authorization, so v16 reports the write path ready while still allowing no
+scoring.
 
-The v17 authorized writer path is implemented but remains blocked by the same
-authorization and raw-input gates. It writes zero rows and leaves the v12 target
-input absent.
+The v17 authorized writer writes the v12 target input from the active v15 raw
+input after v57 authorization. It writes 450 rows and still does not pass
+leakage audit, activate rows, or score model families.
 
 The v18 raw-input template supplies the CSV shape for a future SPARC-like raw
 source file. It is template material only and is not used as observed data.
@@ -355,10 +358,11 @@ provenance rows into
 rerunning the source-side gates, v22, v23, and v20 are ready, and the scoring
 unblock frontier moves to raw source input. The v56 active raw SPARC-like input
 writer writes 450 MassModels rows for the eighteen frozen galaxies into
-\path{data/input/source_import_raw_sparc_like_v15.csv}. The current frontier is
-now explicit v12 write authorization,
-\path{PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1}. Endpoint scoring remains
-disabled.
+\path{data/input/source_import_raw_sparc_like_v15.csv}. The v57 active
+write-authorization artifact permits the v17 writer to populate
+\path{data/input/source_import_real_values_v12.csv}. The current frontier is
+now leakage audit evidence, \path{leakage_audit_evidence_v10.csv}. Endpoint
+scoring remains disabled.
 
 \section{Claim Boundary}
 

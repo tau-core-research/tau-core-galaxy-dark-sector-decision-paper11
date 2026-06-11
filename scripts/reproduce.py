@@ -31,6 +31,7 @@ def main() -> None:
     run(["python", "scripts/build_source_import_raw_template.py"])
     run(["python", "scripts/run_active_v15_raw_sparc_like_input_writer.py"])
     run(["python", "scripts/run_source_import_raw_adapter.py"])
+    run(["python", "scripts/run_active_v12_real_values_write_authorization.py"])
     run(["python", "scripts/run_source_import_write_authorization.py"])
     run(["python", "scripts/run_source_import_authorized_writer.py"])
     run(["python", "scripts/run_source_import_real_values_gate.py"])
