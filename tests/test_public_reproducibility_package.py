@@ -70,6 +70,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_scoring_unblock_priority_recheck_v41.md",
         "docs/post_writer_frontier_evidence_acceptance_recheck_v42.md",
         "docs/post_writer_frontier_work_order_recheck_v43.md",
+        "docs/frontier_provenance_evidence_intake_contract_v44.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -164,6 +165,9 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv",
         "data/derived/post_writer_frontier_work_order_recheck_v43.csv",
         "data/derived/post_writer_frontier_work_order_recheck_summary_v43.csv",
+        "data/derived/frontier_provenance_evidence_intake_contract_v44.csv",
+        "data/derived/frontier_provenance_evidence_intake_checklist_v44.csv",
+        "data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -202,6 +206,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_scoring_unblock_priority_recheck.py",
         "scripts/run_post_writer_frontier_evidence_acceptance_recheck.py",
         "scripts/run_post_writer_frontier_work_order_recheck.py",
+        "scripts/build_frontier_provenance_evidence_intake_contract.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1510,6 +1515,52 @@ def test_v43_post_writer_frontier_work_order_recheck_blocks_evidence_write() -> 
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_FRONTIER_WORK_ORDER_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_frontier_work_order_recheck_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v44_frontier_provenance_evidence_intake_contract_is_not_evidence() -> None:
+    rules = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_intake_contract_v44.csv").open()))
+    checklist = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_intake_checklist_v44.csv").open()))
+    required_fields = {
+        "galaxy_id",
+        "catalog",
+        "table_or_file",
+        "version_or_date",
+        "row_id",
+        "sha256_or_external_accession",
+        "source_route",
+        "leakage_evidence_id",
+        "provenance_evidence_status",
+    }
+    assert len(rules) == 9
+    assert {row["field_name"] for row in rules} == required_fields
+    assert all(row["target_evidence_file"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rules)
+    assert all(row["required_before_promotion"] == "true" for row in rules)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rules)
+    assert any("uses_rotation_residual_or_family_score" in row["reject_if"] for row in rules)
+
+    assert len(checklist) == 18
+    assert all(row["work_order_recheck_source"] == "data/derived/post_writer_frontier_work_order_recheck_v43.csv" for row in checklist)
+    assert all(row["manual_collection_status"] == "READY_FOR_REVIEWED_SOURCE_COLLECTION" for row in checklist)
+    assert all(row["may_copy_template_to_evidence_input"] == "true" for row in checklist)
+    assert all(row["may_mark_complete_without_review"] == "false" for row in checklist)
+    assert all(row["may_promote_after_contract_only"] == "false" for row in checklist)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in checklist)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_PROVENANCE_EVIDENCE_INTAKE_CONTRACT_V44",
+            "target_evidence_file": "data/input/source_import_provenance_evidence_v21.csv",
+            "review_rule_rows": "9",
+            "row_checklist_rows": "18",
+            "manual_collection_ready_rows": "18",
+            "evidence_rows_created_by_contract": "0",
+            "promotion_allowed_by_contract_only": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_EVIDENCE_INTAKE_CONTRACT_READY_NOT_EVIDENCE",
+            "claim_boundary": "frontier_evidence_intake_contract_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

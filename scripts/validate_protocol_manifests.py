@@ -1331,6 +1331,63 @@ def validate_post_writer_frontier_work_order_recheck_v43() -> None:
     )
 
 
+def validate_frontier_provenance_evidence_intake_contract_v44() -> None:
+    rules = read_csv(ROOT / "data/derived/frontier_provenance_evidence_intake_contract_v44.csv")
+    checklist = read_csv(ROOT / "data/derived/frontier_provenance_evidence_intake_checklist_v44.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv")
+    required_fields = {
+        "galaxy_id",
+        "catalog",
+        "table_or_file",
+        "version_or_date",
+        "row_id",
+        "sha256_or_external_accession",
+        "source_route",
+        "leakage_evidence_id",
+        "provenance_evidence_status",
+    }
+    require(len(rules) == 9, "v44 must define nine review rules")
+    require({row["field_name"] for row in rules} == required_fields, "v44 review fields mismatch")
+    require(
+        all(row["target_evidence_file"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rules),
+        "v44 rules must target the frontier evidence file",
+    )
+    require(all(row["required_before_promotion"] == "true" for row in rules), "v44 rules must be required")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rules), "v44 rules cannot allow scoring")
+    require(
+        any("uses_rotation_residual_or_family_score" in row["reject_if"] for row in rules),
+        "v44 must reject endpoint-score leakage routes",
+    )
+    require(len(checklist) == 18, "v44 checklist must cover eighteen rows")
+    require(
+        all(row["work_order_recheck_source"] == "data/derived/post_writer_frontier_work_order_recheck_v43.csv" for row in checklist),
+        "v44 checklist must cite v43 work orders",
+    )
+    require(
+        all(row["manual_collection_status"] == "READY_FOR_REVIEWED_SOURCE_COLLECTION" for row in checklist),
+        "v44 checklist must be ready for reviewed collection",
+    )
+    require(all(row["may_copy_template_to_evidence_input"] == "true" for row in checklist), "v44 may allow template copying")
+    require(all(row["may_mark_complete_without_review"] == "false" for row in checklist), "v44 cannot allow unreviewed completion")
+    require(all(row["may_promote_after_contract_only"] == "false" for row in checklist), "v44 cannot promote by contract alone")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in checklist), "v44 checklist cannot allow scoring")
+    require(len(summary) == 1, "v44 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_PROVENANCE_EVIDENCE_INTAKE_CONTRACT_V44", "v44 summary id mismatch")
+    require(row["target_evidence_file"] == "data/input/source_import_provenance_evidence_v21.csv", "v44 target mismatch")
+    require(row["review_rule_rows"] == "9", "v44 must summarize nine review rules")
+    require(row["row_checklist_rows"] == "18", "v44 must summarize eighteen checklist rows")
+    require(row["manual_collection_ready_rows"] == "18", "v44 must ready eighteen manual collection rows")
+    require(row["evidence_rows_created_by_contract"] == "0", "v44 must create zero evidence rows")
+    require(row["promotion_allowed_by_contract_only"] == "false", "v44 cannot allow promotion by contract alone")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v44 summary must forbid scoring")
+    require(row["overall_status"] == "FRONTIER_EVIDENCE_INTAKE_CONTRACT_READY_NOT_EVIDENCE", "v44 summary status mismatch")
+    require(
+        row["claim_boundary"] == "frontier_evidence_intake_contract_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v44 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1389,6 +1446,7 @@ def main() -> None:
     validate_post_writer_scoring_unblock_priority_recheck_v41()
     validate_post_writer_frontier_evidence_acceptance_recheck_v42()
     validate_post_writer_frontier_work_order_recheck_v43()
+    validate_frontier_provenance_evidence_intake_contract_v44()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

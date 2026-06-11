@@ -151,6 +151,9 @@ data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv
 data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv
 data/derived/post_writer_frontier_work_order_recheck_v43.csv
 data/derived/post_writer_frontier_work_order_recheck_summary_v43.csv
+data/derived/frontier_provenance_evidence_intake_contract_v44.csv
+data/derived/frontier_provenance_evidence_intake_checklist_v44.csv
+data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -223,6 +226,7 @@ docs/post_writer_scoring_dependency_closure_recheck_v40.md
 docs/post_writer_scoring_unblock_priority_recheck_v41.md
 docs/post_writer_frontier_evidence_acceptance_recheck_v42.md
 docs/post_writer_frontier_work_order_recheck_v43.md
+docs/frontier_provenance_evidence_intake_contract_v44.md
 ```
 
 ## Reproduce
@@ -326,4 +330,7 @@ v41 post-writer scoring unblock-priority recheck confirms the first frontier as
 frontier evidence-acceptance recheck keeps all eighteen rows blocked, with zero
 evidence rows present and zero rows accepted for promotion review. The v43
 post-writer frontier work-order recheck keeps all eighteen work orders open,
-with zero closed work orders and zero evidence-write rows.
+with zero closed work orders and zero evidence-write rows. The v44 frontier
+provenance evidence intake contract defines nine review rules and eighteen
+manual collection checklist rows for the missing provenance evidence input,
+while creating zero evidence rows by itself.
