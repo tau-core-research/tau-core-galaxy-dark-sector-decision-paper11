@@ -341,6 +341,14 @@ v51 artifacts with a fillable authorization template for the next human review
 decision. It remains review-only and does not create v21 evidence or allow
 scoring.
 
+The v53 completed authorization response intake accepts all eighteen rows for
+later ingestion, with v21 copy and provenance-complete authorization set to
+true while endpoint scoring remains false. The v54 authorized provenance
+evidence payload converts that authorization into an eighteen-row
+\texttt{PROVENANCE\_EVIDENCE\_COMPLETE} payload under \texttt{data/derived/};
+it is ready for a separate active v21 write gate but is not yet active source
+input.
+
 \section{Claim Boundary}
 
 This paper does not claim:

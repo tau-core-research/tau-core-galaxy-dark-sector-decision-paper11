@@ -79,6 +79,8 @@ def test_required_files_exist() -> None:
         "docs/frontier_external_hash_recompute_audit_v50.md",
         "docs/post_hash_frontier_review_promotion_recheck_v51.md",
         "docs/post_hash_review_promotion_package_v52.md",
+        "docs/post_hash_review_promotion_response_intake_v53.md",
+        "docs/authorized_provenance_evidence_payload_v54.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -213,6 +215,15 @@ def test_required_files_exist() -> None:
         "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/post_hash_frontier_review_promotion_recheck_v51.csv",
         "review_packages/frontier_post_hash_review_promotion_v51_review_package/data/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
         "review_packages/frontier_post_hash_review_promotion_v51_review_package/templates/frontier_review_promotion_authorization_TEMPLATE.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response.zip",
+        "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response/frontier_post_hash_review_promotion_v51_authorization_response.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response/frontier_post_hash_review_promotion_v51_completed_summary.csv",
+        "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response/frontier_post_hash_review_promotion_v51_review_notes.md",
+        "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response/frontier_post_hash_review_promotion_v51_validation_log.txt",
+        "data/derived/post_hash_review_promotion_response_intake_v53.csv",
+        "data/derived/post_hash_review_promotion_response_intake_summary_v53.csv",
+        "data/derived/authorized_provenance_evidence_payload_v54.csv",
+        "data/derived/authorized_provenance_evidence_payload_summary_v54.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -260,6 +271,8 @@ def test_required_files_exist() -> None:
         "scripts/run_frontier_external_hash_recompute_audit.py",
         "scripts/run_post_hash_frontier_review_promotion_recheck.py",
         "scripts/build_post_hash_review_promotion_package.py",
+        "scripts/ingest_post_hash_review_promotion_response.py",
+        "scripts/build_authorized_provenance_evidence_payload.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1937,6 +1950,79 @@ def test_v52_post_hash_review_promotion_package_is_review_only() -> None:
     with zipfile.ZipFile(zip_path) as archive:
         names = set(archive.namelist())
     assert {f"frontier_post_hash_review_promotion_v51_review_package/{rel}" for rel in required}.issubset(names)
+
+
+def test_v53_post_hash_review_promotion_response_intake_accepts_authorization() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_hash_review_promotion_response_intake_v53.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/post_hash_review_promotion_response_intake_summary_v53.csv").open()))
+    response_dir = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response"
+    response_zip = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response.zip"
+    required = {
+        "frontier_post_hash_review_promotion_v51_authorization_response.csv",
+        "frontier_post_hash_review_promotion_v51_completed_summary.csv",
+        "frontier_post_hash_review_promotion_v51_review_notes.md",
+        "frontier_post_hash_review_promotion_v51_validation_log.txt",
+    }
+    assert response_zip.exists()
+    assert response_dir.exists()
+    for rel in required:
+        assert (response_dir / rel).exists(), rel
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    assert required.issubset(names)
+    assert len(rows) == 18
+    assert all(row["primary_table1_hash_recomputed_matched"] == "true" for row in rows)
+    assert all(row["reviewer_promotion_decision"] == "PROMOTE_TO_COMPLETE_V21_EVIDENCE" for row in rows)
+    assert all(row["may_copy_to_v21_after_authorization"] == "true" for row in rows)
+    assert all(row["may_mark_provenance_complete_after_authorization"] == "true" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert summary == [
+        {
+            "summary_id": "POST_HASH_REVIEW_PROMOTION_RESPONSE_INTAKE_V53",
+            "response_zip": "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response.zip",
+            "response_files_present": "4",
+            "review_rows": "18",
+            "promote_to_complete_v21_evidence_rows": "18",
+            "copy_to_v21_authorized_rows": "18",
+            "provenance_complete_authorized_rows": "18",
+            "primary_hash_matched_rows": "18",
+            "source_decision": "AUTHORIZE_PROMOTION_FOR_LATER_INGESTION_GATE_ONLY",
+            "v21_evidence_rows_created_by_response": "0",
+            "provenance_complete_rows_marked_by_response": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_HASH_REVIEW_PROMOTION_AUTHORIZATION_ACCEPTED_FOR_INGESTION",
+            "claim_boundary": "post_hash_review_promotion_response_intake_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v54_authorized_provenance_evidence_payload_is_ready_not_active_input() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/authorized_provenance_evidence_payload_v54.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/authorized_provenance_evidence_payload_summary_v54.csv").open()))
+    assert len(rows) == 18
+    assert all(row["catalog"] == "SPARC" for row in rows)
+    assert all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in rows)
+    assert all(row["provenance_evidence_status"] == "PROVENANCE_EVIDENCE_COMPLETE" for row in rows)
+    assert all(row["payload_write_status"] == "READY_FOR_SEPARATE_ACTIVE_V21_WRITE_GATE" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert not (ROOT / "data/input/source_import_provenance_evidence_v21.csv").exists()
+
+    assert summary == [
+        {
+            "summary_id": "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_V54",
+            "payload_rows": "18",
+            "complete_provenance_payload_rows": "18",
+            "ready_for_active_v21_write_rows": "18",
+            "active_v21_target": "data/input/source_import_provenance_evidence_v21.csv",
+            "active_v21_target_present": "false",
+            "active_v21_rows_written_by_this_step": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_READY_NOT_ACTIVE_INPUT",
+            "next_required_action": "run_separate_active_v21_write_gate_then_recompute_source_import_provenance_gates",
+            "claim_boundary": "authorized_provenance_evidence_payload_only_no_active_input_no_scores_no_dark_sector_verdict",
+        }
+    ]
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

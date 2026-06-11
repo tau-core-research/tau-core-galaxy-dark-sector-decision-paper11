@@ -1,0 +1,43 @@
+Validation log: Frontier post-hash review promotion v51
+
+Input package:
+frontier_post_hash_review_promotion_v51_review_package.zip
+
+Package access:
+PASS - ZIP was present and readable.
+
+Instruction boundary:
+PASS - Package is review-only and not itself active v21 evidence input.
+
+v48 review intake:
+PASS - 18 review rows had route and pre-score checks accepted as draft-only, with no endpoint scoring.
+
+v49 promotion gate:
+PASS - promotion was blocked before external hash recomputation and explicit authorization.
+
+v50 external hash audit:
+PASS - primary SPARC Table1 hash recomputed and matched.
+
+v51 post-hash recheck:
+PASS - 18/18 review rows have primary_table1_hash_recomputed_matched=true.
+
+Authorization response:
+PASS - 18/18 rows marked PROMOTE_TO_COMPLETE_V21_EVIDENCE.
+
+Copy authorization:
+PASS - may_copy_to_v21_after_authorization=true for all 18 rows.
+
+Complete-status authorization:
+PASS - may_mark_provenance_complete_after_authorization=true for all 18 rows.
+
+Endpoint scoring boundary:
+PASS - endpoint_scoring_allowed=false for all 18 rows.
+
+In-place import:
+PASS - no v21 evidence input was created by this package.
+
+Decision:
+AUTHORIZE_PROMOTION_FOR_LATER_INGESTION_GATE_ONLY
+
+Completion status:
+PASS

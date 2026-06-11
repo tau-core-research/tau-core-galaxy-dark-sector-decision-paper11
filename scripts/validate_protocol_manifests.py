@@ -1780,6 +1780,88 @@ def validate_post_hash_review_promotion_package_v52() -> None:
     require(zipped_required.issubset(names), "v52 zip missing required package files")
 
 
+def validate_post_hash_review_promotion_response_intake_v53() -> None:
+    rows = read_csv(ROOT / "data/derived/post_hash_review_promotion_response_intake_v53.csv")
+    summary = read_csv(ROOT / "data/derived/post_hash_review_promotion_response_intake_summary_v53.csv")
+    response_dir = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response"
+    response_zip = ROOT / "review_packages/frontier_post_hash_review_promotion_v51_completed_review_response.zip"
+    required = {
+        "frontier_post_hash_review_promotion_v51_authorization_response.csv",
+        "frontier_post_hash_review_promotion_v51_completed_summary.csv",
+        "frontier_post_hash_review_promotion_v51_review_notes.md",
+        "frontier_post_hash_review_promotion_v51_validation_log.txt",
+    }
+    require(response_zip.exists(), "v53 response zip must exist")
+    require(response_dir.exists(), "v53 extracted response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v53 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v53 response zip missing required files")
+    require(len(rows) == 18, "v53 response must cover eighteen rows")
+    require(all(row["primary_table1_hash_recomputed_matched"] == "true" for row in rows), "v53 must preserve hash support")
+    require(all(row["reviewer_promotion_decision"] == "PROMOTE_TO_COMPLETE_V21_EVIDENCE" for row in rows), "v53 must promote all rows")
+    require(all(row["may_copy_to_v21_after_authorization"] == "true" for row in rows), "v53 must authorize v21 copy")
+    require(
+        all(row["may_mark_provenance_complete_after_authorization"] == "true" for row in rows),
+        "v53 must authorize provenance completion",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v53 cannot allow scoring")
+    require(len(summary) == 1, "v53 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_HASH_REVIEW_PROMOTION_RESPONSE_INTAKE_V53", "v53 summary id mismatch")
+    require(row["response_files_present"] == "4", "v53 must record four response files")
+    require(row["review_rows"] == "18", "v53 must summarize eighteen rows")
+    require(row["promote_to_complete_v21_evidence_rows"] == "18", "v53 must promote eighteen rows")
+    require(row["copy_to_v21_authorized_rows"] == "18", "v53 must authorize eighteen copy rows")
+    require(row["provenance_complete_authorized_rows"] == "18", "v53 must authorize eighteen complete rows")
+    require(row["primary_hash_matched_rows"] == "18", "v53 must preserve eighteen hash matches")
+    require(row["source_decision"] == "AUTHORIZE_PROMOTION_FOR_LATER_INGESTION_GATE_ONLY", "v53 source decision mismatch")
+    require(row["v21_evidence_rows_created_by_response"] == "0", "v53 response itself cannot create v21 rows")
+    require(row["provenance_complete_rows_marked_by_response"] == "0", "v53 response itself cannot mark complete")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v53 summary must forbid scoring")
+    require(
+        row["overall_status"] == "POST_HASH_REVIEW_PROMOTION_AUTHORIZATION_ACCEPTED_FOR_INGESTION",
+        "v53 status mismatch",
+    )
+    require(
+        row["claim_boundary"] == "post_hash_review_promotion_response_intake_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        "v53 claim boundary mismatch",
+    )
+
+
+def validate_authorized_provenance_evidence_payload_v54() -> None:
+    rows = read_csv(ROOT / "data/derived/authorized_provenance_evidence_payload_v54.csv")
+    summary = read_csv(ROOT / "data/derived/authorized_provenance_evidence_payload_summary_v54.csv")
+    require(len(rows) == 18, "v54 payload must cover eighteen rows")
+    require(all(row["catalog"] == "SPARC" for row in rows), "v54 payload must use SPARC")
+    require(all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in rows), "v54 payload must use SPARC Table1")
+    require(
+        all(row["provenance_evidence_status"] == "PROVENANCE_EVIDENCE_COMPLETE" for row in rows),
+        "v54 payload rows must be complete",
+    )
+    require(
+        all(row["payload_write_status"] == "READY_FOR_SEPARATE_ACTIVE_V21_WRITE_GATE" for row in rows),
+        "v54 rows must be ready for a separate active write gate",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v54 cannot allow scoring")
+    require(len(summary) == 1, "v54 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_V54", "v54 summary id mismatch")
+    require(row["payload_rows"] == "18", "v54 must summarize eighteen rows")
+    require(row["complete_provenance_payload_rows"] == "18", "v54 must have eighteen complete payload rows")
+    require(row["ready_for_active_v21_write_rows"] == "18", "v54 must have eighteen ready rows")
+    require(row["active_v21_target"] == "data/input/source_import_provenance_evidence_v21.csv", "v54 target mismatch")
+    require(row["active_v21_target_present"] == "false", "v54 must not create active target")
+    require(row["active_v21_rows_written_by_this_step"] == "0", "v54 must write zero active rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v54 summary must forbid scoring")
+    require(row["overall_status"] == "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_READY_NOT_ACTIVE_INPUT", "v54 status mismatch")
+    require(
+        row["claim_boundary"] == "authorized_provenance_evidence_payload_only_no_active_input_no_scores_no_dark_sector_verdict",
+        "v54 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1847,6 +1929,8 @@ def main() -> None:
     validate_frontier_external_hash_recompute_audit_v50()
     validate_post_hash_frontier_review_promotion_recheck_v51()
     validate_post_hash_review_promotion_package_v52()
+    validate_post_hash_review_promotion_response_intake_v53()
+    validate_authorized_provenance_evidence_payload_v54()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

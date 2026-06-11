@@ -175,6 +175,12 @@ data/derived/post_hash_frontier_review_promotion_recheck_v51.csv
 data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv
 review_packages/frontier_post_hash_review_promotion_v51_review_package/
 review_packages/frontier_post_hash_review_promotion_v51_review_package.zip
+review_packages/frontier_post_hash_review_promotion_v51_completed_review_response/
+review_packages/frontier_post_hash_review_promotion_v51_completed_review_response.zip
+data/derived/post_hash_review_promotion_response_intake_v53.csv
+data/derived/post_hash_review_promotion_response_intake_summary_v53.csv
+data/derived/authorized_provenance_evidence_payload_v54.csv
+data/derived/authorized_provenance_evidence_payload_summary_v54.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -256,6 +262,8 @@ docs/frontier_review_promotion_gate_v49.md
 docs/frontier_external_hash_recompute_audit_v50.md
 docs/post_hash_frontier_review_promotion_recheck_v51.md
 docs/post_hash_review_promotion_package_v52.md
+docs/post_hash_review_promotion_response_intake_v53.md
+docs/authorized_provenance_evidence_payload_v54.md
 ```
 
 ## Reproduce
@@ -384,4 +392,10 @@ promotion authorization: all eighteen rows have primary hash support, but zero
 rows may write v21 evidence or activate scoring. The v52 post-hash review
 promotion package bundles the v46, v48, v49, v50, and v51 artifacts plus a
 fillable authorization template for the next human review decision; it remains
-review-only and does not create v21 evidence or allow scoring.
+review-only and does not create v21 evidence or allow scoring. The v53 completed
+authorization response intake accepts all eighteen rows for later ingestion,
+with v21 copy and provenance-complete authorization set to true while endpoint
+scoring remains false. The v54 authorized provenance evidence payload converts
+that authorization into an eighteen-row `PROVENANCE_EVIDENCE_COMPLETE` payload
+under `data/derived/`; it is ready for a separate active v21 write gate but is
+not yet active source input.
