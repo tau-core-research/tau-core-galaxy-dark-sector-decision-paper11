@@ -1,0 +1,40 @@
+Validation log: Leakage prescore artifact candidate v67 review package
+
+Input package:
+leakage_prescore_artifact_candidate_v67_review_package(1).zip
+
+Package access:
+PASS - ZIP was present and readable.
+
+Instruction boundary:
+PASS - Package is candidate-review only, not leakage evidence, no activation, no endpoint scoring.
+
+Candidate row count:
+PASS - leakage_prescore_artifact_candidate_ledger_v67.csv contains 72 rows.
+
+Galaxy/check structure:
+PASS - 18 galaxies x 4 required artifact families.
+
+Coverage summary:
+PASS - candidate summary reports 36 full candidate rows and 36 partial candidate rows.
+
+Full candidate acceptance:
+PASS - 36 full candidate rows accepted as prescore artifact candidates for a later ingestion gate only.
+
+Partial candidate boundary:
+PASS - 36 partial candidate rows remain blocked and review-required.
+
+Promotion authorization:
+PASS - accepted full candidates may be considered by a later ingestion gate, but no leakage evidence rows are created by this package.
+
+Activation authorization:
+PASS - completed response authorizes 0 activation rows.
+
+Endpoint scoring boundary:
+PASS - endpoint_scoring_allowed=false for all 72 response rows.
+
+Decision:
+ACCEPT_FULL_CANDIDATES_FOR_LATER_INGESTION_GATE_KEEP_PARTIAL_BLOCKED
+
+Completion status:
+PASS_CANDIDATE_ONLY_PARTIAL_BLOCKED

@@ -107,6 +107,10 @@ data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv
 data/derived/leakage_prescore_artifact_candidate_summary_v67.csv
 review_packages/leakage_prescore_artifact_candidate_v67_review_package/
 review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip
+review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/
+review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip
+data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv
+data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -269,6 +273,7 @@ docs/leakage_prescore_artifact_request_review_package_v65.md
 docs/leakage_prescore_artifact_request_review_intake_v66.md
 docs/leakage_prescore_artifact_candidate_ledger_v67.md
 docs/leakage_prescore_artifact_candidate_review_package_v68.md
+docs/leakage_prescore_artifact_candidate_review_intake_v69.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -454,3 +459,8 @@ identified, while morphology-label and benchmark-policy candidates remain
 partial; all rows still require review before leakage evidence can be created.
 The v68 candidate review package turns those candidates into a fillable review
 handoff; it remains review-only and creates zero leakage-evidence rows.
+The v69 intake records the completed candidate review response: 36 full
+source-route and observed-input candidates are accepted only for a later
+leakage-evidence ingestion gate, while 36 partial morphology-label and
+benchmark-policy candidates remain blocked. It creates zero active leakage
+evidence rows, zero activation rows, and zero endpoint scoring rows.

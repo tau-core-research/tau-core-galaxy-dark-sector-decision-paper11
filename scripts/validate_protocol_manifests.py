@@ -953,6 +953,77 @@ def validate_leakage_prescore_artifact_candidate_review_package_v68() -> None:
     require(zipped_required.issubset(names), "v68 zip missing required package files")
 
 
+def validate_leakage_prescore_artifact_candidate_review_intake_v69() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv")
+    response_dir = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip"
+    required = {
+        "leakage_prescore_artifact_candidate_v67_review_response.csv",
+        "leakage_prescore_artifact_candidate_v67_review_completed_summary.csv",
+        "leakage_prescore_artifact_candidate_v67_review_notes.md",
+        "leakage_prescore_artifact_candidate_v67_review_validation_log.txt",
+    }
+    require(response_zip.exists(), "v69 completed review response zip must exist")
+    require(response_dir.exists(), "v69 completed review response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v69 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v69 response zip missing required files")
+    require(len(rows) == 72, "v69 intake must cover 72 candidate rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v69 intake must cover eighteen galaxies")
+    accepted = [
+        row
+        for row in rows
+        if row["leakage_evidence_candidate_status"] == "CANDIDATE_FOR_LATER_LEAKAGE_EVIDENCE_INGESTION"
+    ]
+    blocked = [
+        row
+        for row in rows
+        if row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_PARTIAL_REVIEW_REQUIRED"
+    ]
+    require(len(accepted) == 36, "v69 must accept exactly 36 full candidates")
+    require(len(blocked) == 36, "v69 must keep exactly 36 partial candidates blocked")
+    require(
+        {row["evidence_id"] for row in accepted} == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS"},
+        "v69 accepted candidates must be source-route or observed-input rows",
+    )
+    require(
+        {row["evidence_id"] for row in blocked} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v69 blocked candidates must be partial morphology-label or benchmark-policy rows",
+    )
+    require(
+        all(row["intake_decision"] == "ACCEPT_AS_PRESCORE_CANDIDATE_FOR_LATER_LEAKAGE_EVIDENCE_GATE_NOT_EVIDENCE" for row in accepted),
+        "v69 accepted rows must stay candidate-only",
+    )
+    require(
+        all(row["intake_decision"] == "BLOCKED_PARTIAL_CANDIDATE_REVIEW_INCOMPLETE_OR_UNSAFE" for row in blocked),
+        "v69 partial rows must remain blocked",
+    )
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v69 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v69 cannot allow scoring")
+    require(len(summary) == 1, "v69 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_CANDIDATE_REVIEW_INTAKE_V69", "v69 summary id mismatch")
+    require(row["response_files_present"] == "4", "v69 must record four response files")
+    require(row["intake_rows"] == "72", "v69 summary must record 72 rows")
+    require(row["accepted_candidate_rows"] == "36", "v69 summary must record 36 accepted candidates")
+    require(row["blocked_partial_rows"] == "36", "v69 summary must record 36 blocked partial candidates")
+    require(row["candidate_rows_for_later_leakage_evidence"] == "36", "v69 must expose 36 later-ingestion candidates")
+    require(row["leakage_evidence_rows_created"] == "0", "v69 cannot create leakage evidence")
+    require(row["activation_rows_authorized"] == "0", "v69 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v69 summary must forbid scoring")
+    require(
+        row["overall_status"] == "PRESCORE_CANDIDATE_REVIEW_PARTIAL_ACCEPTANCE_NEEDS_LEAKAGE_EVIDENCE_GATE",
+        "v69 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "leakage_evidence_candidate_ingestion_gate_for_36_accepted_candidates",
+        "v69 next artifact mismatch",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2550,6 +2621,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_request_review_intake_v66()
     validate_leakage_prescore_artifact_candidate_ledger_v67()
     validate_leakage_prescore_artifact_candidate_review_package_v68()
+    validate_leakage_prescore_artifact_candidate_review_intake_v69()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

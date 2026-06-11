@@ -48,6 +48,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_request_review_intake_v66.md",
         "docs/leakage_prescore_artifact_candidate_ledger_v67.md",
         "docs/leakage_prescore_artifact_candidate_review_package_v68.md",
+        "docs/leakage_prescore_artifact_candidate_review_intake_v69.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -185,6 +186,13 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_prescore_artifact_candidate_v67_review_package/data/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
         "review_packages/leakage_prescore_artifact_candidate_v67_review_package/templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv",
         "review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip",
+        "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip",
+        "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/leakage_prescore_artifact_candidate_v67_review_response.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/leakage_prescore_artifact_candidate_v67_review_completed_summary.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/leakage_prescore_artifact_candidate_v67_review_notes.md",
+        "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/leakage_prescore_artifact_candidate_v67_review_validation_log.txt",
+        "data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv",
+        "data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -332,6 +340,7 @@ def test_required_files_exist() -> None:
         "scripts/run_leakage_prescore_artifact_request_review_intake.py",
         "scripts/build_leakage_prescore_artifact_candidate_ledger.py",
         "scripts/build_leakage_prescore_artifact_candidate_review_package.py",
+        "scripts/run_leakage_prescore_artifact_candidate_review_intake.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1181,6 +1190,63 @@ def test_v68_leakage_prescore_artifact_candidate_review_package_is_not_evidence(
     with zipfile.ZipFile(zip_path) as archive:
         names = set(archive.namelist())
     assert {f"leakage_prescore_artifact_candidate_v67_review_package/{rel}" for rel in required}.issubset(names)
+
+
+def test_v69_leakage_prescore_artifact_candidate_review_intake_accepts_only_full_candidates_not_evidence() -> None:
+    response_root = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response"
+    response_zip = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip"
+    required = {
+        "leakage_prescore_artifact_candidate_v67_review_response.csv",
+        "leakage_prescore_artifact_candidate_v67_review_completed_summary.csv",
+        "leakage_prescore_artifact_candidate_v67_review_notes.md",
+        "leakage_prescore_artifact_candidate_v67_review_validation_log.txt",
+    }
+    assert response_root.exists()
+    assert response_zip.exists()
+    for rel in required:
+        assert (response_root / rel).exists(), rel
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    assert required.issubset(names)
+
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv").open()))
+    summary = list(
+        csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv").open())
+    )
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    accepted = [
+        row
+        for row in rows
+        if row["leakage_evidence_candidate_status"] == "CANDIDATE_FOR_LATER_LEAKAGE_EVIDENCE_INGESTION"
+    ]
+    blocked = [row for row in rows if row["leakage_evidence_candidate_status"] == "NOT_CANDIDATE_PARTIAL_REVIEW_REQUIRED"]
+    assert len(accepted) == 36
+    assert len(blocked) == 36
+    assert {row["evidence_id"] for row in accepted} == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS"}
+    assert {row["evidence_id"] for row in blocked} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"}
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_CANDIDATE_REVIEW_INTAKE_V69",
+            "response_zip": "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip",
+            "response_files_present": "4",
+            "intake_rows": "72",
+            "galaxies_covered": "18",
+            "evidence_checks_per_galaxy": "4",
+            "completed_response_present": "true",
+            "accepted_candidate_rows": "36",
+            "blocked_partial_rows": "36",
+            "candidate_rows_for_later_leakage_evidence": "36",
+            "leakage_evidence_rows_created": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PRESCORE_CANDIDATE_REVIEW_PARTIAL_ACCEPTANCE_NEEDS_LEAKAGE_EVIDENCE_GATE",
+            "next_required_artifact": "leakage_evidence_candidate_ingestion_gate_for_36_accepted_candidates",
+            "claim_boundary": "leakage_prescore_artifact_candidate_review_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
 
 
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
