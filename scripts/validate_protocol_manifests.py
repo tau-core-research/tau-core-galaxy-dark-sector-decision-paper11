@@ -1001,6 +1001,30 @@ def validate_post_writer_raw_import_recheck_v34() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v34 summary must forbid scoring")
 
 
+def validate_post_writer_raw_adapter_recheck_v35() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_raw_adapter_recheck_v35.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_raw_adapter_recheck_summary_v35.csv")
+    require(len(rows) == 1, "v35 raw adapter recheck must have one row")
+    row = rows[0]
+    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v35 raw input must remain missing")
+    require(row["raw_rows_seen"] == "0", "v35 must see zero raw rows")
+    require(row["valid_raw_rows"] == "0", "v35 must validate zero raw rows")
+    require(row["raw_rows_imported_after_recheck"] == "0", "v35 must inherit zero raw imports")
+    require("post_writer_raw_import_not_allowed" in row["adapter_recheck_blockers"], "v35 must block on v34 raw import")
+    require("raw_adapter_input_not_present" in row["adapter_recheck_blockers"], "v35 must block on missing raw input")
+    require(row["target_file_written_after_recheck"] == "false", "v35 must not write v12 target")
+    require(row["real_values_input_may_exist_after_recheck"] == "false", "v35 cannot allow real values input")
+    require(row["endpoint_scoring_allowed"] == "false", "v35 row cannot allow scoring")
+    require(len(summary) == 1, "v35 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED", "v35 summary must block")
+    require(summary_row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v35 summary raw input mismatch")
+    require(summary_row["valid_raw_rows"] == "0", "v35 summary must validate zero rows")
+    require(summary_row["target_file_written_after_recheck"] == "false", "v35 summary must not write target")
+    require(summary_row["real_values_input_may_exist_after_recheck"] == "false", "v35 summary cannot allow real values")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v35 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1050,6 +1074,7 @@ def main() -> None:
     validate_post_writer_evidence_gate_recheck_v32()
     validate_post_writer_provenance_promotion_recheck_v33()
     validate_post_writer_raw_import_recheck_v34()
+    validate_post_writer_raw_adapter_recheck_v35()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

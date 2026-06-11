@@ -61,6 +61,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_evidence_gate_recheck_v32.md",
         "docs/post_writer_provenance_promotion_recheck_v33.md",
         "docs/post_writer_raw_import_recheck_v34.md",
+        "docs/post_writer_raw_adapter_recheck_v35.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -137,6 +138,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv",
         "data/derived/post_writer_raw_import_recheck_v34.csv",
         "data/derived/post_writer_raw_import_recheck_summary_v34.csv",
+        "data/derived/post_writer_raw_adapter_recheck_v35.csv",
+        "data/derived/post_writer_raw_adapter_recheck_summary_v35.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -166,6 +169,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_evidence_gate_recheck.py",
         "scripts/run_post_writer_provenance_promotion_recheck.py",
         "scripts/run_post_writer_raw_import_recheck.py",
+        "scripts/run_post_writer_raw_adapter_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1225,6 +1229,40 @@ def test_v34_post_writer_raw_import_recheck_blocks_all_rows() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_RAW_IMPORT_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_raw_import_recheck_only_no_raw_import_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_raw_adapter_recheck_v35.csv").open()))
+    assert rows == [
+        {
+            "recheck_id": "PWRAR35_POST_WRITER_RAW_ADAPTER_RECHECK",
+            "raw_import_recheck_source": "data/derived/post_writer_raw_import_recheck_summary_v34.csv",
+            "raw_adapter_source": "data/derived/source_import_raw_adapter_gate_v15.csv",
+            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "raw_rows_seen": "0",
+            "valid_raw_rows": "0",
+            "raw_rows_imported_after_recheck": "0",
+            "adapter_recheck_blockers": "post_writer_raw_import_not_allowed;zero_raw_rows_imported_after_recheck;raw_adapter_input_not_present",
+            "target_file_written_after_recheck": "false",
+            "real_values_input_may_exist_after_recheck": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "post_writer_raw_adapter_recheck_only_no_v12_write_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_raw_adapter_recheck_summary_v35.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_RAW_ADAPTER_RECHECK_V35",
+            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "valid_raw_rows": "0",
+            "target_file_written_after_recheck": "false",
+            "real_values_input_may_exist_after_recheck": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED",
+            "claim_boundary": "post_writer_raw_adapter_recheck_only_no_v12_write_no_scores_no_dark_sector_verdict",
         }
     ]
 

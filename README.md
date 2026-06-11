@@ -133,6 +133,8 @@ data/derived/post_writer_provenance_promotion_recheck_v33.csv
 data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv
 data/derived/post_writer_raw_import_recheck_v34.csv
 data/derived/post_writer_raw_import_recheck_summary_v34.csv
+data/derived/post_writer_raw_adapter_recheck_v35.csv
+data/derived/post_writer_raw_adapter_recheck_summary_v35.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -196,6 +198,7 @@ docs/frontier_post_writer_evidence_absence_audit_v31.md
 docs/post_writer_evidence_gate_recheck_v32.md
 docs/post_writer_provenance_promotion_recheck_v33.md
 docs/post_writer_raw_import_recheck_v34.md
+docs/post_writer_raw_adapter_recheck_v35.md
 ```
 
 ## Reproduce
@@ -282,4 +285,6 @@ cannot be promoted. The v32 post-writer evidence gate recheck confirms that
 provenance promotion remains blocked after the writer path. The v33 post-writer
 provenance promotion recheck keeps all eighteen promotion rows blocked, with
 zero rows promoted. The v34 post-writer raw import recheck keeps all eighteen
-raw-import rows blocked, with zero raw rows imported.
+raw-import rows blocked, with zero raw rows imported. The v35 post-writer raw
+adapter recheck keeps the v12 real-values target unwritten because the raw input
+is still missing.
