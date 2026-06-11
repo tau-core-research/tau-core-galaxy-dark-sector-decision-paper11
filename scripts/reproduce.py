@@ -49,6 +49,7 @@ def main() -> None:
     run(["python", "scripts/run_leakage_prescore_artifact_candidate_review_intake.py"])
     run(["python", "scripts/run_leakage_evidence_candidate_ingestion_gate.py"])
     run(["python", "scripts/build_leakage_partial_candidate_sufficiency_review_package.py"])
+    run(["python", "scripts/run_leakage_partial_candidate_sufficiency_review_intake.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])
     run(["python", "scripts/build_scoring_dependency_closure.py"])

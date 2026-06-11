@@ -51,6 +51,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_candidate_review_intake_v69.md",
         "docs/leakage_evidence_candidate_ingestion_gate_v70.md",
         "docs/leakage_partial_candidate_sufficiency_review_package_v71.md",
+        "docs/leakage_partial_candidate_sufficiency_review_intake_v73.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -211,6 +212,8 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_partial_candidate_sufficiency_v71_review_package/data/leakage_partial_candidate_sufficiency_policy_summary_v71.csv",
         "review_packages/leakage_partial_candidate_sufficiency_v71_review_package/templates/leakage_partial_candidate_sufficiency_v71_review_response_TEMPLATE.csv",
         "review_packages/leakage_partial_candidate_sufficiency_v71_review_package.zip",
+        "data/derived/leakage_partial_candidate_sufficiency_review_intake_v73.csv",
+        "data/derived/leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -363,6 +366,7 @@ def test_required_files_exist() -> None:
         "scripts/run_leakage_prescore_artifact_candidate_review_intake.py",
         "scripts/run_leakage_evidence_candidate_ingestion_gate.py",
         "scripts/build_leakage_partial_candidate_sufficiency_review_package.py",
+        "scripts/run_leakage_partial_candidate_sufficiency_review_intake.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1398,6 +1402,42 @@ def test_v71_partial_candidate_sufficiency_review_package_requires_full_four_com
     assert {f"leakage_partial_candidate_sufficiency_v71_review_package/{rel}" for rel in required}.issubset(names)
 
 
+def test_v73_partial_candidate_sufficiency_review_intake_blocks_absent_response() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_partial_candidate_sufficiency_review_intake_v73.csv").open()))
+    summary = list(
+        csv.DictReader((ROOT / "data/derived/leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv").open())
+    )
+    assert len(rows) == 36
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"}
+    assert all(row["source_mode"] == "template_absent_completed_response" for row in rows)
+    assert all(row["intake_decision"] == "BLOCKED_COMPLETED_V71_SUFFICIENCY_RESPONSE_ABSENT" for row in rows)
+    assert all(row["sufficiency_candidate_status"] == "NOT_ACCEPTED_COMPLETED_RESPONSE_ABSENT" for row in rows)
+    assert all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in rows)
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_PARTIAL_CANDIDATE_SUFFICIENCY_REVIEW_INTAKE_V73",
+            "response_zip": "review_packages/leakage_partial_candidate_sufficiency_v71_completed_review_response.zip",
+            "response_files_present": "0",
+            "intake_rows": "36",
+            "galaxies_covered": "18",
+            "partial_evidence_components": "2",
+            "completed_response_present": "false",
+            "accepted_sufficiency_rows": "0",
+            "blocked_or_missing_rows": "36",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_authorized": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "PARTIAL_SUFFICIENCY_REVIEW_RESPONSE_BLOCKED_OR_ABSENT",
+            "next_required_artifact": "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+            "claim_boundary": "leakage_partial_candidate_sufficiency_review_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
     source_values = list(csv.DictReader((ROOT / "data/derived/source_import_values_v11.csv").open()))
     assert len(source_values) == 18
@@ -1958,6 +1998,7 @@ def test_v72_scoring_frontier_status_targets_completed_v71_response_not_scores()
     assert all(row["leakage_pass_authorized"] == "false" for row in rows)
     assert all(row["activation_rows_authorized"] == "0" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_RESPONSE_BLOCKED_OR_ABSENT"
     assert rows[0]["next_required_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip"
     assert rows[1]["current_status"] == "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE"
     assert rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION"

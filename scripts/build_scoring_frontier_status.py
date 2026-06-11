@@ -26,22 +26,23 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 def frontier_rows() -> list[dict[str, object]]:
     v70 = read_csv(DERIVED / "leakage_evidence_candidate_ingestion_summary_v70.csv")[0]
     v71 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_policy_summary_v71.csv")[0]
+    v73 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv")[0]
     return [
         {
             "frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
             "frontier_rank": 1,
             "frontier_class": "source_blindness_leakage_component_sufficiency",
-            "current_status": v71["overall_status"],
+            "current_status": v73["overall_status"],
             "ready_detail": (
                 f"{v70['galaxies_with_source_and_observed_candidates']} galaxies have source-route and observed-input "
                 "draft candidates"
             ),
             "blocked_detail": (
-                f"{v71['partial_candidate_rows_requiring_review']} morphology-label/benchmark-policy partial rows "
-                "still require completed sufficiency review"
+                f"{v73['blocked_or_missing_rows']} morphology-label/benchmark-policy partial rows "
+                "remain blocked or missing completed sufficiency response"
             ),
             "required_before_scoring": "true",
-            "next_required_artifact": "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+            "next_required_artifact": v73["next_required_artifact"],
             "next_gate_after_artifact": "leakage_evidence_ingestion_gate_recheck_after_v71_response",
             "target_evidence_rows_created": "0",
             "leakage_pass_authorized": "false",
@@ -95,8 +96,8 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "first_frontier_artifact": rows[0]["next_required_artifact"],
             "required_components_for_full_scoring_leakage_pass": 4,
             "partial_candidate_rows_requiring_review": read_csv(
-                DERIVED / "leakage_partial_candidate_sufficiency_policy_summary_v71.csv"
-            )[0]["partial_candidate_rows_requiring_review"],
+                DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv"
+            )[0]["blocked_or_missing_rows"],
             "target_evidence_rows_created": 0,
             "leakage_pass_authorized": 0,
             "activation_rows_authorized": 0,
