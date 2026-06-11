@@ -67,6 +67,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_scoring_activation_recheck_v38.md",
         "docs/post_writer_scoring_preflight_recheck_v39.md",
         "docs/post_writer_scoring_dependency_closure_recheck_v40.md",
+        "docs/post_writer_scoring_unblock_priority_recheck_v41.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -155,6 +156,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv",
         "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv",
         "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv",
+        "data/derived/post_writer_scoring_unblock_priority_recheck_v41.csv",
+        "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -190,6 +193,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_scoring_activation_recheck.py",
         "scripts/run_post_writer_scoring_preflight_recheck.py",
         "scripts/run_post_writer_scoring_dependency_closure_recheck.py",
+        "scripts/run_post_writer_scoring_unblock_priority_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1413,6 +1417,35 @@ def test_v40_post_writer_scoring_dependency_closure_recheck_blocks_scoring() -> 
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_DEPENDENCY_CLOSURE_RECHECK_BLOCKED",
             "claim_boundary": "post_writer_scoring_dependency_closure_recheck_only_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_v41.csv").open()))
+    assert len(rows) == 13
+    assert all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows)
+    assert all("v25_priority_dependency_blocked" in row["priority_recheck_blockers"] for row in rows)
+    assert all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows)
+    assert all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows)
+    assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
+    assert rows[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE"
+    assert rows[0]["frontier_now_after_recheck"] == "true"
+    assert rows[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv"
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_SCORING_UNBLOCK_PRIORITY_RECHECK_V41",
+            "priority_rows_rechecked": "13",
+            "blocked_priority_rows_after_recheck": "13",
+            "frontier_now_rows_after_recheck": "1",
+            "first_frontier_dependency_after_recheck": "SCD24_PROVENANCE_EVIDENCE",
+            "first_frontier_artifact_after_recheck": "data/input/source_import_provenance_evidence_v21.csv",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
+            "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
         }
     ]
 

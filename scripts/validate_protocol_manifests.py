@@ -1198,6 +1198,50 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     )
 
 
+def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_v41.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv")
+    require(len(rows) == 13, "v41 priority recheck must cover thirteen rows")
+    require(all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows), "v41 must inherit zero ready dependencies")
+    require(
+        all("v25_priority_dependency_blocked" in row["priority_recheck_blockers"] for row in rows),
+        "v41 must block on v25 priority dependencies",
+    )
+    require(
+        all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
+        "v41 must block on zero ready dependencies",
+    )
+    require(
+        all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows),
+        "v41 must block on dependency scoring denial",
+    )
+    require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
+    require(rows[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE", "v41 first row must remain provenance evidence")
+    require(rows[0]["frontier_now_after_recheck"] == "true", "v41 first row must be frontier")
+    require(
+        rows[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv",
+        "v41 frontier artifact mismatch",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
+    require(len(summary) == 1, "v41 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_SCORING_UNBLOCK_PRIORITY_RECHECK_V41", "v41 summary id mismatch")
+    require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
+    require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
+    require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
+    require(row["first_frontier_dependency_after_recheck"] == "SCD24_PROVENANCE_EVIDENCE", "v41 frontier dependency mismatch")
+    require(
+        row["first_frontier_artifact_after_recheck"] == "data/input/source_import_provenance_evidence_v21.csv",
+        "v41 frontier artifact mismatch",
+    )
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED", "v41 summary must confirm frontier")
+    require(
+        row["claim_boundary"] == "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
+        "v41 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1253,6 +1297,7 @@ def main() -> None:
     validate_post_writer_scoring_activation_recheck_v38()
     validate_post_writer_scoring_preflight_recheck_v39()
     validate_post_writer_scoring_dependency_closure_recheck_v40()
+    validate_post_writer_scoring_unblock_priority_recheck_v41()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
