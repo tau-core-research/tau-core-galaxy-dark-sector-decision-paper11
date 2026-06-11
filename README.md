@@ -123,6 +123,8 @@ data/derived/frontier_work_order_completion_gate_v28.csv
 data/derived/frontier_work_order_completion_gate_summary_v28.csv
 data/derived/frontier_evidence_write_authorization_v29.csv
 data/derived/frontier_evidence_write_authorization_summary_v29.csv
+data/derived/frontier_authorized_evidence_writer_v30.csv
+data/derived/frontier_authorized_evidence_writer_summary_v30.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -181,6 +183,7 @@ docs/frontier_provenance_evidence_acceptance_v26.md
 docs/frontier_provenance_evidence_work_order_v27.md
 docs/frontier_work_order_completion_gate_v28.md
 docs/frontier_evidence_write_authorization_v29.md
+docs/frontier_authorized_evidence_writer_v30.md
 ```
 
 ## Reproduce
@@ -260,4 +263,5 @@ collection tasks but does not authorize evidence writes or scoring. The v28
 frontier work-order completion gate keeps all eighteen work orders blocked from
 closure; zero work orders are closed. The v29 frontier evidence write
 authorization gate reports `FRONTIER_EVIDENCE_WRITE_BLOCKED`; no target evidence
-input file is written.
+input file is written. The v30 authorized evidence writer is blocked by that
+authorization gate and writes zero rows.

@@ -56,6 +56,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_provenance_evidence_work_order_v27.md",
         "docs/frontier_work_order_completion_gate_v28.md",
         "docs/frontier_evidence_write_authorization_v29.md",
+        "docs/frontier_authorized_evidence_writer_v30.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -122,6 +123,8 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_work_order_completion_gate_summary_v28.csv",
         "data/derived/frontier_evidence_write_authorization_v29.csv",
         "data/derived/frontier_evidence_write_authorization_summary_v29.csv",
+        "data/derived/frontier_authorized_evidence_writer_v30.csv",
+        "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -146,6 +149,7 @@ def test_required_files_exist() -> None:
         "scripts/build_frontier_provenance_evidence_work_order.py",
         "scripts/run_frontier_work_order_completion_gate.py",
         "scripts/run_frontier_evidence_write_authorization.py",
+        "scripts/run_frontier_authorized_evidence_writer.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1056,6 +1060,39 @@ def test_v29_frontier_evidence_write_authorization_blocks_write() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_EVIDENCE_WRITE_BLOCKED",
             "claim_boundary": "frontier_evidence_write_authorization_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v30_frontier_authorized_evidence_writer_writes_zero_rows() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_authorized_evidence_writer_v30.csv").open()))
+    assert rows == [
+        {
+            "writer_id": "FAEW30_AUTHORIZED_FRONTIER_EVIDENCE_WRITER",
+            "authorization_source": "data/derived/frontier_evidence_write_authorization_v29.csv",
+            "target_evidence_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "write_authorized": "false",
+            "target_preexisting": "false",
+            "target_file_written": "false",
+            "rows_written": "0",
+            "writer_status": "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "frontier_authorized_evidence_writer_only_no_evidence_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_authorized_evidence_writer_summary_v30.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_AUTHORIZED_EVIDENCE_WRITER_V30",
+            "writer_status": "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION",
+            "write_authorized": "false",
+            "target_file_written": "false",
+            "rows_written": "0",
+            "target_input_file_present_after_writer": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_AUTHORIZED_EVIDENCE_WRITER_BLOCKED",
+            "claim_boundary": "frontier_authorized_evidence_writer_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

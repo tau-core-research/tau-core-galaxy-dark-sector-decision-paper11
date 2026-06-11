@@ -248,6 +248,10 @@ The v29 frontier evidence-write authorization gate requires closed work orders
 before the evidence input may be written. Since no work order is closed, the
 target evidence file is not written and scoring remains closed.
 
+The v30 authorized evidence writer records the only current writer path for the
+frontier evidence input. Because v29 blocks authorization, it writes zero rows
+and creates no evidence file.
+
 \section{Claim Boundary}
 
 This paper does not claim:
