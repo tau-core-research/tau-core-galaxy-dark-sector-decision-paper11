@@ -49,6 +49,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_candidate_ledger_v67.md",
         "docs/leakage_prescore_artifact_candidate_review_package_v68.md",
         "docs/leakage_prescore_artifact_candidate_review_intake_v69.md",
+        "docs/leakage_evidence_candidate_ingestion_gate_v70.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -193,6 +194,9 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response/leakage_prescore_artifact_candidate_v67_review_validation_log.txt",
         "data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv",
         "data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv",
+        "data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv",
+        "data/derived/leakage_evidence_candidate_ingestion_coverage_v70.csv",
+        "data/derived/leakage_evidence_candidate_ingestion_summary_v70.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -341,6 +345,7 @@ def test_required_files_exist() -> None:
         "scripts/build_leakage_prescore_artifact_candidate_ledger.py",
         "scripts/build_leakage_prescore_artifact_candidate_review_package.py",
         "scripts/run_leakage_prescore_artifact_candidate_review_intake.py",
+        "scripts/run_leakage_evidence_candidate_ingestion_gate.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1245,6 +1250,58 @@ def test_v69_leakage_prescore_artifact_candidate_review_intake_accepts_only_full
             "overall_status": "PRESCORE_CANDIDATE_REVIEW_PARTIAL_ACCEPTANCE_NEEDS_LEAKAGE_EVIDENCE_GATE",
             "next_required_artifact": "leakage_evidence_candidate_ingestion_gate_for_36_accepted_candidates",
             "claim_boundary": "leakage_prescore_artifact_candidate_review_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v70_leakage_evidence_candidate_ingestion_gate_is_partial_not_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/leakage_evidence_candidate_ingestion_coverage_v70.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/leakage_evidence_candidate_ingestion_summary_v70.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    draft = [
+        row
+        for row in rows
+        if row["draft_evidence_candidate_status"] == "DRAFT_CANDIDATE_AVAILABLE_FOR_LATER_LEAKAGE_EVIDENCE_ROW"
+    ]
+    blocked = [row for row in rows if row["draft_evidence_candidate_status"] == "NOT_AVAILABLE_FOR_LEAKAGE_EVIDENCE_ROW"]
+    assert len(draft) == 36
+    assert len(blocked) == 36
+    assert {row["evidence_id"] for row in draft} == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS"}
+    assert {row["evidence_id"] for row in blocked} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"}
+    assert all(row["target_evidence_file_written"] == "false" for row in rows)
+    assert all(row["leakage_pass_authorized"] == "false" for row in rows)
+    assert all(row["activation_rows_authorized"] == "0" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    coverage_by_id = {row["evidence_id"]: row for row in coverage}
+    assert len(coverage) == 4
+    assert coverage_by_id["LEC10_SOURCE_ROUTE"]["draft_available_rows"] == "18"
+    assert coverage_by_id["LEC10_OBSERVED_INPUTS"]["draft_available_rows"] == "18"
+    assert coverage_by_id["LEC10_MORPH_LABELS"]["blocked_rows"] == "18"
+    assert coverage_by_id["LEC10_BENCHMARK_INPUTS"]["blocked_rows"] == "18"
+    assert all(row["target_evidence_rows_created"] == "0" for row in coverage)
+    assert all(row["leakage_pass_rows_authorized"] == "0" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_EVIDENCE_CANDIDATE_INGESTION_GATE_V70",
+            "input_artifact": "data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv",
+            "gate_rows": "72",
+            "galaxies_covered": "18",
+            "draft_evidence_candidate_rows": "36",
+            "blocked_partial_rows": "36",
+            "galaxies_with_source_and_observed_candidates": "18",
+            "galaxies_with_all_four_evidence_candidates": "0",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_rows_authorized": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "LEAKAGE_EVIDENCE_INGESTION_GATE_PARTIAL_READY_STILL_BLOCKED",
+            "next_required_artifact": "partial_candidate_sufficiency_review_or_minimum_leakage_policy_decision",
+            "claim_boundary": "leakage_evidence_candidate_ingestion_gate_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

@@ -1024,6 +1024,59 @@ def validate_leakage_prescore_artifact_candidate_review_intake_v69() -> None:
     )
 
 
+def validate_leakage_evidence_candidate_ingestion_gate_v70() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv")
+    coverage = read_csv(ROOT / "data/derived/leakage_evidence_candidate_ingestion_coverage_v70.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_evidence_candidate_ingestion_summary_v70.csv")
+    require(len(rows) == 72, "v70 ingestion gate must cover 72 candidate rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v70 ingestion gate must cover eighteen galaxies")
+    draft = [
+        row
+        for row in rows
+        if row["draft_evidence_candidate_status"] == "DRAFT_CANDIDATE_AVAILABLE_FOR_LATER_LEAKAGE_EVIDENCE_ROW"
+    ]
+    blocked = [row for row in rows if row["draft_evidence_candidate_status"] == "NOT_AVAILABLE_FOR_LEAKAGE_EVIDENCE_ROW"]
+    require(len(draft) == 36, "v70 must expose exactly 36 draft evidence candidates")
+    require(len(blocked) == 36, "v70 must keep exactly 36 partial rows blocked")
+    require(
+        {row["evidence_id"] for row in draft} == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS"},
+        "v70 draft candidates must only cover source-route and observed-input rows",
+    )
+    require(
+        {row["evidence_id"] for row in blocked} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v70 blocked rows must be morphology-label and benchmark-policy rows",
+    )
+    require(all(row["target_evidence_file_written"] == "false" for row in rows), "v70 cannot write target evidence")
+    require(all(row["leakage_pass_authorized"] == "false" for row in rows), "v70 cannot authorize leakage pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in rows), "v70 cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v70 cannot allow scoring")
+    require(len(coverage) == 4, "v70 coverage must summarize four evidence ids")
+    coverage_by_id = {row["evidence_id"]: row for row in coverage}
+    require(coverage_by_id["LEC10_SOURCE_ROUTE"]["draft_available_rows"] == "18", "v70 source-route coverage mismatch")
+    require(coverage_by_id["LEC10_OBSERVED_INPUTS"]["draft_available_rows"] == "18", "v70 observed-input coverage mismatch")
+    require(coverage_by_id["LEC10_MORPH_LABELS"]["blocked_rows"] == "18", "v70 morphology coverage mismatch")
+    require(coverage_by_id["LEC10_BENCHMARK_INPUTS"]["blocked_rows"] == "18", "v70 benchmark coverage mismatch")
+    require(all(row["target_evidence_rows_created"] == "0" for row in coverage), "v70 coverage cannot create evidence")
+    require(all(row["leakage_pass_rows_authorized"] == "0" for row in coverage), "v70 coverage cannot authorize pass")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v70 coverage cannot allow scoring")
+    require(len(summary) == 1, "v70 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_EVIDENCE_CANDIDATE_INGESTION_GATE_V70", "v70 summary id mismatch")
+    require(row["gate_rows"] == "72", "v70 summary must record 72 rows")
+    require(row["draft_evidence_candidate_rows"] == "36", "v70 summary must record 36 draft rows")
+    require(row["blocked_partial_rows"] == "36", "v70 summary must record 36 blocked rows")
+    require(row["galaxies_with_source_and_observed_candidates"] == "18", "v70 must cover source+observed for 18 galaxies")
+    require(row["galaxies_with_all_four_evidence_candidates"] == "0", "v70 cannot claim full leakage coverage")
+    require(row["target_evidence_rows_created"] == "0", "v70 cannot create target evidence")
+    require(row["leakage_pass_rows_authorized"] == "0", "v70 cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v70 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v70 summary must forbid scoring")
+    require(
+        row["overall_status"] == "LEAKAGE_EVIDENCE_INGESTION_GATE_PARTIAL_READY_STILL_BLOCKED",
+        "v70 status mismatch",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2622,6 +2675,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_candidate_ledger_v67()
     validate_leakage_prescore_artifact_candidate_review_package_v68()
     validate_leakage_prescore_artifact_candidate_review_intake_v69()
+    validate_leakage_evidence_candidate_ingestion_gate_v70()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

@@ -111,6 +111,9 @@ review_packages/leakage_prescore_artifact_candidate_v67_completed_review_respons
 review_packages/leakage_prescore_artifact_candidate_v67_completed_review_response.zip
 data/derived/leakage_prescore_artifact_candidate_review_intake_v69.csv
 data/derived/leakage_prescore_artifact_candidate_review_intake_summary_v69.csv
+data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv
+data/derived/leakage_evidence_candidate_ingestion_coverage_v70.csv
+data/derived/leakage_evidence_candidate_ingestion_summary_v70.csv
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -274,6 +277,7 @@ docs/leakage_prescore_artifact_request_review_intake_v66.md
 docs/leakage_prescore_artifact_candidate_ledger_v67.md
 docs/leakage_prescore_artifact_candidate_review_package_v68.md
 docs/leakage_prescore_artifact_candidate_review_intake_v69.md
+docs/leakage_evidence_candidate_ingestion_gate_v70.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -464,3 +468,8 @@ source-route and observed-input candidates are accepted only for a later
 leakage-evidence ingestion gate, while 36 partial morphology-label and
 benchmark-policy candidates remain blocked. It creates zero active leakage
 evidence rows, zero activation rows, and zero endpoint scoring rows.
+The v70 ingestion gate converts those 36 accepted rows into draft evidence
+candidates only. Since the morphology-label and benchmark-policy evidence
+components remain blocked, no full four-component leakage pass is available;
+the gate writes zero target evidence rows and still permits zero endpoint
+scoring rows.
