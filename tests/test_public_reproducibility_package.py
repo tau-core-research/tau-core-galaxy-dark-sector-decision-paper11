@@ -26,6 +26,9 @@ def test_required_files_exist() -> None:
         "docs/scoring_formula_freeze_v02.md",
         "docs/family_parameter_count_freeze_v03.md",
         "docs/control_implementation_freeze_v03.md",
+        "docs/source_field_completeness_v04.md",
+        "docs/family_formula_registry_v04.md",
+        "docs/control_runner_contract_v04.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -126,6 +129,32 @@ def test_v03_family_budget_and_controls_are_frozen_not_run() -> None:
     }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in control_rows)
     assert all("IMPLEMENTATION_POLICY_FROZEN_NOT_RUN" in row["current_status"] for row in control_rows)
+
+
+def test_v04_contracts_are_declared_not_implemented() -> None:
+    source_rows = list(csv.DictReader((ROOT / "data/source_manifest/source_field_completeness_v04.csv").open()))
+    assert len(source_rows) >= 6
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in source_rows)
+    assert all("PENDING" in row["activation_status"] for row in source_rows)
+    assert any(row["required_field"] == "source_packet_leakage_audit" for row in source_rows)
+
+    registry_rows = list(csv.DictReader((ROOT / "data/source_manifest/family_formula_registry_v04.csv").open()))
+    assert {"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in registry_rows})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in registry_rows)
+    assert all("PENDING" in row["numeric_count_status"] for row in registry_rows)
+    assert any("Response_tau formula" in row["claim_boundary"] for row in registry_rows)
+
+    runner_rows = list(csv.DictReader((ROOT / "data/source_manifest/control_runner_contract_v04.csv").open()))
+    assert {row["control_id"] for row in runner_rows} == {
+        "CIF03_SHUFFLE",
+        "CIF03_WRONG_FAMILY",
+        "CIF03_NULL_SOURCE",
+        "CIF03_LEAKAGE",
+        "CIF03_RADIAL",
+        "CIF03_PARITY",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in runner_rows)
+    assert all(row["execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED" for row in runner_rows)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

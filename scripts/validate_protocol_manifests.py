@@ -189,6 +189,55 @@ def validate_control_implementation_v03() -> None:
         require(row["verdict_effect"], f"{row['control_id']} missing verdict effect")
 
 
+def validate_source_field_completeness_v04() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/source_field_completeness_v04.csv")
+    fields = {row["required_field"] for row in rows}
+    required = {
+        "declared_radial_grid",
+        "observed_velocity_and_uncertainty",
+        "baryonic_rotation_components",
+        "source_morphology_readout_label",
+        "source_packet_leakage_audit",
+    }
+    require(required.issubset(fields), f"v04 source completeness missing fields: {required - fields}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v04 source fields must disable endpoint scoring")
+        require("PENDING" in row["activation_status"], "v04 source fields must remain activation-pending")
+        require(row["forbidden_inputs"], f"{row['field_id']} missing forbidden inputs")
+
+
+def validate_family_formula_registry_v04() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/family_formula_registry_v04.csv")
+    families = {row["family_id"] for row in rows}
+    require({"M0", "M1", "M2", "ALL"}.issubset(families), "v04 registry missing model families")
+    slots = {row["formula_slot"] for row in rows}
+    require("tau_response_formula" in slots, "v04 registry missing Tau response slot")
+    require("numeric_parameter_count_table" in slots, "v04 registry missing numeric parameter-count table")
+    for row in rows:
+        require(row["required_before_numeric_count"] == "true", f"{row['registry_id']} must precede numeric count")
+        require(row["endpoint_scoring_allowed"] == "false", "v04 registry must disable endpoint scoring")
+        require("PENDING" in row["numeric_count_status"], "v04 registry must remain pending")
+
+
+def validate_control_runner_contract_v04() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/control_runner_contract_v04.csv")
+    ids = {row["control_id"] for row in rows}
+    required = {
+        "CIF03_SHUFFLE",
+        "CIF03_WRONG_FAMILY",
+        "CIF03_NULL_SOURCE",
+        "CIF03_LEAKAGE",
+        "CIF03_RADIAL",
+        "CIF03_PARITY",
+    }
+    require(ids == required, f"bad v04 runner control ids: {ids}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v04 control runners must disable endpoint scoring")
+        require(row["execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED", "v04 runners must be unimplemented")
+        require(row["input_contract"], f"{row['runner_id']} missing input contract")
+        require(row["output_contract"], f"{row['runner_id']} missing output contract")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -203,6 +252,9 @@ def main() -> None:
     validate_scoring_formula_v02()
     validate_family_parameter_count_v03()
     validate_control_implementation_v03()
+    validate_source_field_completeness_v04()
+    validate_family_formula_registry_v04()
+    validate_control_runner_contract_v04()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
