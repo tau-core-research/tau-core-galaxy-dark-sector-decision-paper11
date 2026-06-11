@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DERIVED = ROOT / "data/derived"
+
+
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
+def frontier_rows() -> list[dict[str, object]]:
+    v70 = read_csv(DERIVED / "leakage_evidence_candidate_ingestion_summary_v70.csv")[0]
+    v71 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_policy_summary_v71.csv")[0]
+    return [
+        {
+            "frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
+            "frontier_rank": 1,
+            "frontier_class": "source_blindness_leakage_component_sufficiency",
+            "current_status": v71["overall_status"],
+            "ready_detail": (
+                f"{v70['galaxies_with_source_and_observed_candidates']} galaxies have source-route and observed-input "
+                "draft candidates"
+            ),
+            "blocked_detail": (
+                f"{v71['partial_candidate_rows_requiring_review']} morphology-label/benchmark-policy partial rows "
+                "still require completed sufficiency review"
+            ),
+            "required_before_scoring": "true",
+            "next_required_artifact": "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+            "next_gate_after_artifact": "leakage_evidence_ingestion_gate_recheck_after_v71_response",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_authorized": "false",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
+        },
+        {
+            "frontier_id": "SFS72_FULL_LEAKAGE_EVIDENCE_INGESTION",
+            "frontier_rank": 2,
+            "frontier_class": "full_four_component_leakage_evidence_ingestion",
+            "current_status": "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE",
+            "ready_detail": "source-route and observed-input draft candidates are available for all 18 galaxies",
+            "blocked_detail": "full leakage evidence cannot be created until the two partial components pass sufficiency review",
+            "required_before_scoring": "true",
+            "next_required_artifact": "accepted_v71_sufficiency_response_then_full_leakage_evidence_ingestion_gate",
+            "next_gate_after_artifact": "source_import_leakage_audit_recheck",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_authorized": "false",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
+        },
+        {
+            "frontier_id": "SFS72_SCORING_ACTIVATION_RECHECK",
+            "frontier_rank": 3,
+            "frontier_class": "row_activation_after_leakage_pass",
+            "current_status": "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION",
+            "ready_detail": "real source values are already present but validation remains leakage-gated",
+            "blocked_detail": "row activation is forbidden until leakage pass exists for every scoring row",
+            "required_before_scoring": "true",
+            "next_required_artifact": "scoring_activation_gate_recheck_after_leakage_pass",
+            "next_gate_after_artifact": "scoring_dependency_closure_recheck",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_authorized": "false",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
+        },
+    ]
+
+
+def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    blocked = [row for row in rows if row["endpoint_scoring_allowed"] == "false"]
+    return [
+        {
+            "summary_id": "SCORING_FRONTIER_STATUS_V72",
+            "frontier_rows": len(rows),
+            "blocked_frontier_rows": len(blocked),
+            "first_frontier_id": rows[0]["frontier_id"],
+            "first_frontier_artifact": rows[0]["next_required_artifact"],
+            "required_components_for_full_scoring_leakage_pass": 4,
+            "partial_candidate_rows_requiring_review": read_csv(
+                DERIVED / "leakage_partial_candidate_sufficiency_policy_summary_v71.csv"
+            )[0]["partial_candidate_rows_requiring_review"],
+            "target_evidence_rows_created": 0,
+            "leakage_pass_authorized": 0,
+            "activation_rows_authorized": 0,
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE",
+            "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def main() -> None:
+    rows = frontier_rows()
+    write_csv(
+        DERIVED / "scoring_frontier_status_v72.csv",
+        rows,
+        [
+            "frontier_id",
+            "frontier_rank",
+            "frontier_class",
+            "current_status",
+            "ready_detail",
+            "blocked_detail",
+            "required_before_scoring",
+            "next_required_artifact",
+            "next_gate_after_artifact",
+            "target_evidence_rows_created",
+            "leakage_pass_authorized",
+            "activation_rows_authorized",
+            "endpoint_scoring_allowed",
+            "claim_boundary",
+        ],
+    )
+    write_csv(
+        DERIVED / "scoring_frontier_status_summary_v72.csv",
+        summary(rows),
+        [
+            "summary_id",
+            "frontier_rows",
+            "blocked_frontier_rows",
+            "first_frontier_id",
+            "first_frontier_artifact",
+            "required_components_for_full_scoring_leakage_pass",
+            "partial_candidate_rows_requiring_review",
+            "target_evidence_rows_created",
+            "leakage_pass_authorized",
+            "activation_rows_authorized",
+            "endpoint_scoring_allowed_anywhere",
+            "overall_status",
+            "claim_boundary",
+        ],
+    )
+    print("PAPER11_SCORING_FRONTIER_STATUS_V72_BUILT")
+
+
+if __name__ == "__main__":
+    main()

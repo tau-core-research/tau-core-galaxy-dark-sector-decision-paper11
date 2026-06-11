@@ -68,6 +68,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_promotion_gate_v23.md",
         "docs/scoring_dependency_closure_v24.md",
         "docs/scoring_unblock_priority_v25.md",
+        "docs/scoring_frontier_status_v72.md",
         "docs/frontier_provenance_evidence_acceptance_v26.md",
         "docs/frontier_provenance_evidence_work_order_v27.md",
         "docs/frontier_work_order_completion_gate_v28.md",
@@ -254,6 +255,8 @@ def test_required_files_exist() -> None:
         "data/derived/scoring_dependency_closure_summary_v24.csv",
         "data/derived/scoring_unblock_priority_v25.csv",
         "data/derived/scoring_unblock_priority_summary_v25.csv",
+        "data/derived/scoring_frontier_status_v72.csv",
+        "data/derived/scoring_frontier_status_summary_v72.csv",
         "data/derived/frontier_provenance_evidence_acceptance_v26.csv",
         "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv",
         "data/derived/frontier_provenance_evidence_work_order_v27.csv",
@@ -377,6 +380,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_provenance_promotion_gate.py",
         "scripts/build_scoring_dependency_closure.py",
         "scripts/build_scoring_unblock_priority.py",
+        "scripts/build_scoring_frontier_status.py",
         "scripts/build_frontier_provenance_evidence_acceptance.py",
         "scripts/build_frontier_provenance_evidence_work_order.py",
         "scripts/run_frontier_work_order_completion_gate.py",
@@ -1936,6 +1940,42 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v72_scoring_frontier_status_targets_completed_v71_response_not_scores() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/scoring_frontier_status_v72.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/scoring_frontier_status_summary_v72.csv").open()))
+    assert len(rows) == 3
+    assert [row["frontier_id"] for row in rows] == [
+        "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
+        "SFS72_FULL_LEAKAGE_EVIDENCE_INGESTION",
+        "SFS72_SCORING_ACTIVATION_RECHECK",
+    ]
+    assert all(row["required_before_scoring"] == "true" for row in rows)
+    assert all(row["target_evidence_rows_created"] == "0" for row in rows)
+    assert all(row["leakage_pass_authorized"] == "false" for row in rows)
+    assert all(row["activation_rows_authorized"] == "0" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert rows[0]["next_required_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip"
+    assert rows[1]["current_status"] == "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE"
+    assert rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION"
+    assert summary == [
+        {
+            "summary_id": "SCORING_FRONTIER_STATUS_V72",
+            "frontier_rows": "3",
+            "blocked_frontier_rows": "3",
+            "first_frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
+            "first_frontier_artifact": "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+            "required_components_for_full_scoring_leakage_pass": "4",
+            "partial_candidate_rows_requiring_review": "36",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_authorized": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE",
+            "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

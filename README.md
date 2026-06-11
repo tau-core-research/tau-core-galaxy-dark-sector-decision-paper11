@@ -162,6 +162,8 @@ data/derived/scoring_dependency_closure_v24.csv
 data/derived/scoring_dependency_closure_summary_v24.csv
 data/derived/scoring_unblock_priority_v25.csv
 data/derived/scoring_unblock_priority_summary_v25.csv
+data/derived/scoring_frontier_status_v72.csv
+data/derived/scoring_frontier_status_summary_v72.csv
 data/derived/frontier_provenance_evidence_acceptance_v26.csv
 data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv
 data/derived/frontier_provenance_evidence_work_order_v27.csv
@@ -300,6 +302,7 @@ docs/source_import_provenance_evidence_gate_v22.md
 docs/source_import_provenance_promotion_gate_v23.md
 docs/scoring_dependency_closure_v24.md
 docs/scoring_unblock_priority_v25.md
+docs/scoring_frontier_status_v72.md
 docs/frontier_provenance_evidence_acceptance_v26.md
 docs/frontier_provenance_evidence_work_order_v27.md
 docs/frontier_work_order_completion_gate_v28.md
@@ -483,3 +486,7 @@ all four leakage components are required before endpoint scoring. It packages
 the 36 blocked morphology-label and benchmark-policy rows for separate
 sufficiency review, while creating zero evidence rows, zero activation rows,
 and zero endpoint scores.
+The v72 scoring-frontier status refines the next scoring blocker after v71:
+the first required artifact is now the completed v71 sufficiency response,
+followed by full leakage-evidence ingestion and only then activation recheck.
+It remains status-only and non-scoring.

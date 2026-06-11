@@ -1616,6 +1616,58 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
+def validate_scoring_frontier_status_v72() -> None:
+    rows = read_csv(ROOT / "data/derived/scoring_frontier_status_v72.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_frontier_status_summary_v72.csv")
+    require(len(rows) == 3, "v72 frontier status must have three rows")
+    require(
+        [row["frontier_id"] for row in rows]
+        == [
+            "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
+            "SFS72_FULL_LEAKAGE_EVIDENCE_INGESTION",
+            "SFS72_SCORING_ACTIVATION_RECHECK",
+        ],
+        "v72 frontier order mismatch",
+    )
+    require(all(row["required_before_scoring"] == "true" for row in rows), "v72 rows must be required before scoring")
+    require(all(row["target_evidence_rows_created"] == "0" for row in rows), "v72 cannot create evidence")
+    require(all(row["leakage_pass_authorized"] == "false" for row in rows), "v72 cannot authorize leakage pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in rows), "v72 cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v72 cannot allow scoring")
+    require(
+        rows[0]["next_required_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+        "v72 first frontier artifact mismatch",
+    )
+    require(
+        rows[1]["current_status"] == "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE",
+        "v72 second frontier must wait on rank 1",
+    )
+    require(
+        rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION",
+        "v72 third frontier must wait on full leakage ingestion",
+    )
+    require(len(summary) == 1, "v72 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "SCORING_FRONTIER_STATUS_V72", "v72 summary id mismatch")
+    require(row["frontier_rows"] == "3", "v72 summary must record three frontier rows")
+    require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
+    require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
+    require(
+        row["first_frontier_artifact"] == "completed_leakage_partial_candidate_sufficiency_v71_review_response.zip",
+        "v72 first frontier artifact summary mismatch",
+    )
+    require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
+    require(row["partial_candidate_rows_requiring_review"] == "36", "v72 must carry 36-row partial blocker")
+    require(row["target_evidence_rows_created"] == "0", "v72 summary cannot create evidence")
+    require(row["leakage_pass_authorized"] == "0", "v72 summary cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
+    require(
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_COMPLETED_V71_SUFFICIENCY_RESPONSE",
+        "v72 status mismatch",
+    )
+
+
 def validate_frontier_provenance_evidence_acceptance_v26() -> None:
     rows = read_csv(ROOT / "data/derived/frontier_provenance_evidence_acceptance_v26.csv")
     summary = read_csv(ROOT / "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv")
@@ -2787,6 +2839,7 @@ def main() -> None:
     validate_source_import_provenance_promotion_gate_v23()
     validate_scoring_dependency_closure_v24()
     validate_scoring_unblock_priority_v25()
+    validate_scoring_frontier_status_v72()
     validate_frontier_provenance_evidence_acceptance_v26()
     validate_frontier_provenance_evidence_work_order_v27()
     validate_frontier_work_order_completion_gate_v28()
