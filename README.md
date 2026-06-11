@@ -168,6 +168,11 @@ data/derived/frontier_provenance_review_response_intake_v48.csv
 data/derived/frontier_provenance_review_response_intake_summary_v48.csv
 data/derived/frontier_review_promotion_gate_v49.csv
 data/derived/frontier_review_promotion_gate_summary_v49.csv
+data/external/sparc_hash_audit_v50/
+data/derived/frontier_external_hash_recompute_audit_v50.csv
+data/derived/frontier_external_hash_recompute_audit_summary_v50.csv
+data/derived/post_hash_frontier_review_promotion_recheck_v51.csv
+data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -246,6 +251,8 @@ docs/frontier_provenance_evidence_payload_draft_v46.md
 docs/frontier_provenance_review_package_v47.md
 docs/frontier_provenance_review_response_intake_v48.md
 docs/frontier_review_promotion_gate_v49.md
+docs/frontier_external_hash_recompute_audit_v50.md
+docs/post_hash_frontier_review_promotion_recheck_v51.md
 ```
 
 ## Reproduce
@@ -367,4 +374,8 @@ evidence rows created. The v49 frontier review-promotion gate checks whether
 that response can promote rows into active v21 provenance evidence. It blocks
 all eighteen rows because the external SPARC hash was not independently
 recomputed and the response did not explicitly authorize v21 copy or provenance
-completion.
+completion. The v50 external hash recompute audit closes the hash caveat by
+matching both cached SPARC source files against the v45 ledger. The v51
+post-hash promotion recheck then narrows the remaining block to explicit review
+promotion authorization: all eighteen rows have primary hash support, but zero
+rows may write v21 evidence or activate scoring.

@@ -76,6 +76,8 @@ def test_required_files_exist() -> None:
         "docs/frontier_provenance_review_package_v47.md",
         "docs/frontier_provenance_review_response_intake_v48.md",
         "docs/frontier_review_promotion_gate_v49.md",
+        "docs/frontier_external_hash_recompute_audit_v50.md",
+        "docs/post_hash_frontier_review_promotion_recheck_v51.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -195,6 +197,12 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_provenance_review_response_intake_summary_v48.csv",
         "data/derived/frontier_review_promotion_gate_v49.csv",
         "data/derived/frontier_review_promotion_gate_summary_v49.csv",
+        "data/external/sparc_hash_audit_v50/SPARC_Lelli2016c.mrt",
+        "data/external/sparc_hash_audit_v50/MassModels_Lelli2016c.mrt",
+        "data/derived/frontier_external_hash_recompute_audit_v50.csv",
+        "data/derived/frontier_external_hash_recompute_audit_summary_v50.csv",
+        "data/derived/post_hash_frontier_review_promotion_recheck_v51.csv",
+        "data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -239,6 +247,8 @@ def test_required_files_exist() -> None:
         "scripts/build_frontier_provenance_review_package.py",
         "scripts/ingest_frontier_provenance_review_response.py",
         "scripts/run_frontier_review_promotion_gate.py",
+        "scripts/run_frontier_external_hash_recompute_audit.py",
+        "scripts/run_post_hash_frontier_review_promotion_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1806,6 +1816,72 @@ def test_v49_frontier_review_promotion_gate_blocks_caveated_review_response() ->
             "overall_status": "FRONTIER_REVIEW_PROMOTION_BLOCKED",
             "next_required_action": "independently_recompute_external_sparc_hash_and_issue_explicit_promotion_authorization",
             "claim_boundary": "frontier_review_promotion_gate_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v50_frontier_external_hash_recompute_audit_matches_sparc_sources() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_external_hash_recompute_audit_v50.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_external_hash_recompute_audit_summary_v50.csv").open()))
+    expected = {
+        "FPSC45_SPARC_TABLE1": ("SPARC_Lelli2016c.mrt", "5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"),
+        "FPSC45_SPARC_MASSMODELS": ("MassModels_Lelli2016c.mrt", "9108994b12cc401b94a1768beca61c53ec354779385c9c9cc571049f3043244c"),
+    }
+    assert len(rows) == 2
+    by_id = {row["source_candidate_id"]: row for row in rows}
+    assert set(by_id) == set(expected)
+    for source_id, (table, digest) in expected.items():
+        row = by_id[source_id]
+        assert row["table_or_file"] == table
+        assert row["expected_sha256"] == digest
+        assert row["recomputed_sha256"] == digest
+        assert int(row["file_size_bytes"]) > 0
+        assert row["source_access_status"] == "LIVE_DOWNLOAD_CACHED_FOR_HASH_AUDIT"
+        assert row["hash_recompute_status"] == "EXTERNAL_HASH_RECOMPUTED_MATCHED"
+        assert row["may_promote_v21_by_hash_alone"] == "false"
+        assert row["endpoint_scoring_allowed"] == "false"
+
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_EXTERNAL_HASH_RECOMPUTE_AUDIT_V50",
+            "source_candidate_rows": "2",
+            "hash_recomputed_matched_rows": "2",
+            "primary_table1_hash_recomputed_matched": "true",
+            "v21_evidence_rows_created": "0",
+            "provenance_complete_rows_marked": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_EXTERNAL_HASH_RECOMPUTED_MATCHED",
+            "claim_boundary": "frontier_external_hash_recompute_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v51_post_hash_frontier_review_promotion_recheck_still_requires_authorization() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_hash_frontier_review_promotion_recheck_v51.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv").open()))
+    assert len(rows) == 18
+    assert all(row["primary_table1_hash_recomputed_matched"] == "true" for row in rows)
+    assert all(row["v48_reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows)
+    assert all("primary_table1_hash_not_recomputed_matched" not in row["promotion_recheck_blockers"] for row in rows)
+    assert all("explicit_promotion_authorization_missing" in row["promotion_recheck_blockers"] for row in rows)
+    assert all(row["promotion_recheck_decision"] == "DO_NOT_PROMOTE_TO_V21_EVIDENCE" for row in rows)
+    assert all(row["may_write_v21_evidence_input_after_recheck"] == "false" for row in rows)
+    assert all(row["may_mark_provenance_complete_after_recheck"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert summary == [
+        {
+            "summary_id": "POST_HASH_FRONTIER_REVIEW_PROMOTION_RECHECK_V51",
+            "review_rows": "18",
+            "primary_hash_matched_review_rows": "18",
+            "promotion_allowed_rows_after_hash": "0",
+            "promotion_blocked_rows_after_hash": "18",
+            "v21_evidence_rows_created": "0",
+            "provenance_complete_rows_marked": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_HASH_FRONTIER_REVIEW_PROMOTION_RECHECK_BLOCKED",
+            "next_required_action": "issue_explicit_review_promotion_authorization_for_v21_copy_and_provenance_completion",
+            "claim_boundary": "post_hash_frontier_review_promotion_recheck_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

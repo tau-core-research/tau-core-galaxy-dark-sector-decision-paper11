@@ -1643,6 +1643,87 @@ def validate_frontier_review_promotion_gate_v49() -> None:
     )
 
 
+def validate_frontier_external_hash_recompute_audit_v50() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_external_hash_recompute_audit_v50.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_external_hash_recompute_audit_summary_v50.csv")
+    require(len(rows) == 2, "v50 must audit two SPARC source candidates")
+    expected = {
+        "FPSC45_SPARC_TABLE1": ("SPARC_Lelli2016c.mrt", "5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"),
+        "FPSC45_SPARC_MASSMODELS": ("MassModels_Lelli2016c.mrt", "9108994b12cc401b94a1768beca61c53ec354779385c9c9cc571049f3043244c"),
+    }
+    by_id = {row["source_candidate_id"]: row for row in rows}
+    require(set(by_id) == set(expected), "v50 source ids mismatch")
+    for source_id, (table, digest) in expected.items():
+        row = by_id[source_id]
+        require(row["table_or_file"] == table, f"v50 table mismatch for {source_id}")
+        require(row["expected_sha256"] == digest, f"v50 expected hash mismatch for {source_id}")
+        require(row["recomputed_sha256"] == digest, f"v50 recomputed hash mismatch for {source_id}")
+        require(int(row["file_size_bytes"]) > 0, f"v50 file size missing for {source_id}")
+        require(row["source_access_status"] == "LIVE_DOWNLOAD_CACHED_FOR_HASH_AUDIT", f"v50 access status mismatch for {source_id}")
+        require(row["hash_recompute_status"] == "EXTERNAL_HASH_RECOMPUTED_MATCHED", f"v50 hash not matched for {source_id}")
+        require(row["may_promote_v21_by_hash_alone"] == "false", "v50 hash alone cannot promote v21")
+        require(row["endpoint_scoring_allowed"] == "false", "v50 cannot allow scoring")
+    require(len(summary) == 1, "v50 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_EXTERNAL_HASH_RECOMPUTE_AUDIT_V50", "v50 summary id mismatch")
+    require(row["source_candidate_rows"] == "2", "v50 must summarize two sources")
+    require(row["hash_recomputed_matched_rows"] == "2", "v50 must match both hashes")
+    require(row["primary_table1_hash_recomputed_matched"] == "true", "v50 primary table hash must match")
+    require(row["v21_evidence_rows_created"] == "0", "v50 cannot create v21 evidence")
+    require(row["provenance_complete_rows_marked"] == "0", "v50 cannot mark provenance complete")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v50 summary must forbid scoring")
+    require(row["overall_status"] == "FRONTIER_EXTERNAL_HASH_RECOMPUTED_MATCHED", "v50 status mismatch")
+    require(
+        row["claim_boundary"] == "frontier_external_hash_recompute_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v50 claim boundary mismatch",
+    )
+
+
+def validate_post_hash_frontier_review_promotion_recheck_v51() -> None:
+    rows = read_csv(ROOT / "data/derived/post_hash_frontier_review_promotion_recheck_v51.csv")
+    summary = read_csv(ROOT / "data/derived/post_hash_frontier_review_promotion_recheck_summary_v51.csv")
+    require(len(rows) == 18, "v51 must cover eighteen review rows")
+    require(all(row["primary_table1_hash_recomputed_matched"] == "true" for row in rows), "v51 primary hash must be matched")
+    require(
+        all(row["v48_reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows),
+        "v51 must preserve v48 reviewer decision",
+    )
+    require(
+        all("primary_table1_hash_not_recomputed_matched" not in row["promotion_recheck_blockers"] for row in rows),
+        "v51 must close the hash blocker",
+    )
+    require(
+        all("explicit_promotion_authorization_missing" in row["promotion_recheck_blockers"] for row in rows),
+        "v51 must block on explicit promotion authorization",
+    )
+    require(all(row["promotion_recheck_decision"] == "DO_NOT_PROMOTE_TO_V21_EVIDENCE" for row in rows), "v51 cannot promote")
+    require(all(row["may_write_v21_evidence_input_after_recheck"] == "false" for row in rows), "v51 cannot write v21 evidence")
+    require(
+        all(row["may_mark_provenance_complete_after_recheck"] == "false" for row in rows),
+        "v51 cannot mark provenance complete",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v51 cannot allow scoring")
+    require(len(summary) == 1, "v51 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_HASH_FRONTIER_REVIEW_PROMOTION_RECHECK_V51", "v51 summary id mismatch")
+    require(row["review_rows"] == "18", "v51 must summarize eighteen rows")
+    require(row["primary_hash_matched_review_rows"] == "18", "v51 must match primary hash for all rows")
+    require(row["promotion_allowed_rows_after_hash"] == "0", "v51 cannot allow promotion")
+    require(row["promotion_blocked_rows_after_hash"] == "18", "v51 must keep all rows blocked")
+    require(row["v21_evidence_rows_created"] == "0", "v51 cannot create v21 evidence")
+    require(row["provenance_complete_rows_marked"] == "0", "v51 cannot mark provenance complete")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v51 summary must forbid scoring")
+    require(row["overall_status"] == "POST_HASH_FRONTIER_REVIEW_PROMOTION_RECHECK_BLOCKED", "v51 status mismatch")
+    require(
+        row["next_required_action"] == "issue_explicit_review_promotion_authorization_for_v21_copy_and_provenance_completion",
+        "v51 next action mismatch",
+    )
+    require(
+        row["claim_boundary"] == "post_hash_frontier_review_promotion_recheck_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v51 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1707,6 +1788,8 @@ def main() -> None:
     validate_frontier_provenance_review_package_v47()
     validate_frontier_provenance_review_response_intake_v48()
     validate_frontier_review_promotion_gate_v49()
+    validate_frontier_external_hash_recompute_audit_v50()
+    validate_post_hash_frontier_review_promotion_recheck_v51()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

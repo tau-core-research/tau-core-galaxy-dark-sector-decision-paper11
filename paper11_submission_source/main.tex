@@ -330,6 +330,12 @@ promote rows into active v21 provenance evidence. It blocks all eighteen rows
 because the external SPARC hash was not independently recomputed and the
 response did not explicitly authorize v21 copy or provenance completion.
 
+The v50 external hash recompute audit closes the hash caveat by matching both
+cached SPARC source files against the v45 ledger. The v51 post-hash promotion
+recheck narrows the remaining block to explicit review-promotion authorization:
+all eighteen rows have primary hash support, but zero rows may write v21
+evidence or activate scoring.
+
 \section{Claim Boundary}
 
 This paper does not claim:
