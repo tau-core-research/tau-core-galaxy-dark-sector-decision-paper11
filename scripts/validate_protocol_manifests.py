@@ -1084,6 +1084,45 @@ def validate_post_writer_leakage_audit_recheck_v37() -> None:
     )
 
 
+def validate_post_writer_scoring_activation_recheck_v38() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_scoring_activation_recheck_v38.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_scoring_activation_recheck_summary_v38.csv")
+    require(len(rows) == 18, "v38 activation recheck must cover eighteen rows")
+    require(all(row["v37_leakage_pass_after_recheck"] == "false" for row in rows), "v38 must inherit zero leakage passes")
+    require(
+        all(row["v37_activation_allowed_after_recheck"] == "false" for row in rows),
+        "v38 must inherit zero activation-allowed rows",
+    )
+    require(all(row["v13_activation_decision"] == "DO_NOT_ACTIVATE" for row in rows), "v38 must inherit v13 blocks")
+    require(
+        all("post_writer_leakage_audit_not_passed" in row["activation_recheck_blockers"] for row in rows),
+        "v38 must block on v37 leakage failure",
+    )
+    require(
+        all("post_writer_leakage_recheck_disallows_activation" in row["activation_recheck_blockers"] for row in rows),
+        "v38 must block on v37 activation denial",
+    )
+    require(
+        all("v13_activation_gate_not_passed" in row["activation_recheck_blockers"] for row in rows),
+        "v38 must block on v13 activation gate",
+    )
+    require(all(row["activation_decision_after_recheck"] == "DO_NOT_ACTIVATE" for row in rows), "v38 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v38 rows cannot allow scoring")
+    require(len(summary) == 1, "v38 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_V38", "v38 summary id mismatch")
+    require(row["activation_recheck_rows"] == "18", "v38 must summarize eighteen rows")
+    require(row["rows_activated_after_recheck"] == "0", "v38 must activate zero rows")
+    require(row["row_level_blocked_rows_after_recheck"] == "18", "v38 must block eighteen rows")
+    require(row["global_blockers_after_recheck"] == "4", "v38 must preserve four global blockers")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v38 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_BLOCKED", "v38 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_scoring_activation_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
+        "v38 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1136,6 +1175,7 @@ def main() -> None:
     validate_post_writer_raw_adapter_recheck_v35()
     validate_post_writer_real_values_gate_recheck_v36()
     validate_post_writer_leakage_audit_recheck_v37()
+    validate_post_writer_scoring_activation_recheck_v38()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
