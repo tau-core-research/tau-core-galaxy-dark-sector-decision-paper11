@@ -1218,6 +1218,48 @@ def validate_leakage_partial_candidate_sufficiency_review_intake_v73() -> None:
     )
 
 
+def validate_leakage_partial_candidate_sufficiency_preaudit_v74() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_partial_candidate_sufficiency_preaudit_v74.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv")
+    require(len(rows) == 36, "v74 preaudit must cover 36 partial rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v74 preaudit must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows} == {"LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v74 preaudit must cover only partial components",
+    )
+    require(all(row["artifact_exists"] == "true" for row in rows), "v74 artifacts must exist")
+    require(all(row["row_selector_found"] == "true" for row in rows), "v74 row selectors must resolve")
+    require(all(row["source_side_fields_present"] == "true" for row in rows), "v74 source/policy fields must exist")
+    require(all(row["endpoint_scoring_disabled_in_source"] == "true" for row in rows), "v74 source scoring must be disabled")
+    require(all(row["not_active_or_not_run"] == "true" for row in rows), "v74 rows must be inactive or not run")
+    require(all(row["forbidden_input_guard_present"] == "true" for row in rows), "v74 forbidden guards must exist")
+    require(
+        all(row["preaudit_decision"] == "PREAUDIT_REVIEW_READY_NOT_ACCEPTED" for row in rows),
+        "v74 rows must be review-ready but not accepted",
+    )
+    require(all(row["target_evidence_rows_created"] == "0" for row in rows), "v74 cannot create evidence")
+    require(all(row["leakage_pass_authorized"] == "false" for row in rows), "v74 cannot authorize pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in rows), "v74 cannot activate")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v74 cannot score")
+    require(len(summary) == 1, "v74 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PARTIAL_CANDIDATE_SUFFICIENCY_PREAUDIT_V74", "v74 summary id mismatch")
+    require(row["preaudit_rows"] == "36", "v74 summary must record 36 rows")
+    require(row["galaxies_covered"] == "18", "v74 summary must record eighteen galaxies")
+    require(row["partial_evidence_components"] == "2", "v74 summary must record two components")
+    require(row["preaudit_review_ready_rows"] == "36", "v74 must mark all rows review-ready")
+    require(row["preaudit_blocked_rows"] == "0", "v74 must have zero preaudit-blocked rows")
+    require(row["accepted_sufficiency_rows"] == "0", "v74 cannot accept sufficiency")
+    require(row["target_evidence_rows_created"] == "0", "v74 cannot create evidence")
+    require(row["leakage_pass_authorized"] == "0", "v74 cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v74 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v74 summary must forbid scoring")
+    require(
+        row["overall_status"] == "PARTIAL_SUFFICIENCY_PREAUDIT_REVIEW_READY_NOT_ACCEPTED",
+        "v74 status mismatch",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -1689,6 +1731,10 @@ def validate_scoring_frontier_status_v72() -> None:
     require(
         rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_RESPONSE_BLOCKED_OR_ABSENT",
         "v72 first frontier must reflect absent v73 response",
+    )
+    require(
+        "36 partial rows are preaudit review-ready" in rows[0]["ready_detail"],
+        "v72 first frontier must expose v74 preaudit readiness",
     )
     require(
         rows[1]["current_status"] == "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE",
@@ -2875,6 +2921,7 @@ def main() -> None:
     validate_leakage_evidence_candidate_ingestion_gate_v70()
     validate_leakage_partial_candidate_sufficiency_review_package_v71()
     validate_leakage_partial_candidate_sufficiency_review_intake_v73()
+    validate_leakage_partial_candidate_sufficiency_preaudit_v74()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

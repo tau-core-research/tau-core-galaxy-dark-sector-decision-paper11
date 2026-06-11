@@ -25,8 +25,8 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 def frontier_rows() -> list[dict[str, object]]:
     v70 = read_csv(DERIVED / "leakage_evidence_candidate_ingestion_summary_v70.csv")[0]
-    v71 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_policy_summary_v71.csv")[0]
     v73 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv")[0]
+    v74 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv")[0]
     return [
         {
             "frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
@@ -35,7 +35,7 @@ def frontier_rows() -> list[dict[str, object]]:
             "current_status": v73["overall_status"],
             "ready_detail": (
                 f"{v70['galaxies_with_source_and_observed_candidates']} galaxies have source-route and observed-input "
-                "draft candidates"
+                f"draft candidates; {v74['preaudit_review_ready_rows']} partial rows are preaudit review-ready"
             ),
             "blocked_detail": (
                 f"{v73['blocked_or_missing_rows']} morphology-label/benchmark-policy partial rows "
