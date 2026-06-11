@@ -96,6 +96,9 @@ data/derived/source_import_write_authorization_v16.csv
 data/derived/source_import_write_authorization_summary_v16.csv
 data/derived/source_import_authorized_writer_v17.csv
 data/derived/source_import_authorized_writer_summary_v17.csv
+data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv
+data/derived/source_import_raw_template_columns_v18.csv
+data/derived/source_import_raw_template_summary_v18.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -142,6 +145,7 @@ docs/source_import_real_values_template_v14.md
 docs/source_import_raw_adapter_v15.md
 docs/source_import_write_authorization_v16.md
 docs/source_import_authorized_writer_v17.md
+docs/source_import_raw_template_v18.md
 ```
 
 ## Reproduce
@@ -197,4 +201,6 @@ declares a machine-readable path from a SPARC-like raw input into the v12 real
 input shape, and currently reports `RAW_ADAPTER_READY_INPUT_MISSING`. The v16
 write-authorization gate currently reports `WRITE_AUTHORIZATION_BLOCKED`, so no
 real v12 input file is written. The v17 authorized writer path is implemented
-but currently reports `AUTHORIZED_WRITER_BLOCKED` and writes zero rows.
+but currently reports `AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18
+raw-input template is present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`,
+but it is not data and cannot be used for scoring.

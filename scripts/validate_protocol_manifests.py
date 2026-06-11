@@ -596,6 +596,23 @@ def validate_source_import_authorized_writer_v17() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v17 summary must forbid scoring")
 
 
+def validate_source_import_raw_template_v18() -> None:
+    template = read_csv(ROOT / "data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv")
+    columns = read_csv(ROOT / "data/derived/source_import_raw_template_columns_v18.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_raw_template_summary_v18.csv")
+    require(len(template) == 18, "v18 raw template must include one placeholder row per candidate galaxy")
+    require(all(row["v_obs_km_s"] == "FILL_NUMERIC_OBSERVED_VELOCITY" for row in template), "v18 template must remain placeholder-only")
+    require(len(columns) == 15, "v18 raw template must document fifteen raw columns")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in columns), "v18 template columns cannot allow scoring")
+    require(len(summary) == 1, "v18 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "RAW_TEMPLATE_READY_NOT_DATA", "v18 must remain template-only")
+    require(row["template_rows"] == "18", "v18 summary must report eighteen template rows")
+    require(row["required_columns"] == "15", "v18 summary must report fifteen raw columns")
+    require(row["raw_input_file_present"] == "false", "v18 must not include the real raw input file")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v18 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -628,6 +645,7 @@ def main() -> None:
     validate_source_import_raw_adapter_v15()
     validate_source_import_write_authorization_v16()
     validate_source_import_authorized_writer_v17()
+    validate_source_import_raw_template_v18()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

@@ -44,6 +44,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_raw_adapter_v15.md",
         "docs/source_import_write_authorization_v16.md",
         "docs/source_import_authorized_writer_v17.md",
+        "docs/source_import_raw_template_v18.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -83,6 +84,9 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_write_authorization_summary_v16.csv",
         "data/derived/source_import_authorized_writer_v17.csv",
         "data/derived/source_import_authorized_writer_summary_v17.csv",
+        "data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv",
+        "data/derived/source_import_raw_template_columns_v18.csv",
+        "data/derived/source_import_raw_template_summary_v18.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -95,6 +99,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_raw_adapter.py",
         "scripts/run_source_import_write_authorization.py",
         "scripts/run_source_import_authorized_writer.py",
+        "scripts/build_source_import_raw_template.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -639,6 +644,35 @@ def test_v17_authorized_writer_is_implemented_but_blocked() -> None:
             "overall_status": "AUTHORIZED_WRITER_BLOCKED",
             "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v18_raw_template_is_not_data() -> None:
+    template = list(csv.DictReader((ROOT / "data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv").open()))
+    assert len(template) == 18
+    assert all(row["v_obs_km_s"] == "FILL_NUMERIC_OBSERVED_VELOCITY" for row in template)
+    assert all(row["radial_index"] == "FILL_INTEGER_INDEX_REPEAT_FOR_EACH_RADIAL_POINT" for row in template)
+
+    columns = list(csv.DictReader((ROOT / "data/derived/source_import_raw_template_columns_v18.csv").open()))
+    assert len(columns) == 15
+    assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "source_route"}.issubset(
+        {row["raw_field_name"] for row in columns}
+    )
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in columns)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_raw_template_summary_v18.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_RAW_TEMPLATE_V18",
+            "template_file": "data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv",
+            "target_raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
+            "template_rows": "18",
+            "required_columns": "15",
+            "raw_input_file_present": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "RAW_TEMPLATE_READY_NOT_DATA",
+            "claim_boundary": "raw_template_only_no_source_import_no_scores",
         }
     ]
 
