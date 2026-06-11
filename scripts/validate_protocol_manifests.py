@@ -120,6 +120,40 @@ def validate_thresholds() -> None:
         require("NUMERIC_CUTOFF_PENDING" in row["current_status"], "numeric cutoffs must remain pending")
 
 
+def validate_galaxy_list_v02() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/galaxy_list_freeze_v02.csv")
+    galaxies = {row["galaxy_id"] for row in rows}
+    required = {"NGC4559", "NGC4010", "NGC5585", "UGC06930", "NGC4183", "NGC4088", "UGC12506"}
+    require(required.issubset(galaxies), f"v02 galaxy role list missing required rows: {required - galaxies}")
+    roles = {row["decision_role"] for row in rows}
+    require("train_formula_candidate" in roles, "v02 list missing train role")
+    require("challenge_high_spin_edge_on" in roles, "v02 list missing high-spin challenge role")
+    require("beta_closure_transfer_candidate" in roles, "v02 list missing beta transfer role")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v02 galaxy list must disable endpoint scoring")
+        require("NOT_ACTIVE" in row["scoring_activation_status"], "v02 galaxy rows must remain inactive")
+        require("family_winner" in row["forbidden_inputs"], "v02 galaxy rows must forbid family-winner leakage")
+
+
+def validate_scoring_formula_v02() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/scoring_formula_freeze_v02.csv")
+    ids = {row["formula_id"] for row in rows}
+    required = {
+        "SF02_FULL_CURVE",
+        "SF02_INNER_ZONE",
+        "SF02_OUTER_ZONE",
+        "SF02_PARSIMONY",
+        "SF02_GALAXY_SCORE",
+        "SF02_HELDOUT",
+        "SF02_CONTROL_VETO",
+    }
+    require(ids == required, f"bad v02 scoring formula ids: {ids}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v02 scoring formula must disable endpoint scoring")
+        require("FORMULA_POLICY_FROZEN_NOT_RUN" in row["current_status"], "v02 formulas must remain unrun")
+        require(row["forbidden_inputs"], f"{row['formula_id']} missing forbidden inputs")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -130,6 +164,8 @@ def main() -> None:
     validate_scoring_freeze()
     validate_controls()
     validate_thresholds()
+    validate_galaxy_list_v02()
+    validate_scoring_formula_v02()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

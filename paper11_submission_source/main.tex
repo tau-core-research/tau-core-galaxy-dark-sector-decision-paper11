@@ -81,9 +81,11 @@ global falsification of Tau Core.
 The present repository supplies a decision-protocol scaffold, a frozen-reference
 policy-bundle instance \(PB11\_v01\), a first galaxy endpoint decision
 manifest, and v01 sample, scoring, control, and threshold pre-registration
+manifests. It also supplies v02 galaxy-role and scoring-formula freeze
 manifests.
-The next honest target is a concrete source-side galaxy list and numeric
-scoring formula freeze. The following remain absent:
+The next honest target is family parameter-count freeze, control
+implementation, and source-field completeness checks. The following remain
+absent:
 \[
 \begin{aligned}
 &\mathrm{Response}_{\tau}, \quad
@@ -113,6 +115,13 @@ The v01 pre-registration layer declares five sample roles, six scoring
 components, five controls, and four verdict labels. These records still do not
 select galaxies, define numeric cutoffs, run controls, or produce a family
 winner.
+
+The v02 layer declares a concrete source-side galaxy-role list and a shared
+scoring-formula policy. The galaxy rows are not an activated statistical sample:
+they preserve train, held-out, control, challenge, and transfer-candidate roles
+without importing endpoint scores. The score policy fixes full-curve, inner
+zone, outer zone, parsimony, held-out median, and control-veto components, but
+it still does not run endpoint scoring or declare numerical thresholds.
 
 \section{Claim Boundary}
 

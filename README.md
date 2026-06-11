@@ -47,6 +47,8 @@ data/source_manifest/galaxy_sample_freeze_v01.csv
 data/source_manifest/scoring_rule_freeze_v01.csv
 data/source_manifest/control_manifest_v01.csv
 data/source_manifest/decision_threshold_v01.csv
+data/source_manifest/galaxy_list_freeze_v02.csv
+data/source_manifest/scoring_formula_freeze_v02.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -71,6 +73,8 @@ docs/galaxy_sample_freeze_v01.md
 docs/scoring_rule_freeze_v01.md
 docs/control_manifest_v01.md
 docs/decision_threshold_v01.md
+docs/galaxy_list_freeze_v02.md
+docs/scoring_formula_freeze_v02.md
 ```
 
 ## Reproduce
@@ -98,7 +102,8 @@ Paper 11 compares no-dark, Tau dark-sector response, and standard dark-sector
 benchmark families under the same endpoint-blind decision protocol.
 ```
 
-The current honest status is a frozen-reference policy bundle plus v01
-sample/scoring/control/threshold pre-registration. The next target is concrete
-source-side galaxy list and numeric scoring formula freeze, not a response
+The current honest status is a frozen-reference policy bundle, v01
+sample/scoring/control/threshold pre-registration, and v02 galaxy-role plus
+scoring-formula freeze. The next target is family parameter-count freeze,
+control implementation, and source-field completeness checks, not a response
 formula or physical readout claim.

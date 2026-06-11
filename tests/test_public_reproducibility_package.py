@@ -22,6 +22,8 @@ def test_required_files_exist() -> None:
         "docs/scoring_rule_freeze_v01.md",
         "docs/control_manifest_v01.md",
         "docs/decision_threshold_v01.md",
+        "docs/galaxy_list_freeze_v02.md",
+        "docs/scoring_formula_freeze_v02.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -81,6 +83,27 @@ def test_pre_registration_manifests_are_not_endpoint_results() -> None:
         "UNRESOLVED",
     }
     assert all("PENDING" in row["current_status"] for row in thresholds)
+
+
+def test_v02_freezes_are_concrete_but_not_activated() -> None:
+    galaxy_rows = list(csv.DictReader((ROOT / "data/source_manifest/galaxy_list_freeze_v02.csv").open()))
+    assert len(galaxy_rows) >= 10
+    assert {"NGC4088", "UGC12506", "NGC4183"}.issubset({row["galaxy_id"] for row in galaxy_rows})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in galaxy_rows)
+    assert all("NOT_ACTIVE" in row["scoring_activation_status"] for row in galaxy_rows)
+
+    formula_rows = list(csv.DictReader((ROOT / "data/source_manifest/scoring_formula_freeze_v02.csv").open()))
+    assert {row["formula_id"] for row in formula_rows} == {
+        "SF02_FULL_CURVE",
+        "SF02_INNER_ZONE",
+        "SF02_OUTER_ZONE",
+        "SF02_PARSIMONY",
+        "SF02_GALAXY_SCORE",
+        "SF02_HELDOUT",
+        "SF02_CONTROL_VETO",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in formula_rows)
+    assert all("FORMULA_POLICY_FROZEN_NOT_RUN" in row["current_status"] for row in formula_rows)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:
