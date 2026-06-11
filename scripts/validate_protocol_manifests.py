@@ -782,6 +782,30 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
+def validate_frontier_provenance_evidence_acceptance_v26() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_provenance_evidence_acceptance_v26.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv")
+    require(len(rows) == 18, "v26 acceptance checklist must cover eighteen candidate rows")
+    require(all(row["frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows), "v26 must target the v25 frontier")
+    require(
+        all(row["frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows),
+        "v26 must target the provenance evidence input",
+    )
+    require(all(row["evidence_input_present"] == "false" for row in rows), "v26 must not see real evidence input")
+    require(all(row["missing_or_placeholder_fields"] == "input_row_missing" for row in rows), "v26 must report missing input rows")
+    require(all(row["acceptance_status"] == "PENDING_INPUT" for row in rows), "v26 rows must remain pending input")
+    require(all(row["accepted_for_promotion_review"] == "false" for row in rows), "v26 must accept zero rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v26 rows cannot allow scoring")
+    require(len(summary) == 1, "v26 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "FRONTIER_EVIDENCE_ACCEPTANCE_PENDING_INPUT", "v26 must remain input-pending")
+    require(row["candidate_rows"] == "18", "v26 must summarize eighteen candidates")
+    require(row["evidence_input_rows_present"] == "0", "v26 must see zero evidence rows")
+    require(row["accepted_for_promotion_review_rows"] == "0", "v26 must accept zero rows")
+    require(row["blocked_rows"] == "18", "v26 must block eighteen rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v26 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -822,6 +846,7 @@ def main() -> None:
     validate_source_import_provenance_promotion_gate_v23()
     validate_scoring_dependency_closure_v24()
     validate_scoring_unblock_priority_v25()
+    validate_frontier_provenance_evidence_acceptance_v26()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

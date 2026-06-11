@@ -115,6 +115,8 @@ data/derived/scoring_dependency_closure_v24.csv
 data/derived/scoring_dependency_closure_summary_v24.csv
 data/derived/scoring_unblock_priority_v25.csv
 data/derived/scoring_unblock_priority_summary_v25.csv
+data/derived/frontier_provenance_evidence_acceptance_v26.csv
+data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -169,6 +171,7 @@ docs/source_import_provenance_evidence_gate_v22.md
 docs/source_import_provenance_promotion_gate_v23.md
 docs/scoring_dependency_closure_v24.md
 docs/scoring_unblock_priority_v25.md
+docs/frontier_provenance_evidence_acceptance_v26.md
 ```
 
 ## Reproduce
@@ -241,4 +244,5 @@ collects thirteen current pre-score dependencies and reports
 endpoint scoring. The v25 scoring unblock priority ledger identifies the first
 frontier as `SCD24_PROVENANCE_EVIDENCE`, with
 `data/input/source_import_provenance_evidence_v21.csv` as the next required
-artifact.
+artifact. The v26 frontier provenance evidence acceptance checklist keeps all
+eighteen rows at `PENDING_INPUT`; zero rows are accepted for promotion review.

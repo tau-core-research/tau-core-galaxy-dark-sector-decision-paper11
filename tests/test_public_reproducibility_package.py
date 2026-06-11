@@ -52,6 +52,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_provenance_promotion_gate_v23.md",
         "docs/scoring_dependency_closure_v24.md",
         "docs/scoring_unblock_priority_v25.md",
+        "docs/frontier_provenance_evidence_acceptance_v26.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -110,6 +111,8 @@ def test_required_files_exist() -> None:
         "data/derived/scoring_dependency_closure_summary_v24.csv",
         "data/derived/scoring_unblock_priority_v25.csv",
         "data/derived/scoring_unblock_priority_summary_v25.csv",
+        "data/derived/frontier_provenance_evidence_acceptance_v26.csv",
+        "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -130,6 +133,7 @@ def test_required_files_exist() -> None:
         "scripts/run_source_import_provenance_promotion_gate.py",
         "scripts/build_scoring_dependency_closure.py",
         "scripts/build_scoring_unblock_priority.py",
+        "scripts/build_frontier_provenance_evidence_acceptance.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -926,6 +930,34 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v26_frontier_provenance_evidence_acceptance_waits_for_input() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_acceptance_v26.csv").open()))
+    assert len(rows) == 18
+    assert all(row["frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows)
+    assert all(row["frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows)
+    assert all(row["evidence_input_present"] == "false" for row in rows)
+    assert all(row["missing_or_placeholder_fields"] == "input_row_missing" for row in rows)
+    assert all(row["acceptance_status"] == "PENDING_INPUT" for row in rows)
+    assert all(row["accepted_for_promotion_review"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_PROVENANCE_EVIDENCE_ACCEPTANCE_V26",
+            "frontier_dependency": "SCD24_PROVENANCE_EVIDENCE",
+            "frontier_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "candidate_rows": "18",
+            "evidence_input_rows_present": "0",
+            "accepted_for_promotion_review_rows": "0",
+            "blocked_rows": "18",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_EVIDENCE_ACCEPTANCE_PENDING_INPUT",
+            "claim_boundary": "frontier_evidence_acceptance_only_no_scores_no_dark_sector_verdict",
         }
     ]
 
