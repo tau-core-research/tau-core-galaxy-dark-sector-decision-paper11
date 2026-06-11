@@ -194,6 +194,10 @@ The v15 raw-source adapter declares the machine-readable route from a
 SPARC-like raw input table into the v12 real-value input shape. The raw input
 file is not present in this package, so no target input file is written.
 
+The v16 write-authorization gate separates raw-source validation from writing
+the real v12 input file. In the current package write authorization is blocked,
+so no real source-import target is produced.
+
 \section{Claim Boundary}
 
 This paper does not claim:

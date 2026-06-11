@@ -42,6 +42,7 @@ def test_required_files_exist() -> None:
         "docs/scoring_activation_gate_v13.md",
         "docs/source_import_real_values_template_v14.md",
         "docs/source_import_raw_adapter_v15.md",
+        "docs/source_import_write_authorization_v16.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -77,6 +78,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_raw_adapter_schema_v15.csv",
         "data/derived/source_import_raw_adapter_gate_v15.csv",
         "data/derived/source_import_raw_adapter_summary_v15.csv",
+        "data/derived/source_import_write_authorization_v16.csv",
+        "data/derived/source_import_write_authorization_summary_v16.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -87,6 +90,7 @@ def test_required_files_exist() -> None:
         "scripts/run_scoring_activation_gate.py",
         "scripts/build_source_import_real_values_template.py",
         "scripts/run_source_import_raw_adapter.py",
+        "scripts/run_source_import_write_authorization.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -563,6 +567,39 @@ def test_v15_raw_adapter_is_ready_but_has_no_raw_input() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "RAW_ADAPTER_READY_INPUT_MISSING",
             "claim_boundary": "raw_adapter_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v16_write_authorization_blocks_target_input_creation() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_v16.csv").open()))
+    assert rows == [
+        {
+            "authorization_id": "SIWA16_WRITE_V12",
+            "source_adapter_gate": "source_import_raw_adapter_gate_v15.csv",
+            "target_input_file": "data/input/source_import_real_values_v12.csv",
+            "explicit_write_authorization": "false",
+            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "target_input_file_present": "false",
+            "write_authorized": "false",
+            "write_blockers": "explicit_write_authorization_missing;raw_input_not_validated",
+            "target_file_written": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "write_authorization_only_no_source_import_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_write_authorization_summary_v16.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_WRITE_AUTHORIZATION_V16",
+            "write_authorized": "false",
+            "target_file_written": "false",
+            "target_input_file_present": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
+            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "claim_boundary": "write_authorization_only_no_source_import_no_scores",
         }
     ]
 

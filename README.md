@@ -92,6 +92,8 @@ data/derived/source_import_template_summary_v14.csv
 data/derived/source_import_raw_adapter_schema_v15.csv
 data/derived/source_import_raw_adapter_gate_v15.csv
 data/derived/source_import_raw_adapter_summary_v15.csv
+data/derived/source_import_write_authorization_v16.csv
+data/derived/source_import_write_authorization_summary_v16.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -136,6 +138,7 @@ docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
 docs/source_import_real_values_template_v14.md
 docs/source_import_raw_adapter_v15.md
+docs/source_import_write_authorization_v16.md
 ```
 
 ## Reproduce
@@ -188,4 +191,6 @@ numeric counts, controls, and thresholds remain blocked. The v14 source-import
 template is present as `data/input/source_import_real_values_v12_TEMPLATE.csv`,
 but it is not data and cannot activate scoring rows. The v15 raw adapter
 declares a machine-readable path from a SPARC-like raw input into the v12 real
-input shape, and currently reports `RAW_ADAPTER_READY_INPUT_MISSING`.
+input shape, and currently reports `RAW_ADAPTER_READY_INPUT_MISSING`. The v16
+write-authorization gate currently reports `WRITE_AUTHORIZATION_BLOCKED`, so no
+real v12 input file is written.

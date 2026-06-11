@@ -553,6 +553,28 @@ def validate_source_import_raw_adapter_v15() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v15 summary must forbid scoring")
 
 
+def validate_source_import_write_authorization_v16() -> None:
+    rows = read_csv(ROOT / "data/derived/source_import_write_authorization_v16.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_write_authorization_summary_v16.csv")
+    require(len(rows) == 1, "v16 write authorization must have one row")
+    row = rows[0]
+    require(row["explicit_write_authorization"] == "false", "v16 explicit write authorization must be absent")
+    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v16 raw input must remain missing")
+    require(row["target_input_file_present"] == "false", "v16 target input must remain absent")
+    require(row["write_authorized"] == "false", "v16 write authorization must be blocked")
+    require("explicit_write_authorization_missing" in row["write_blockers"], "v16 must require explicit authorization")
+    require("raw_input_not_validated" in row["write_blockers"], "v16 must require validated raw input")
+    require(row["target_file_written"] == "false", "v16 must not write target input")
+    require(row["endpoint_scoring_allowed"] == "false", "v16 row cannot allow scoring")
+    require(len(summary) == 1, "v16 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "WRITE_AUTHORIZATION_BLOCKED", "v16 write authorization must remain blocked")
+    require(summary_row["write_authorized"] == "false", "v16 summary must block writing")
+    require(summary_row["target_file_written"] == "false", "v16 summary must not write target file")
+    require(summary_row["target_input_file_present"] == "false", "v16 summary must report absent target file")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v16 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -583,6 +605,7 @@ def main() -> None:
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()
     validate_source_import_raw_adapter_v15()
+    validate_source_import_write_authorization_v16()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
