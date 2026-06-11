@@ -1534,6 +1534,61 @@ def validate_frontier_provenance_review_package_v47() -> None:
     require(zipped_required.issubset(names), "v47 zip missing required package files")
 
 
+def validate_frontier_provenance_review_response_intake_v48() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_provenance_review_response_intake_v48.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_provenance_review_response_intake_summary_v48.csv")
+    response_dir = ROOT / "review_packages/frontier_provenance_v46_completed_review_response"
+    response_zip = ROOT / "review_packages/frontier_provenance_v46_completed_review_response.zip"
+    required = {
+        "frontier_provenance_v46_review_response.csv",
+        "frontier_provenance_v46_review_completed_summary.csv",
+        "frontier_provenance_v46_review_notes.md",
+        "frontier_provenance_v46_review_validation_log.txt",
+    }
+    require(response_zip.exists(), "v48 response zip must exist")
+    require(response_dir.exists(), "v48 extracted response directory must exist")
+    for rel in required:
+        require((response_dir / rel).exists(), f"v48 response missing {rel}")
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    require(required.issubset(names), "v48 response zip missing required files")
+    require(len(rows) == 18, "v48 response must cover eighteen rows")
+    require(all(row["row_route_internal_consistency"] == "pass" for row in rows), "v48 route consistency must pass")
+    require(
+        all(row["source_hash_route_status"] == "source_hash_matches_package_candidate_ledger_external_sha_not_recomputed" for row in rows),
+        "v48 source hash status must preserve external hash caveat",
+    )
+    require(
+        all(row["leakage_evidence_status"] == "pass_prescore_source_route_review_id" for row in rows),
+        "v48 leakage route review ids must pass",
+    )
+    require(
+        all(row["reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows),
+        "v48 rows must remain review-required and not complete",
+    )
+    require(all(row["may_copy_to_v21_after_review"] == "false" for row in rows), "v48 cannot copy to v21")
+    require(all(row["may_mark_provenance_complete"] == "false" for row in rows), "v48 cannot mark provenance complete")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v48 cannot allow scoring")
+    require(len(summary) == 1, "v48 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_PROVENANCE_REVIEW_RESPONSE_INTAKE_V48", "v48 summary id mismatch")
+    require(row["response_files_present"] == "4", "v48 must record four response files")
+    require(row["review_rows"] == "18", "v48 must summarize eighteen review rows")
+    require(row["route_and_prescore_pass_rows"] == "18", "v48 must summarize eighteen route/prescore passes")
+    require(row["review_decision"] == "ACCEPT_AS_REVIEW_READY_DRAFT_ONLY_NOT_PROMOTED", "v48 review decision mismatch")
+    require(row["completion_status"] == "PASS_WITH_CAVEAT", "v48 must preserve caveated pass")
+    require(row["external_hash_recomputed"] == "false", "v48 must preserve external hash recomputation caveat")
+    require(row["complete_evidence_rows_authorized"] == "0", "v48 cannot authorize complete evidence rows")
+    require(row["v21_evidence_rows_created"] == "0", "v48 cannot create v21 evidence rows")
+    require(row["may_copy_to_v21_without_separate_promotion"] == "false", "v48 cannot copy without promotion gate")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v48 summary must forbid scoring")
+    require(row["overall_status"] == "REVIEW_RESPONSE_ACCEPTED_AS_DRAFT_ONLY_NOT_PROMOTED", "v48 summary status mismatch")
+    require(
+        row["claim_boundary"] == "frontier_provenance_review_response_intake_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        "v48 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1596,6 +1651,7 @@ def main() -> None:
     validate_frontier_provenance_source_candidate_ledger_v45()
     validate_frontier_provenance_evidence_payload_draft_v46()
     validate_frontier_provenance_review_package_v47()
+    validate_frontier_provenance_review_response_intake_v48()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

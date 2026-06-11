@@ -1,0 +1,40 @@
+Validation log: Frontier provenance v46 review package
+
+Input package:
+frontier_provenance_v46_review_package.zip
+
+Package access:
+PASS - ZIP was present and readable.
+
+Instruction boundary:
+PASS - README and DO_NOT_COPY_WITHOUT_REVIEW mark the package as review-only, not v21 evidence input.
+
+Payload row count:
+PASS - frontier_provenance_evidence_payload_draft_v46.csv contains 18 rows.
+
+Draft summary:
+PASS - draft_rows=18, draft_rows_requiring_review=18, complete_evidence_rows=0, v21_evidence_rows_created=0.
+
+Route consistency:
+PASS - all 18 payload rows match the v45 coverage candidate row id and source route.
+
+Leakage evidence id:
+PASS - all 18 payload rows use PRE_SCORE_SOURCE_ROUTE_REVIEW_* ids.
+
+Copy boundary:
+PASS - may_copy_to_v21_without_review=false in summary and may_copy_to_v21_after_review=false in draft review rows.
+
+Completion boundary:
+PASS - all payload rows remain REVIEW_REQUIRED_NOT_COMPLETE and may_mark_complete_without_review=false.
+
+Endpoint scoring boundary:
+PASS - endpoint_scoring_allowed=false across manifest, review rows, coverage rows, and summary.
+
+External source hash recomputation:
+CAVEAT - package hash is internally consistent with the candidate ledger; direct external SPARC source-file download returned 403 here, so the external SHA-256 was not independently recomputed.
+
+Decision:
+ACCEPT_AS_REVIEW_READY_DRAFT_ONLY_NOT_PROMOTED
+
+Completion status:
+PASS_WITH_CAVEAT

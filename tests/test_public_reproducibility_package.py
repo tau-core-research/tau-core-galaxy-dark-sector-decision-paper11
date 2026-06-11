@@ -74,6 +74,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_provenance_source_candidate_ledger_v45.md",
         "docs/frontier_provenance_evidence_payload_draft_v46.md",
         "docs/frontier_provenance_review_package_v47.md",
+        "docs/frontier_provenance_review_response_intake_v48.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -184,6 +185,13 @@ def test_required_files_exist() -> None:
         "review_packages/frontier_provenance_v46_review_package/data/frontier_provenance_evidence_payload_draft_review_v46.csv",
         "review_packages/frontier_provenance_v46_review_package/data/frontier_provenance_evidence_payload_draft_summary_v46.csv",
         "review_packages/frontier_provenance_v46_review_package.zip",
+        "review_packages/frontier_provenance_v46_completed_review_response.zip",
+        "review_packages/frontier_provenance_v46_completed_review_response/frontier_provenance_v46_review_response.csv",
+        "review_packages/frontier_provenance_v46_completed_review_response/frontier_provenance_v46_review_completed_summary.csv",
+        "review_packages/frontier_provenance_v46_completed_review_response/frontier_provenance_v46_review_notes.md",
+        "review_packages/frontier_provenance_v46_completed_review_response/frontier_provenance_v46_review_validation_log.txt",
+        "data/derived/frontier_provenance_review_response_intake_v48.csv",
+        "data/derived/frontier_provenance_review_response_intake_summary_v48.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -226,6 +234,7 @@ def test_required_files_exist() -> None:
         "scripts/build_frontier_provenance_source_candidate_ledger.py",
         "scripts/build_frontier_provenance_evidence_payload_draft.py",
         "scripts/build_frontier_provenance_review_package.py",
+        "scripts/ingest_frontier_provenance_review_response.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1709,6 +1718,56 @@ def test_v47_frontier_provenance_review_package_contains_review_artifacts() -> N
     with zipfile.ZipFile(zip_path) as archive:
         names = set(archive.namelist())
     assert {f"frontier_provenance_v46_review_package/{rel}" for rel in required}.issubset(names)
+
+
+def test_v48_frontier_provenance_review_response_intake_keeps_draft_not_promoted() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_review_response_intake_v48.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_review_response_intake_summary_v48.csv").open()))
+    response_dir = ROOT / "review_packages/frontier_provenance_v46_completed_review_response"
+    response_zip = ROOT / "review_packages/frontier_provenance_v46_completed_review_response.zip"
+    required = {
+        "frontier_provenance_v46_review_response.csv",
+        "frontier_provenance_v46_review_completed_summary.csv",
+        "frontier_provenance_v46_review_notes.md",
+        "frontier_provenance_v46_review_validation_log.txt",
+    }
+    assert response_zip.exists()
+    assert response_dir.exists()
+    for rel in required:
+        assert (response_dir / rel).exists(), rel
+    with zipfile.ZipFile(response_zip) as archive:
+        names = {Path(name).name for name in archive.namelist() if not name.endswith("/")}
+    assert required.issubset(names)
+    assert len(rows) == 18
+    assert all(row["row_route_internal_consistency"] == "pass" for row in rows)
+    assert all(
+        row["source_hash_route_status"] == "source_hash_matches_package_candidate_ledger_external_sha_not_recomputed"
+        for row in rows
+    )
+    assert all(row["leakage_evidence_status"] == "pass_prescore_source_route_review_id" for row in rows)
+    assert all(row["reviewer_decision"] == "KEEP_REVIEW_REQUIRED_NOT_COMPLETE_NO_V21_WRITE" for row in rows)
+    assert all(row["may_copy_to_v21_after_review"] == "false" for row in rows)
+    assert all(row["may_mark_provenance_complete"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_PROVENANCE_REVIEW_RESPONSE_INTAKE_V48",
+            "response_zip": "review_packages/frontier_provenance_v46_completed_review_response.zip",
+            "response_files_present": "4",
+            "review_rows": "18",
+            "route_and_prescore_pass_rows": "18",
+            "review_decision": "ACCEPT_AS_REVIEW_READY_DRAFT_ONLY_NOT_PROMOTED",
+            "completion_status": "PASS_WITH_CAVEAT",
+            "external_hash_recomputed": "false",
+            "complete_evidence_rows_authorized": "0",
+            "v21_evidence_rows_created": "0",
+            "may_copy_to_v21_without_separate_promotion": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "REVIEW_RESPONSE_ACCEPTED_AS_DRAFT_ONLY_NOT_PROMOTED",
+            "claim_boundary": "frontier_provenance_review_response_intake_only_no_v21_write_no_scores_no_dark_sector_verdict",
+        }
+    ]
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:

@@ -162,6 +162,10 @@ data/derived/frontier_provenance_evidence_payload_draft_review_v46.csv
 data/derived/frontier_provenance_evidence_payload_draft_summary_v46.csv
 review_packages/frontier_provenance_v46_review_package/
 review_packages/frontier_provenance_v46_review_package.zip
+review_packages/frontier_provenance_v46_completed_review_response/
+review_packages/frontier_provenance_v46_completed_review_response.zip
+data/derived/frontier_provenance_review_response_intake_v48.csv
+data/derived/frontier_provenance_review_response_intake_summary_v48.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -238,6 +242,7 @@ docs/frontier_provenance_evidence_intake_contract_v44.md
 docs/frontier_provenance_source_candidate_ledger_v45.md
 docs/frontier_provenance_evidence_payload_draft_v46.md
 docs/frontier_provenance_review_package_v47.md
+docs/frontier_provenance_review_response_intake_v48.md
 ```
 
 ## Reproduce
@@ -351,4 +356,8 @@ creating zero v21 evidence rows. The v46 frontier provenance evidence payload
 draft converts those candidates into eighteen review-required draft rows with
 the v21 column shape, while still writing zero v21 evidence rows. The v47
 frontier provenance review package bundles the v44-v46 review artifacts into a
-handoff directory and zip without creating active v21 evidence.
+handoff directory and zip without creating active v21 evidence. The v48
+frontier provenance review-response intake records the completed review
+response as draft-only, with eighteen route/prescore passes,
+`PASS_WITH_CAVEAT`, zero complete evidence rows authorized, and zero v21
+evidence rows created.
