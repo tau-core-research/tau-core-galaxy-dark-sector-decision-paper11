@@ -47,6 +47,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_prescore_artifact_request_review_package_v65.md",
         "docs/leakage_prescore_artifact_request_review_intake_v66.md",
         "docs/leakage_prescore_artifact_candidate_ledger_v67.md",
+        "docs/leakage_prescore_artifact_candidate_review_package_v68.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -175,6 +176,15 @@ def test_required_files_exist() -> None:
         "data/derived/leakage_prescore_artifact_candidate_ledger_v67.csv",
         "data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv",
         "data/derived/leakage_prescore_artifact_candidate_summary_v67.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/README.md",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/DO_NOT_COPY_WITHOUT_COMPLETED_CANDIDATE_REVIEW.md",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/REVIEW_MANIFEST.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/data/leakage_prescore_artifact_candidate_ledger_v67.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/data/leakage_prescore_artifact_candidate_coverage_v67.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/data/leakage_prescore_artifact_candidate_summary_v67.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/data/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package/templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv",
+        "review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -321,6 +331,7 @@ def test_required_files_exist() -> None:
         "scripts/build_leakage_prescore_artifact_request_review_package.py",
         "scripts/run_leakage_prescore_artifact_request_review_intake.py",
         "scripts/build_leakage_prescore_artifact_candidate_ledger.py",
+        "scripts/build_leakage_prescore_artifact_candidate_review_package.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1125,6 +1136,51 @@ def test_v67_leakage_prescore_artifact_candidate_ledger_is_review_required_not_e
             "claim_boundary": "leakage_prescore_artifact_candidate_ledger_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
+
+
+def test_v68_leakage_prescore_artifact_candidate_review_package_is_not_evidence() -> None:
+    package_root = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_review_package"
+    zip_path = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_CANDIDATE_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/leakage_prescore_artifact_candidate_ledger_v67.csv",
+        "data/leakage_prescore_artifact_candidate_coverage_v67.csv",
+        "data/leakage_prescore_artifact_candidate_summary_v67.csv",
+        "data/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
+        "templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv",
+    }
+    assert package_root.exists()
+    assert zip_path.exists()
+    for rel in required:
+        assert (package_root / rel).exists(), rel
+
+    manifest = list(csv.DictReader((package_root / "REVIEW_MANIFEST.csv").open()))
+    assert len(manifest) == len(required) - 1
+    assert {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"}
+    assert all(
+        row["claim_boundary"] == "leakage_prescore_artifact_candidate_review_package_only_no_evidence_no_scores"
+        for row in manifest
+    )
+
+    response = list(
+        csv.DictReader((package_root / "templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv").open())
+    )
+    assert len(response) == 72
+    assert len({row["galaxy_id"] for row in response}) == 18
+    assert all(row["candidate_review_decision"] == "KEEP_REVIEW_REQUIRED_NOT_AUTHORIZED" for row in response)
+    assert all(row["candidate_artifact_accepted"] == "false" for row in response)
+    assert all(row["minimal_required_fields_covered"] == "false" for row in response)
+    assert all(row["artifact_is_prescore"] == "false" for row in response)
+    assert all(row["artifact_uses_forbidden_inputs"] == "UNKNOWN_REVIEW_REQUIRED" for row in response)
+    assert all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in response)
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in response)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in response)
+
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    assert {f"leakage_prescore_artifact_candidate_v67_review_package/{rel}" for rel in required}.issubset(names)
 
 
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:

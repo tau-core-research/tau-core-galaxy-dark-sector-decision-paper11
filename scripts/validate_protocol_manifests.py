@@ -900,6 +900,59 @@ def validate_leakage_prescore_artifact_candidate_ledger_v67() -> None:
     require(row["overall_status"] == "PRESCORE_ARTIFACT_CANDIDATES_IDENTIFIED_REVIEW_REQUIRED", "v67 status mismatch")
 
 
+def validate_leakage_prescore_artifact_candidate_review_package_v68() -> None:
+    package_root = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_review_package"
+    zip_path = ROOT / "review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip"
+    required = {
+        "README.md",
+        "DO_NOT_COPY_WITHOUT_COMPLETED_CANDIDATE_REVIEW.md",
+        "REVIEW_MANIFEST.csv",
+        "data/leakage_prescore_artifact_candidate_ledger_v67.csv",
+        "data/leakage_prescore_artifact_candidate_coverage_v67.csv",
+        "data/leakage_prescore_artifact_candidate_summary_v67.csv",
+        "data/leakage_prescore_artifact_request_review_intake_summary_v66.csv",
+        "templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv",
+    }
+    require(package_root.exists(), "v68 review package directory must exist")
+    require(zip_path.exists(), "v68 review package zip must exist")
+    for rel in required:
+        require((package_root / rel).exists(), f"v68 package missing {rel}")
+    manifest = read_csv(package_root / "REVIEW_MANIFEST.csv")
+    require(len(manifest) == len(required) - 1, "v68 manifest row count mismatch")
+    require(
+        {row["package_path"] for row in manifest} == required - {"REVIEW_MANIFEST.csv"},
+        "v68 manifest package paths mismatch",
+    )
+    require(
+        all(row["claim_boundary"] == "leakage_prescore_artifact_candidate_review_package_only_no_evidence_no_scores" for row in manifest),
+        "v68 manifest claim boundary mismatch",
+    )
+    response = read_csv(package_root / "templates/leakage_prescore_artifact_candidate_review_response_TEMPLATE.csv")
+    require(len(response) == 72, "v68 response template must cover 72 candidate rows")
+    require(len({row["galaxy_id"] for row in response}) == 18, "v68 response template must cover eighteen galaxies")
+    require(
+        all(row["candidate_review_decision"] == "KEEP_REVIEW_REQUIRED_NOT_AUTHORIZED" for row in response),
+        "v68 response template must default to review required",
+    )
+    require(all(row["candidate_artifact_accepted"] == "false" for row in response), "v68 cannot accept candidates by default")
+    require(all(row["minimal_required_fields_covered"] == "false" for row in response), "v68 cannot field-cover by default")
+    require(all(row["artifact_is_prescore"] == "false" for row in response), "v68 cannot prescore-confirm by default")
+    require(
+        all(row["artifact_uses_forbidden_inputs"] == "UNKNOWN_REVIEW_REQUIRED" for row in response),
+        "v68 must require forbidden-input review by default",
+    )
+    require(
+        all(row["may_promote_to_leakage_evidence_after_ingestion"] == "false" for row in response),
+        "v68 cannot promote leakage evidence by default",
+    )
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in response), "v68 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in response), "v68 cannot allow scoring")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    zipped_required = {f"leakage_prescore_artifact_candidate_v67_review_package/{rel}" for rel in required}
+    require(zipped_required.issubset(names), "v68 zip missing required package files")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2496,6 +2549,7 @@ def main() -> None:
     validate_leakage_prescore_artifact_request_review_package_v65()
     validate_leakage_prescore_artifact_request_review_intake_v66()
     validate_leakage_prescore_artifact_candidate_ledger_v67()
+    validate_leakage_prescore_artifact_candidate_review_package_v68()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

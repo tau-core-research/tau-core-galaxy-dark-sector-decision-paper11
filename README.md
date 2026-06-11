@@ -105,6 +105,8 @@ data/derived/leakage_prescore_artifact_request_review_intake_summary_v66.csv
 data/derived/leakage_prescore_artifact_candidate_ledger_v67.csv
 data/derived/leakage_prescore_artifact_candidate_coverage_v67.csv
 data/derived/leakage_prescore_artifact_candidate_summary_v67.csv
+review_packages/leakage_prescore_artifact_candidate_v67_review_package/
+review_packages/leakage_prescore_artifact_candidate_v67_review_package.zip
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -266,6 +268,7 @@ docs/leakage_prescore_artifact_request_ledger_v64.md
 docs/leakage_prescore_artifact_request_review_package_v65.md
 docs/leakage_prescore_artifact_request_review_intake_v66.md
 docs/leakage_prescore_artifact_candidate_ledger_v67.md
+docs/leakage_prescore_artifact_candidate_review_package_v68.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -449,3 +452,5 @@ The v67 candidate ledger maps all 72 open requests to existing repository
 candidate artifacts for review. Source-route and observed-input candidates are
 identified, while morphology-label and benchmark-policy candidates remain
 partial; all rows still require review before leakage evidence can be created.
+The v68 candidate review package turns those candidates into a fillable review
+handoff; it remains review-only and creates zero leakage-evidence rows.
