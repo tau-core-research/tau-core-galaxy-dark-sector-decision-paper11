@@ -1,0 +1,6 @@
+outcome_id,condition,allowed_interpretation,forbidden_interpretation
+O0,protocol_not_frozen,"No decision; policy bundle incomplete","Any dark-sector necessity verdict"
+O1,M0_wins_heldout_with_controls,"No-dark Tau endpoint sufficient for this galaxy-rotation endpoint class","Global dark matter rejection"
+O2,M1_wins_heldout_with_controls,"Tau base-substrate response layer is favored for this endpoint class","Proof of physical Tau dark-sector field"
+O3,M2_wins_heldout_with_controls,"Standard dark-sector benchmark remains stronger for this endpoint class","Tau Core falsified globally"
+O4,no_family_passes_controls,"Decision remains unresolved; revise source/freeze/readout protocol","Arbitrary post-hoc model selection"

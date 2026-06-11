@@ -1,0 +1,4 @@
+family_id,role,description,endpoint_dark_component_allowed,tau_base_substrate_response_allowed,standard_dark_sector_allowed,endpoint_scoring_allowed,current_status,claim_boundary
+M0,no_dark_tau_morphology_readout,"Tau morphology/readout endpoint with no dark component in the endpoint formula",false,false,false,false,PROTOCOL_DECLARED_NO_ENDPOINT,"No global no-dark-sector claim"
+M1,tau_dark_sector_response,"Tau base-substrate response endpoint; internal Tau dark-sector response layer, not standard particle dark matter",false,true,false,false,PROTOCOL_DECLARED_NO_ENDPOINT,"No physical field theorem or Response_tau formula"
+M2,standard_dark_sector_benchmark,"External benchmark using standard dark-sector/halo-style comparison family",true,false,true,false,PROTOCOL_DECLARED_NO_ENDPOINT,"Benchmark only; not a Tau Core ontology claim"

@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import subprocess
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / "paper11_submission_source"
+
+
+def run(cmd: list[str], cwd: Path = ROOT) -> None:
+    print("+", " ".join(cmd))
+    subprocess.run(cmd, cwd=cwd, check=True)
+
+
+def main() -> None:
+    env = os.environ.copy()
+    env.setdefault("SOURCE_DATE_EPOCH", "1781136000")
+    run(["python", "scripts/validate_protocol_manifests.py"])
+    run(["tectonic", "main.tex"], cwd=SOURCE)
+    run(["python", "scripts/build_arxiv_source.py"])
+    run(["pytest", "-q"])
+    print("PAPER11_REPRODUCTION_COMPLETE")
+
+
+if __name__ == "__main__":
+    main()
