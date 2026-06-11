@@ -83,6 +83,9 @@ data/derived/source_import_values_summary_v11.csv
 data/derived/source_import_real_values_schema_v12.csv
 data/derived/source_import_real_values_gate_v12.csv
 data/derived/source_import_real_values_summary_v12.csv
+data/derived/scoring_activation_gate_v13.csv
+data/derived/scoring_activation_global_blockers_v13.csv
+data/derived/scoring_activation_summary_v13.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -124,6 +127,7 @@ docs/source_import_leakage_audit_v09.md
 docs/source_import_contract_v10.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
+docs/scoring_activation_gate_v13.md
 ```
 
 ## Reproduce
@@ -169,4 +173,7 @@ but all source routes, observed numeric values, and leakage evidence are still
 unfilled. The v11 value ledger exists, and every value remains
 `VALUE_REQUIRED_NOT_FILLED`. The v12 real-value import gate is executable and
 currently reports `SOURCE_IMPORT_REAL_VALUES_BLOCKED`, because the package does
-not yet include `data/input/source_import_real_values_v12.csv`.
+not yet include `data/input/source_import_real_values_v12.csv`. The v13 scoring
+activation gate is also executable and currently reports
+`SCORING_ACTIVATION_BLOCKED`: zero rows are activated, and formula tables,
+numeric counts, controls, and thresholds remain blocked.

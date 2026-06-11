@@ -492,6 +492,28 @@ def validate_source_import_real_values_gate_v12() -> None:
     require(row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv", "v12 must point to the input file")
 
 
+def validate_scoring_activation_gate_v13() -> None:
+    gates = read_csv(ROOT / "data/derived/scoring_activation_gate_v13.csv")
+    blockers = read_csv(ROOT / "data/derived/scoring_activation_global_blockers_v13.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_activation_summary_v13.csv")
+    require(len(gates) == 18, "v13 activation gate must cover eighteen rows")
+    require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates), "v13 must activate zero rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in gates), "v13 row gates cannot allow scoring")
+    require(all("real_source_values_missing" in row["blocking_requirements"] for row in gates), "v13 rows must be blocked by missing real values")
+    require(all("leakage_audit_not_passed" in row["blocking_requirements"] for row in gates), "v13 rows must be blocked by leakage")
+    require(len(blockers) == 4, "v13 must list four global blockers")
+    require(all(row["current_status"] == "BLOCKED" for row in blockers), "v13 global blockers must remain blocked")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in blockers), "v13 blockers cannot allow scoring")
+    require(len(summary) == 1, "v13 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SCORING_ACTIVATION_BLOCKED", "v13 activation must remain blocked")
+    require(row["candidate_rows"] == "18", "v13 summary must cover eighteen candidate rows")
+    require(row["rows_activated_for_scoring"] == "0", "v13 must activate zero rows")
+    require(row["row_level_blocked_rows"] == "18", "v13 must block eighteen rows")
+    require(row["global_blockers"] == "4", "v13 must report four global blockers")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -519,6 +541,7 @@ def main() -> None:
     validate_source_import_contract_v10()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
+    validate_scoring_activation_gate_v13()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

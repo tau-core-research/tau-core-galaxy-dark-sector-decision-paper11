@@ -181,6 +181,11 @@ future source import. In the present package that file is absent, so the gate
 imports zero numeric rows, passes zero value gates, and activates no scoring
 rows.
 
+The v13 scoring-activation gate combines row-level source/leakage status with
+global formula, parameter-count, control-runner, and threshold prerequisites.
+It reports that scoring activation remains blocked: zero rows are activated
+and all four global prerequisite classes remain blocked.
+
 \section{Claim Boundary}
 
 This paper does not claim:
