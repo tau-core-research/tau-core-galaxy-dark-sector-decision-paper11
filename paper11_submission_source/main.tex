@@ -82,10 +82,10 @@ The present repository supplies a decision-protocol scaffold, a frozen-reference
 policy-bundle instance \(PB11\_v01\), a first galaxy endpoint decision
 manifest, and v01 sample, scoring, control, and threshold pre-registration
 manifests. It also supplies v02 galaxy-role and scoring-formula freeze
-manifests.
-The next honest target is family parameter-count freeze, control
-implementation, and source-field completeness checks. The following remain
-absent:
+manifests and v03 family-budget plus control-implementation freeze manifests.
+The next honest target is source-field completeness, family formula registry,
+numeric parameter counts, and control-runner implementation. The following
+remain absent:
 \[
 \begin{aligned}
 &\mathrm{Response}_{\tau}, \quad
@@ -122,6 +122,13 @@ they preserve train, held-out, control, challenge, and transfer-candidate roles
 without importing endpoint scores. The score policy fixes full-curve, inner
 zone, outer zone, parsimony, held-out median, and control-veto components, but
 it still does not run endpoint scoring or declare numerical thresholds.
+
+The v03 layer freezes what must count as family flexibility and how the
+controls must be implemented. The parameter-count manifest is intentionally a
+count-rule freeze rather than a numeric count result: final counts require
+activated formula registries for \(M_0\), \(M_1\), and \(M_2\). The control
+manifest fixes shuffled-label, wrong-family, null-source, leakage, radial-zone,
+and family-budget parity gates, but does not run those gates.
 
 \section{Claim Boundary}
 

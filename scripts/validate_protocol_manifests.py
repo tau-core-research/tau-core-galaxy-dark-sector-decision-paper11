@@ -154,6 +154,41 @@ def validate_scoring_formula_v02() -> None:
         require(row["forbidden_inputs"], f"{row['formula_id']} missing forbidden inputs")
 
 
+def validate_family_parameter_count_v03() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/family_parameter_count_freeze_v03.csv")
+    families = {row["family_id"] for row in rows}
+    require({"M0", "M1", "M2", "ALL"}.issubset(families), "v03 family-budget rows missing families")
+    joined_policy = " ".join(row["parameter_count_policy"] for row in rows).lower()
+    require("per-galaxy" in joined_policy, "v03 count rules must count per-galaxy adjustments")
+    require("post-freeze" in joined_policy, "v03 count rules must count post-freeze switches")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v03 parameter-count rows must disable scoring")
+        require(
+            row["numeric_count_status"] == "COUNT_RULE_FROZEN_NUMERIC_COUNT_PENDING",
+            "v03 parameter counts must remain numeric-count pending",
+        )
+        require("family_winner" in row["forbidden_inputs"], "v03 count rows must forbid family-winner leakage")
+
+
+def validate_control_implementation_v03() -> None:
+    rows = read_csv(ROOT / "data/source_manifest/control_implementation_freeze_v03.csv")
+    ids = {row["control_id"] for row in rows}
+    required = {
+        "CIF03_SHUFFLE",
+        "CIF03_WRONG_FAMILY",
+        "CIF03_NULL_SOURCE",
+        "CIF03_LEAKAGE",
+        "CIF03_RADIAL",
+        "CIF03_PARITY",
+    }
+    require(ids == required, f"bad v03 control ids: {ids}")
+    for row in rows:
+        require(row["endpoint_scoring_allowed"] == "false", "v03 controls must disable endpoint scoring")
+        require("IMPLEMENTATION_POLICY_FROZEN_NOT_RUN" in row["current_status"], "v03 controls must remain unrun")
+        require(row["pass_condition"], f"{row['control_id']} missing pass condition")
+        require(row["verdict_effect"], f"{row['control_id']} missing verdict effect")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -166,6 +201,8 @@ def main() -> None:
     validate_thresholds()
     validate_galaxy_list_v02()
     validate_scoring_formula_v02()
+    validate_family_parameter_count_v03()
+    validate_control_implementation_v03()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

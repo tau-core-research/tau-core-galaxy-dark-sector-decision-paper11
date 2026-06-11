@@ -49,6 +49,8 @@ data/source_manifest/control_manifest_v01.csv
 data/source_manifest/decision_threshold_v01.csv
 data/source_manifest/galaxy_list_freeze_v02.csv
 data/source_manifest/scoring_formula_freeze_v02.csv
+data/source_manifest/family_parameter_count_freeze_v03.csv
+data/source_manifest/control_implementation_freeze_v03.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -75,6 +77,8 @@ docs/control_manifest_v01.md
 docs/decision_threshold_v01.md
 docs/galaxy_list_freeze_v02.md
 docs/scoring_formula_freeze_v02.md
+docs/family_parameter_count_freeze_v03.md
+docs/control_implementation_freeze_v03.md
 ```
 
 ## Reproduce
@@ -103,7 +107,8 @@ benchmark families under the same endpoint-blind decision protocol.
 ```
 
 The current honest status is a frozen-reference policy bundle, v01
-sample/scoring/control/threshold pre-registration, and v02 galaxy-role plus
-scoring-formula freeze. The next target is family parameter-count freeze,
-control implementation, and source-field completeness checks, not a response
+sample/scoring/control/threshold pre-registration, v02 galaxy-role plus
+scoring-formula freeze, and v03 family-budget plus control-implementation
+freeze. The next target is source-field completeness, family formula registry,
+numeric parameter counts, and control-runner implementation, not a response
 formula or physical readout claim.

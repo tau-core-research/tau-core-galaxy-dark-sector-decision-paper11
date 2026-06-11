@@ -24,6 +24,8 @@ def test_required_files_exist() -> None:
         "docs/decision_threshold_v01.md",
         "docs/galaxy_list_freeze_v02.md",
         "docs/scoring_formula_freeze_v02.md",
+        "docs/family_parameter_count_freeze_v03.md",
+        "docs/control_implementation_freeze_v03.md",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -104,6 +106,26 @@ def test_v02_freezes_are_concrete_but_not_activated() -> None:
     }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in formula_rows)
     assert all("FORMULA_POLICY_FROZEN_NOT_RUN" in row["current_status"] for row in formula_rows)
+
+
+def test_v03_family_budget_and_controls_are_frozen_not_run() -> None:
+    budget_rows = list(csv.DictReader((ROOT / "data/source_manifest/family_parameter_count_freeze_v03.csv").open()))
+    assert {"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in budget_rows})
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in budget_rows)
+    assert all("COUNT_RULE_FROZEN_NUMERIC_COUNT_PENDING" in row["numeric_count_status"] for row in budget_rows)
+    assert any("Response_tau formula claimed" in row["claim_boundary"] for row in budget_rows)
+
+    control_rows = list(csv.DictReader((ROOT / "data/source_manifest/control_implementation_freeze_v03.csv").open()))
+    assert {row["control_id"] for row in control_rows} == {
+        "CIF03_SHUFFLE",
+        "CIF03_WRONG_FAMILY",
+        "CIF03_NULL_SOURCE",
+        "CIF03_LEAKAGE",
+        "CIF03_RADIAL",
+        "CIF03_PARITY",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in control_rows)
+    assert all("IMPLEMENTATION_POLICY_FROZEN_NOT_RUN" in row["current_status"] for row in control_rows)
 
 
 def test_arxiv_zip_is_source_only_if_present() -> None:
