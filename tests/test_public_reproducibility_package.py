@@ -57,6 +57,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_work_order_completion_gate_v28.md",
         "docs/frontier_evidence_write_authorization_v29.md",
         "docs/frontier_authorized_evidence_writer_v30.md",
+        "docs/frontier_post_writer_evidence_absence_audit_v31.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -125,6 +126,8 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_evidence_write_authorization_summary_v29.csv",
         "data/derived/frontier_authorized_evidence_writer_v30.csv",
         "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
+        "data/derived/frontier_post_writer_evidence_absence_audit_v31.csv",
+        "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -150,6 +153,7 @@ def test_required_files_exist() -> None:
         "scripts/run_frontier_work_order_completion_gate.py",
         "scripts/run_frontier_evidence_write_authorization.py",
         "scripts/run_frontier_authorized_evidence_writer.py",
+        "scripts/run_frontier_post_writer_evidence_absence_audit.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1093,6 +1097,38 @@ def test_v30_frontier_authorized_evidence_writer_writes_zero_rows() -> None:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_AUTHORIZED_EVIDENCE_WRITER_BLOCKED",
             "claim_boundary": "frontier_authorized_evidence_writer_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v31_frontier_post_writer_evidence_absence_audit_confirms_absence() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/frontier_post_writer_evidence_absence_audit_v31.csv").open()))
+    assert rows == [
+        {
+            "audit_id": "FPWEA31_POST_WRITER_EVIDENCE_ABSENCE",
+            "writer_summary_source": "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
+            "target_evidence_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "writer_status": "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION",
+            "writer_rows_written": "0",
+            "writer_target_file_written": "false",
+            "target_evidence_input_present_after_audit": "false",
+            "absence_confirmed": "true",
+            "evidence_gate_may_be_promoted": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_POST_WRITER_EVIDENCE_ABSENCE_AUDIT_V31",
+            "absence_confirmed": "true",
+            "target_evidence_input_present_after_audit": "false",
+            "evidence_gate_may_be_promoted": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED",
+            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

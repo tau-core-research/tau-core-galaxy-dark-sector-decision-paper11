@@ -252,6 +252,10 @@ The v30 authorized evidence writer records the only current writer path for the
 frontier evidence input. Because v29 blocks authorization, it writes zero rows
 and creates no evidence file.
 
+The v31 post-writer evidence-absence audit checks the filesystem state after
+that writer. It confirms that the target evidence input remains absent, so the
+evidence gate cannot be promoted.
+
 \section{Claim Boundary}
 
 This paper does not claim:

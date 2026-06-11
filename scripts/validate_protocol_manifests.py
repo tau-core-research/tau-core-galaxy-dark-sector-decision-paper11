@@ -907,6 +907,27 @@ def validate_frontier_authorized_evidence_writer_v30() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v30 summary must forbid scoring")
 
 
+def validate_frontier_post_writer_evidence_absence_audit_v31() -> None:
+    rows = read_csv(ROOT / "data/derived/frontier_post_writer_evidence_absence_audit_v31.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv")
+    require(len(rows) == 1, "v31 post-writer absence audit must have one row")
+    row = rows[0]
+    require(row["writer_status"] == "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION", "v31 must inherit blocked writer")
+    require(row["writer_rows_written"] == "0", "v31 must inherit zero writer rows")
+    require(row["writer_target_file_written"] == "false", "v31 must inherit no target write")
+    require(row["target_evidence_input_present_after_audit"] == "false", "v31 target evidence input must remain absent")
+    require(row["absence_confirmed"] == "true", "v31 must confirm target evidence absence")
+    require(row["evidence_gate_may_be_promoted"] == "false", "v31 cannot allow evidence gate promotion")
+    require(row["endpoint_scoring_allowed"] == "false", "v31 row cannot allow scoring")
+    require(len(summary) == 1, "v31 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED", "v31 summary must confirm absence")
+    require(summary_row["absence_confirmed"] == "true", "v31 summary must confirm absence")
+    require(summary_row["target_evidence_input_present_after_audit"] == "false", "v31 summary target must remain absent")
+    require(summary_row["evidence_gate_may_be_promoted"] == "false", "v31 summary cannot promote evidence gate")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v31 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -952,6 +973,7 @@ def main() -> None:
     validate_frontier_work_order_completion_gate_v28()
     validate_frontier_evidence_write_authorization_v29()
     validate_frontier_authorized_evidence_writer_v30()
+    validate_frontier_post_writer_evidence_absence_audit_v31()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
