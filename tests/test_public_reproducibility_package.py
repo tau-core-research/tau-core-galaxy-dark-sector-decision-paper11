@@ -40,6 +40,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_audit_evidence_template_v58.md",
         "docs/leakage_audit_review_package_v59.md",
         "docs/leakage_audit_review_response_intake_v60.md",
+        "docs/leakage_prescore_artifact_work_order_v61.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -126,6 +127,9 @@ def test_required_files_exist() -> None:
         "review_packages/leakage_audit_v58_completed_review_response/leakage_audit_v58_review_validation_log.txt",
         "data/derived/leakage_audit_review_response_intake_v60.csv",
         "data/derived/leakage_audit_review_response_intake_summary_v60.csv",
+        "data/derived/leakage_prescore_artifact_work_order_v61.csv",
+        "data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv",
+        "data/derived/leakage_prescore_artifact_work_order_summary_v61.csv",
         "data/derived/source_import_values_v11.csv",
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
@@ -265,6 +269,7 @@ def test_required_files_exist() -> None:
         "scripts/build_leakage_audit_evidence_template.py",
         "scripts/build_leakage_audit_review_package.py",
         "scripts/ingest_leakage_audit_review_response.py",
+        "scripts/build_leakage_prescore_artifact_work_order.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -736,6 +741,47 @@ def test_v60_leakage_audit_review_response_intake_is_no_go_not_evidence() -> Non
             "overall_status": "LEAKAGE_REVIEW_RESPONSE_ACCEPTED_AS_NO_GO_NOT_EVIDENCE",
             "next_required_action": "provide_reviewed_prescore_source_or_protocol_artifacts_for_LEC10_SOURCE_ROUTE_LEC10_OBSERVED_INPUTS_LEC10_MORPH_LABELS_LEC10_BENCHMARK_INPUTS",
             "claim_boundary": "leakage_review_response_intake_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v61_leakage_prescore_artifact_work_order_is_open_not_evidence() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_work_order_v61.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/leakage_prescore_artifact_work_order_summary_v61.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {
+        "LEC10_SOURCE_ROUTE",
+        "LEC10_OBSERVED_INPUTS",
+        "LEC10_MORPH_LABELS",
+        "LEC10_BENCHMARK_INPUTS",
+    }
+    assert all(row["artifact_collection_status"] == "OPEN_PRESCORE_ARTIFACT_REQUIRED" for row in rows)
+    assert all(row["may_create_leakage_evidence_after_work_order"] == "false" for row in rows)
+    assert all(row["may_activate_row_after_work_order"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+
+    assert len(coverage) == 4
+    assert all(row["galaxy_rows"] == "18" for row in coverage)
+    assert all(row["open_prescore_artifact_rows"] == "18" for row in coverage)
+    assert all(row["ready_for_leakage_evidence_rows"] == "0" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_PRESCORE_ARTIFACT_WORK_ORDER_V61",
+            "work_order_rows": "72",
+            "galaxies_covered": "18",
+            "evidence_checks_per_galaxy": "4",
+            "open_prescore_artifact_rows": "72",
+            "ready_for_leakage_evidence_rows": "0",
+            "leakage_pass_rows_created": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "LEAKAGE_PRESCORE_ARTIFACT_WORK_ORDER_OPEN",
+            "next_required_artifact": "reviewed_prescore_source_or_protocol_artifacts_for_v61",
+            "claim_boundary": "leakage_prescore_artifact_work_order_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

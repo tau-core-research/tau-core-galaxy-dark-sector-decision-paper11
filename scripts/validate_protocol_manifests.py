@@ -553,6 +553,44 @@ def validate_leakage_audit_review_response_intake_v60() -> None:
     )
 
 
+def validate_leakage_prescore_artifact_work_order_v61() -> None:
+    rows = read_csv(ROOT / "data/derived/leakage_prescore_artifact_work_order_v61.csv")
+    coverage = read_csv(ROOT / "data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_prescore_artifact_work_order_summary_v61.csv")
+    require(len(rows) == 72, "v61 work order must cover 72 leakage artifact rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v61 work order must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v61 evidence ids must match leakage contract",
+    )
+    require(
+        all(row["artifact_collection_status"] == "OPEN_PRESCORE_ARTIFACT_REQUIRED" for row in rows),
+        "v61 rows must remain open",
+    )
+    require(
+        all(row["may_create_leakage_evidence_after_work_order"] == "false" for row in rows),
+        "v61 cannot create leakage evidence",
+    )
+    require(all(row["may_activate_row_after_work_order"] == "false" for row in rows), "v61 cannot activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v61 rows cannot allow scoring")
+    require(len(coverage) == 4, "v61 coverage must summarize four leakage checks")
+    require(all(row["galaxy_rows"] == "18" for row in coverage), "v61 coverage rows must cover eighteen galaxies")
+    require(all(row["open_prescore_artifact_rows"] == "18" for row in coverage), "v61 coverage must keep all rows open")
+    require(all(row["ready_for_leakage_evidence_rows"] == "0" for row in coverage), "v61 coverage cannot mark ready rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v61 coverage cannot allow scoring")
+    require(len(summary) == 1, "v61 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_PRESCORE_ARTIFACT_WORK_ORDER_V61", "v61 summary id mismatch")
+    require(row["work_order_rows"] == "72", "v61 must summarize 72 work order rows")
+    require(row["open_prescore_artifact_rows"] == "72", "v61 must keep 72 rows open")
+    require(row["ready_for_leakage_evidence_rows"] == "0", "v61 must mark zero rows ready")
+    require(row["leakage_pass_rows_created"] == "0", "v61 cannot create leakage passes")
+    require(row["activation_rows_authorized"] == "0", "v61 cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v61 summary must forbid scoring")
+    require(row["overall_status"] == "LEAKAGE_PRESCORE_ARTIFACT_WORK_ORDER_OPEN", "v61 must remain open")
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -2142,6 +2180,7 @@ def main() -> None:
     validate_leakage_audit_evidence_template_v58()
     validate_leakage_audit_review_package_v59()
     validate_leakage_audit_review_response_intake_v60()
+    validate_leakage_prescore_artifact_work_order_v61()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

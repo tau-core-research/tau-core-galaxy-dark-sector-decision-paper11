@@ -187,6 +187,10 @@ as a no-go decision because required evidence is not filled. It covers all 72
 review rows, authorizes zero leakage-pass rows, authorizes zero activation
 rows, and keeps endpoint scoring disabled.
 
+The v61 leakage prescore artifact work order converts that no-go into 72 open
+artifact tasks across the four leakage checks. It creates zero leakage-evidence
+rows and authorizes no activation or scoring.
+
 The v11 source-import value ledger instantiates those fields row by row. It
 contains placeholders only: no source route, observed numeric value, or leakage
 evidence has been filled.
