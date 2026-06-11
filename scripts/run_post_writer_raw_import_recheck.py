@@ -38,6 +38,7 @@ def recheck_rows() -> list[dict[str, object]]:
             blockers.append("zero_provenance_rows_promoted_after_recheck")
         if row["raw_import_decision"] == "DO_NOT_IMPORT_RAW":
             blockers.append("v20_raw_import_decision_not_import")
+        allowed = not blockers
         out.append(
             {
                 "recheck_id": f"PWRI34_{index:03d}",
@@ -46,8 +47,8 @@ def recheck_rows() -> list[dict[str, object]]:
                 "promotion_recheck_source": "data/derived/post_writer_provenance_promotion_recheck_v33.csv",
                 "v20_raw_import_decision": row["raw_import_decision"],
                 "provenance_rows_promoted_after_recheck": promotion["provenance_rows_promoted_after_recheck"],
-                "raw_import_recheck_blockers": ";".join(blockers),
-                "raw_import_allowed_after_recheck": "false",
+                "raw_import_recheck_blockers": ";".join(blockers) if blockers else "none",
+                "raw_import_allowed_after_recheck": str(allowed).lower(),
                 "raw_rows_imported_after_recheck": 0,
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_raw_import_recheck_only_no_raw_import_no_scores",

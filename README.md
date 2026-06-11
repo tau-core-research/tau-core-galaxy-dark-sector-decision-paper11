@@ -181,6 +181,8 @@ data/derived/post_hash_review_promotion_response_intake_v53.csv
 data/derived/post_hash_review_promotion_response_intake_summary_v53.csv
 data/derived/authorized_provenance_evidence_payload_v54.csv
 data/derived/authorized_provenance_evidence_payload_summary_v54.csv
+data/input/source_import_provenance_evidence_v21.csv
+data/derived/active_v21_provenance_evidence_writer_summary_v55.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -264,6 +266,7 @@ docs/post_hash_frontier_review_promotion_recheck_v51.md
 docs/post_hash_review_promotion_package_v52.md
 docs/post_hash_review_promotion_response_intake_v53.md
 docs/authorized_provenance_evidence_payload_v54.md
+docs/active_v21_provenance_evidence_writer_v55.md
 ```
 
 ## Reproduce
@@ -322,52 +325,29 @@ real v12 input file is written. The v17 authorized writer path is implemented
 but currently reports `AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18
 raw-input template is present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`,
 but it is not data and cannot be used for scoring. The v19 provenance manifest
-currently reports `PROVENANCE_REQUIRED_NOT_FILLED`, so raw import remains
-blocked before any observed value can enter the scoring path. The v20
-provenance audit currently reports `RAW_IMPORT_BLOCKED_BY_PROVENANCE`. The v21
-provenance evidence template is present, but it is not evidence and cannot
-allow raw import. The v22 provenance evidence gate currently reports
-`PROVENANCE_EVIDENCE_INPUT_MISSING`, so provenance promotion remains blocked.
-The v23 provenance promotion gate makes that downstream block explicit:
-`PROVENANCE_PROMOTION_BLOCKED`, zero provenance rows are promoted, and no
-source import or scoring path is activated. The v24 scoring dependency closure
-collects thirteen current pre-score dependencies and reports
-`SCORING_DEPENDENCY_CLOSURE_BLOCKED`; no dependency is currently ready for
-endpoint scoring. The v25 scoring unblock priority ledger identifies the first
-frontier as `SCD24_PROVENANCE_EVIDENCE`, with
-`data/input/source_import_provenance_evidence_v21.csv` as the next required
-artifact. The v26 frontier provenance evidence acceptance checklist keeps all
-eighteen rows at `PENDING_INPUT`; zero rows are accepted for promotion review.
-The v27 frontier provenance evidence work order opens eighteen evidence
-collection tasks but does not authorize evidence writes or scoring. The v28
-frontier work-order completion gate keeps all eighteen work orders blocked from
-closure; zero work orders are closed. The v29 frontier evidence write
-authorization gate reports `FRONTIER_EVIDENCE_WRITE_BLOCKED`; no target evidence
-input file is written. The v30 authorized evidence writer is blocked by that
-authorization gate and writes zero rows. The v31 post-writer absence audit
-confirms that the target evidence input remains absent, so the evidence gate
-cannot be promoted. The v32 post-writer evidence gate recheck confirms that
-provenance promotion remains blocked after the writer path. The v33 post-writer
-provenance promotion recheck keeps all eighteen promotion rows blocked, with
-zero rows promoted. The v34 post-writer raw import recheck keeps all eighteen
-raw-import rows blocked, with zero raw rows imported. The v35 post-writer raw
-adapter recheck keeps the v12 real-values target unwritten because the raw input
-is still missing. The v36 post-writer real-values gate recheck keeps all
-eighteen rows unactivated, with zero imported numeric rows. The v37 post-writer
-leakage audit recheck keeps all eighteen rows leakage-blocked, with zero
-leakage-pass rows and zero activation-allowed rows. The v38 post-writer scoring
-activation recheck keeps all eighteen rows blocked from activation, with zero
-rows activated for scoring. The v39 post-writer scoring preflight recheck keeps
-all six preflight requirements blocked, with zero requirements ready after
-recheck. The v40 post-writer scoring dependency-closure recheck keeps all
-thirteen scoring dependencies blocked, with zero closed score-ready paths. The
-v41 post-writer scoring unblock-priority recheck confirms the first frontier as
-`SCD24_PROVENANCE_EVIDENCE`, requiring
-`data/input/source_import_provenance_evidence_v21.csv`. The v42 post-writer
-frontier evidence-acceptance recheck keeps all eighteen rows blocked, with zero
-evidence rows present and zero rows accepted for promotion review. The v43
-post-writer frontier work-order recheck keeps all eighteen work orders open,
-with zero closed work orders and zero evidence-write rows. The v44 frontier
+still declares the provenance requirements, and v21 keeps the provenance
+evidence column contract. The active v21 input is now present via v55. With that
+input in place, v22 reports `PROVENANCE_EVIDENCE_READY_FOR_PROMOTION`, v23
+promotes all eighteen provenance rows, and v20 reports
+`RAW_IMPORT_READY_BY_PROVENANCE`. The v24 scoring dependency closure now has
+three ready provenance-side dependencies and ten blocked downstream
+dependencies. The v25 scoring unblock priority ledger identifies the first
+current frontier as `SCD24_RAW_ADAPTER_INPUT`, with
+`data/input/source_import_raw_sparc_like_v15.csv` as the next required
+artifact. The legacy v26-v30 frontier-provenance work-order/writer path remains
+review-only and write-blocked; it does not override the separate active v55
+writer. The v31 audit records the active v55 provenance input as present, v32
+allows evidence-gate promotion, v33 promotes all eighteen provenance rows on
+recheck, and v34 allows raw import in principle while importing zero raw rows.
+The v35 post-writer raw adapter recheck is therefore the current source-side
+blocker: `data/input/source_import_raw_sparc_like_v15.csv` is still missing, so
+the v12 real-values target remains unwritten. The v36-v39 post-writer rechecks
+keep real values, leakage audit, scoring activation, and scoring preflight
+blocked. The v40 recheck keeps all endpoint-scoring paths blocked because
+preflight readiness is still zero, and v41 confirms the current frontier as
+`SCD24_RAW_ADAPTER_INPUT`. The v42-v43 frontier-evidence rechecks remain
+blocked/bypassed with respect to scoring because the active frontier is no
+longer provenance evidence. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen
 manual collection checklist rows for the missing provenance evidence input,
 while creating zero evidence rows by itself. The v45 frontier provenance source
@@ -398,4 +378,9 @@ with v21 copy and provenance-complete authorization set to true while endpoint
 scoring remains false. The v54 authorized provenance evidence payload converts
 that authorization into an eighteen-row `PROVENANCE_EVIDENCE_COMPLETE` payload
 under `data/derived/`; it is ready for a separate active v21 write gate but is
-not yet active source input.
+not yet active source input. The v55 active v21 provenance evidence writer
+writes all eighteen complete provenance rows into
+`data/input/source_import_provenance_evidence_v21.csv`. After rerunning the
+source-side gates, v22, v23, and v20 are ready, and the scoring unblock frontier
+moves to `data/input/source_import_raw_sparc_like_v15.csv`; endpoint scoring
+remains disabled.

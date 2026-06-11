@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 TARGET = ROOT / "data/input/source_import_provenance_evidence_v21.csv"
+ACTIVE_WRITER_SUMMARY = DERIVED / "active_v21_provenance_evidence_writer_summary_v55.csv"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -27,19 +28,26 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 def audit_rows() -> list[dict[str, object]]:
     writer = read_csv(DERIVED / "frontier_authorized_evidence_writer_summary_v30.csv")[0]
     target_present = TARGET.exists()
+    active_writer_status = "ACTIVE_WRITER_SUMMARY_MISSING"
+    if ACTIVE_WRITER_SUMMARY.exists():
+        active_writer_status = read_csv(ACTIVE_WRITER_SUMMARY)[0]["overall_status"]
+    active_writer_present = active_writer_status == "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITTEN"
+    evidence_gate_may_be_promoted = target_present and active_writer_present
     return [
         {
             "audit_id": "FPWEA31_POST_WRITER_EVIDENCE_ABSENCE",
             "writer_summary_source": "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
+            "active_writer_summary_source": "data/derived/active_v21_provenance_evidence_writer_summary_v55.csv",
             "target_evidence_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "writer_status": writer["writer_status"],
             "writer_rows_written": writer["rows_written"],
             "writer_target_file_written": writer["target_file_written"],
+            "active_writer_status": active_writer_status,
             "target_evidence_input_present_after_audit": str(target_present).lower(),
             "absence_confirmed": str(not target_present).lower(),
-            "evidence_gate_may_be_promoted": "false",
+            "evidence_gate_may_be_promoted": str(evidence_gate_may_be_promoted).lower(),
             "endpoint_scoring_allowed": "false",
-            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores",
+            "claim_boundary": "post_writer_evidence_presence_audit_only_no_scores",
         }
     ]
 
@@ -53,10 +61,14 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "target_evidence_input_present_after_audit": row["target_evidence_input_present_after_audit"],
             "evidence_gate_may_be_promoted": row["evidence_gate_may_be_promoted"],
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED"
-            if row["absence_confirmed"] == "true"
-            else "FRONTIER_EVIDENCE_INPUT_UNEXPECTEDLY_PRESENT",
-            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
+            "overall_status": (
+                "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED"
+                if row["absence_confirmed"] == "true"
+                else "FRONTIER_EVIDENCE_INPUT_PRESENT_VIA_ACTIVE_V21_WRITER"
+                if row["evidence_gate_may_be_promoted"] == "true"
+                else "FRONTIER_EVIDENCE_INPUT_UNEXPECTEDLY_PRESENT"
+            ),
+            "claim_boundary": "post_writer_evidence_presence_audit_only_no_scores_no_dark_sector_verdict",
         }
     ]
 
@@ -70,10 +82,12 @@ def main() -> None:
         [
             "audit_id",
             "writer_summary_source",
+            "active_writer_summary_source",
             "target_evidence_artifact",
             "writer_status",
             "writer_rows_written",
             "writer_target_file_written",
+            "active_writer_status",
             "target_evidence_input_present_after_audit",
             "absence_confirmed",
             "evidence_gate_may_be_promoted",

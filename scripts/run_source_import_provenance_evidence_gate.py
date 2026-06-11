@@ -61,6 +61,7 @@ def gate_rows() -> list[dict[str, object]]:
     manifest = read_csv(DERIVED / "source_import_provenance_manifest_v19.csv")
     expected_galaxies = {row["galaxy_id"] for row in manifest}
     input_status, rows_seen, valid_rows, valid_galaxies = evidence_statuses(expected_galaxies)
+    all_valid = valid_rows == len(expected_galaxies) and valid_galaxies == len(expected_galaxies)
     return [
         {
             "evidence_gate_id": "SIPEG22_EVIDENCE_TO_PROVENANCE",
@@ -70,7 +71,7 @@ def gate_rows() -> list[dict[str, object]]:
             "evidence_rows_seen": rows_seen,
             "valid_evidence_rows": valid_rows,
             "galaxies_with_valid_evidence": valid_galaxies,
-            "provenance_promotion_allowed": "false",
+            "provenance_promotion_allowed": str(all_valid).lower(),
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "provenance_evidence_gate_only_no_promotion_no_scores",
         }
@@ -79,6 +80,7 @@ def gate_rows() -> list[dict[str, object]]:
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     row = rows[0]
+    promotion_allowed = row["provenance_promotion_allowed"] == "true"
     return [
         {
             "summary_id": "SOURCE_IMPORT_PROVENANCE_EVIDENCE_GATE_V22",
@@ -88,7 +90,9 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "galaxies_with_valid_evidence": row["galaxies_with_valid_evidence"],
             "provenance_promotion_allowed": row["provenance_promotion_allowed"],
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "PROVENANCE_EVIDENCE_INPUT_MISSING",
+            "overall_status": "PROVENANCE_EVIDENCE_READY_FOR_PROMOTION"
+            if promotion_allowed
+            else "PROVENANCE_EVIDENCE_INPUT_MISSING",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "provenance_evidence_gate_only_no_source_import_no_scores",
         }

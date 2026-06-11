@@ -33,7 +33,10 @@ def recheck_rows() -> list[dict[str, object]]:
         blockers.append("zero_valid_evidence_rows_after_writer")
     out: list[dict[str, object]] = []
     for index, row in enumerate(promotion_rows, start=1):
-        row_blockers = blockers + ["v23_promotion_decision_not_promote"]
+        row_blockers = list(blockers)
+        if row["promotion_decision"] != "PROMOTE_PROVENANCE":
+            row_blockers.append("v23_promotion_decision_not_promote")
+        allowed = not row_blockers
         out.append(
             {
                 "recheck_id": f"PWPPR33_{index:03d}",
@@ -42,10 +45,10 @@ def recheck_rows() -> list[dict[str, object]]:
                 "evidence_recheck_source": "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv",
                 "v23_promotion_decision": row["promotion_decision"],
                 "valid_evidence_rows_after_writer": evidence_recheck["valid_evidence_rows"],
-                "promotion_recheck_blockers": ";".join(row_blockers),
-                "provenance_promotion_allowed_after_recheck": "false",
-                "provenance_rows_promoted_after_recheck": 0,
-                "raw_import_allowed_after_recheck": "false",
+                "promotion_recheck_blockers": ";".join(row_blockers) if row_blockers else "none",
+                "provenance_promotion_allowed_after_recheck": str(allowed).lower(),
+                "provenance_rows_promoted_after_recheck": 1 if allowed else 0,
+                "raw_import_allowed_after_recheck": str(allowed).lower(),
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_provenance_promotion_recheck_only_no_promotion_no_scores",
             }
@@ -56,6 +59,7 @@ def recheck_rows() -> list[dict[str, object]]:
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     promoted = sum(int(row["provenance_rows_promoted_after_recheck"]) for row in rows)
     allowed = sum(row["provenance_promotion_allowed_after_recheck"] == "true" for row in rows)
+    raw_allowed = sum(row["raw_import_allowed_after_recheck"] == "true" for row in rows)
     return [
         {
             "summary_id": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_V33",
@@ -63,7 +67,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "promotion_allowed_rows_after_recheck": allowed,
             "promotion_blocked_rows_after_recheck": len(rows) - allowed,
             "provenance_rows_promoted_after_recheck": promoted,
-            "raw_import_allowed_rows_after_recheck": 0,
+            "raw_import_allowed_rows_after_recheck": raw_allowed,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_BLOCKED"
             if allowed == 0

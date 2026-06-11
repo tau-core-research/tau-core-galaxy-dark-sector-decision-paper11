@@ -7,8 +7,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
+ACTIVE_EVIDENCE = ROOT / "data/input/source_import_provenance_evidence_v21.csv"
 
 COMPLETE = "PROVENANCE_COMPLETE"
+EVIDENCE_COMPLETE = "PROVENANCE_EVIDENCE_COMPLETE"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -25,28 +27,45 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
             writer.writerow(row)
 
 
+def active_evidence_by_galaxy() -> dict[str, dict[str, str]]:
+    if not ACTIVE_EVIDENCE.exists():
+        return {}
+    return {row["galaxy_id"]: row for row in read_csv(ACTIVE_EVIDENCE)}
+
+
 def audit_rows() -> list[dict[str, object]]:
     rows = read_csv(DERIVED / "source_import_provenance_manifest_v19.csv")
+    active_evidence = active_evidence_by_galaxy()
     out: list[dict[str, object]] = []
     for row in rows:
-        statuses = [
-            row["catalog_status"],
-            row["file_or_table_status"],
-            row["row_identity_status"],
-            row["hash_or_accession_status"],
-            row["leakage_evidence_status"],
-        ]
+        evidence = active_evidence.get(row["galaxy_id"])
+        evidence_complete = evidence is not None and evidence["provenance_evidence_status"] == EVIDENCE_COMPLETE
+        statuses = (
+            [COMPLETE, COMPLETE, COMPLETE, COMPLETE, COMPLETE]
+            if evidence_complete
+            else [
+                row["catalog_status"],
+                row["file_or_table_status"],
+                row["row_identity_status"],
+                row["hash_or_accession_status"],
+                row["leakage_evidence_status"],
+            ]
+        )
         complete = all(status == COMPLETE for status in statuses)
         blockers = []
-        if row["catalog_status"] != COMPLETE:
+        if evidence is None:
+            blockers.append("active_v21_evidence_missing")
+        elif not evidence_complete:
+            blockers.append("active_v21_evidence_not_complete")
+        if statuses[0] != COMPLETE:
             blockers.append("catalog_provenance_missing")
-        if row["file_or_table_status"] != COMPLETE:
+        if statuses[1] != COMPLETE:
             blockers.append("file_or_table_provenance_missing")
-        if row["row_identity_status"] != COMPLETE:
+        if statuses[2] != COMPLETE:
             blockers.append("row_identity_missing")
-        if row["hash_or_accession_status"] != COMPLETE:
+        if statuses[3] != COMPLETE:
             blockers.append("hash_or_accession_missing")
-        if row["leakage_evidence_status"] != COMPLETE:
+        if statuses[4] != COMPLETE:
             blockers.append("leakage_evidence_missing")
         out.append(
             {
@@ -74,7 +93,9 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "raw_import_allowed_rows": allowed_rows,
             "raw_import_blocked_rows": len(rows) - allowed_rows,
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "RAW_IMPORT_BLOCKED_BY_PROVENANCE",
+            "overall_status": "RAW_IMPORT_READY_BY_PROVENANCE"
+            if allowed_rows == len(rows)
+            else "RAW_IMPORT_BLOCKED_BY_PROVENANCE",
             "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "provenance_audit_only_no_source_import_no_scores",
         }

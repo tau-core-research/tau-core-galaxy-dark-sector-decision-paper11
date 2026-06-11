@@ -135,12 +135,17 @@ def priority_rows() -> list[dict[str, object]]:
                 "next_required_artifact": row["next_required_artifact"],
                 "why_next": plan["why_next"],
                 "actionable_next_step": plan["actionable_next_step"],
-                "frontier_now": "true" if plan["rank"] == 1 and blocked else "false",
+                "frontier_now": "false",
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
             }
         )
-    return sorted(rows, key=lambda item: int(item["priority_rank"]))
+    rows = sorted(rows, key=lambda item: int(item["priority_rank"]))
+    for row in rows:
+        if row["dependency_decision"] == "BLOCKED":
+            row["frontier_now"] = "true"
+            break
+    return rows
 
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:

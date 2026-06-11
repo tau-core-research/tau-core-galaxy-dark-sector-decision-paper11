@@ -46,7 +46,7 @@ def recheck_rows() -> list[dict[str, object]]:
                 "v40_ready_dependencies_after_recheck": dependency_summary["ready_dependencies_after_recheck"],
                 "next_required_artifact": row["next_required_artifact"],
                 "priority_recheck_blockers": ";".join(blockers),
-                "frontier_now_after_recheck": "true" if row["priority_rank"] == "1" and blockers else "false",
+                "frontier_now_after_recheck": row["frontier_now"],
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores",
             }

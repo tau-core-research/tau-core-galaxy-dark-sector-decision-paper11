@@ -639,17 +639,17 @@ def validate_source_import_provenance_audit_v20() -> None:
     rows = read_csv(ROOT / "data/derived/source_import_provenance_audit_v20.csv")
     summary = read_csv(ROOT / "data/derived/source_import_provenance_audit_summary_v20.csv")
     require(len(rows) == 18, "v20 provenance audit must cover eighteen candidate rows")
-    require(all(row["provenance_complete"] == "false" for row in rows), "v20 must complete zero provenance rows")
-    require(all(row["raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows), "v20 must block raw import")
-    require(all("catalog_provenance_missing" in row["blocking_requirements"] for row in rows), "v20 must report catalog blockers")
+    require(all(row["provenance_complete"] == "true" for row in rows), "v20 must complete all provenance rows")
+    require(all(row["raw_import_decision"] == "ALLOW_RAW_IMPORT" for row in rows), "v20 must allow raw import")
+    require(all(row["blocking_requirements"] == "none" for row in rows), "v20 must clear provenance blockers")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v20 rows cannot allow scoring")
     require(len(summary) == 1, "v20 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "RAW_IMPORT_BLOCKED_BY_PROVENANCE", "v20 must block raw import by provenance")
+    require(row["overall_status"] == "RAW_IMPORT_READY_BY_PROVENANCE", "v20 must allow raw import by provenance")
     require(row["audited_rows"] == "18", "v20 summary must audit eighteen rows")
-    require(row["provenance_complete_rows"] == "0", "v20 must complete zero provenance rows")
-    require(row["raw_import_allowed_rows"] == "0", "v20 must allow zero raw imports")
-    require(row["raw_import_blocked_rows"] == "18", "v20 must block eighteen rows")
+    require(row["provenance_complete_rows"] == "18", "v20 must complete eighteen provenance rows")
+    require(row["raw_import_allowed_rows"] == "18", "v20 must allow eighteen raw imports")
+    require(row["raw_import_blocked_rows"] == "0", "v20 must block zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v20 summary must forbid scoring")
 
 
@@ -669,7 +669,7 @@ def validate_source_import_provenance_template_v21() -> None:
     require(row["overall_status"] == "PROVENANCE_TEMPLATE_READY_NOT_DATA", "v21 must remain template-only")
     require(row["template_rows"] == "18", "v21 summary must report eighteen rows")
     require(row["required_columns"] == "9", "v21 summary must report nine columns")
-    require(row["evidence_input_file_present"] == "false", "v21 must not include real evidence input")
+    require(row["evidence_input_file_present"] == "true", "v21 must detect real evidence input")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v21 summary must forbid scoring")
 
 
@@ -678,18 +678,21 @@ def validate_source_import_provenance_evidence_gate_v22() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_provenance_evidence_gate_summary_v22.csv")
     require(len(gate) == 1, "v22 evidence gate must have one row")
     row = gate[0]
-    require(row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v22 evidence input must remain absent")
-    require(row["evidence_rows_seen"] == "0", "v22 must see zero evidence rows")
-    require(row["valid_evidence_rows"] == "0", "v22 must validate zero evidence rows")
-    require(row["galaxies_with_valid_evidence"] == "0", "v22 must validate zero galaxies")
-    require(row["provenance_promotion_allowed"] == "false", "v22 must not allow provenance promotion")
+    require(row["evidence_input_status"] == "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v22 evidence input must be present")
+    require(row["evidence_rows_seen"] == "18", "v22 must see eighteen evidence rows")
+    require(row["valid_evidence_rows"] == "18", "v22 must validate eighteen evidence rows")
+    require(row["galaxies_with_valid_evidence"] == "18", "v22 must validate eighteen galaxies")
+    require(row["provenance_promotion_allowed"] == "true", "v22 must allow provenance promotion")
     require(row["endpoint_scoring_allowed"] == "false", "v22 row cannot allow scoring")
     require(len(summary) == 1, "v22 summary must have one row")
     summary_row = summary[0]
-    require(summary_row["overall_status"] == "PROVENANCE_EVIDENCE_INPUT_MISSING", "v22 summary must report missing evidence")
-    require(summary_row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v22 summary must report missing evidence input")
-    require(summary_row["valid_evidence_rows"] == "0", "v22 summary must validate zero rows")
-    require(summary_row["provenance_promotion_allowed"] == "false", "v22 summary must block promotion")
+    require(summary_row["overall_status"] == "PROVENANCE_EVIDENCE_READY_FOR_PROMOTION", "v22 summary must report ready evidence")
+    require(
+        summary_row["evidence_input_status"] == "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+        "v22 summary must report present evidence input",
+    )
+    require(summary_row["valid_evidence_rows"] == "18", "v22 summary must validate eighteen rows")
+    require(summary_row["provenance_promotion_allowed"] == "true", "v22 summary must allow promotion")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v22 summary must forbid scoring")
 
 
@@ -698,29 +701,26 @@ def validate_source_import_provenance_promotion_gate_v23() -> None:
     summary = read_csv(ROOT / "data/derived/source_import_provenance_promotion_summary_v23.csv")
     require(len(rows) == 18, "v23 promotion gate must cover eighteen candidate rows")
     require(
-        all(row["v22_provenance_promotion_allowed"] == "false" for row in rows),
-        "v23 must inherit the blocked v22 promotion decision",
+        all(row["v22_provenance_promotion_allowed"] == "true" for row in rows),
+        "v23 must inherit the ready v22 promotion decision",
     )
-    require(all(row["promotion_allowed"] == "false" for row in rows), "v23 must block all promotions")
+    require(all(row["promotion_allowed"] == "true" for row in rows), "v23 must allow all promotions")
     require(
-        all(row["promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows),
-        "v23 must not promote provenance",
+        all(row["promotion_decision"] == "PROMOTE_PROVENANCE" for row in rows),
+        "v23 must promote provenance",
     )
-    require(
-        all("provenance_evidence_gate_not_allowed" in row["promotion_blockers"] for row in rows),
-        "v23 must report the evidence-gate blocker",
-    )
-    require(all(row["provenance_rows_promoted"] == "0" for row in rows), "v23 must promote zero rows")
-    require(all(row["raw_import_allowed_after_promotion"] == "false" for row in rows), "v23 cannot allow raw import")
+    require(all(row["promotion_blockers"] == "none" for row in rows), "v23 must clear promotion blockers")
+    require(all(row["provenance_rows_promoted"] == "1" for row in rows), "v23 must promote all rows")
+    require(all(row["raw_import_allowed_after_promotion"] == "true" for row in rows), "v23 must allow raw import")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v23 rows cannot allow scoring")
     require(len(summary) == 1, "v23 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "PROVENANCE_PROMOTION_BLOCKED", "v23 summary must block promotion")
+    require(row["overall_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED", "v23 summary must be ready")
     require(row["candidate_rows"] == "18", "v23 summary must cover eighteen rows")
-    require(row["promotion_allowed_rows"] == "0", "v23 must allow zero promotions")
-    require(row["promotion_blocked_rows"] == "18", "v23 must block eighteen promotions")
-    require(row["provenance_rows_promoted"] == "0", "v23 must promote zero provenance rows")
-    require(row["raw_import_allowed_rows_after_promotion"] == "0", "v23 must allow zero raw imports")
+    require(row["promotion_allowed_rows"] == "18", "v23 must allow eighteen promotions")
+    require(row["promotion_blocked_rows"] == "0", "v23 must block zero promotions")
+    require(row["provenance_rows_promoted"] == "18", "v23 must promote eighteen provenance rows")
+    require(row["raw_import_allowed_rows_after_promotion"] == "18", "v23 must allow eighteen raw imports")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v23 summary must forbid scoring")
 
 
@@ -745,16 +745,21 @@ def validate_scoring_dependency_closure_v24() -> None:
         "SCD24_DECISION_THRESHOLDS",
     }
     require(ids == required, f"v24 dependency ids mismatch: {ids ^ required}")
-    require(all(row["dependency_decision"] == "BLOCKED" for row in rows), "v24 must block all dependencies")
+    ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
+    require(
+        ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"},
+        f"v24 ready ids mismatch: {ready_ids}",
+    )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v24 rows cannot allow scoring")
-    require(any(row["upstream_status"] == "PROVENANCE_PROMOTION_BLOCKED" for row in rows), "v24 must include v23 block")
+    require(any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows), "v24 must include v23 ready")
     require(any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows), "v24 must include v13 block")
     require(len(summary) == 1, "v24 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
-    require(row["ready_dependencies"] == "0", "v24 must have zero ready dependencies")
-    require(row["blocked_dependencies"] == "13", "v24 must block thirteen dependencies")
+    require(row["ready_dependencies"] == "3", "v24 must have three ready dependencies")
+    require(row["blocked_dependencies"] == "10", "v24 must block ten dependencies")
+    require(row["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv", "v24 next artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
 
 
@@ -764,22 +769,27 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(len(rows) == 13, "v25 priority ledger must cover thirteen dependencies")
     ranks = [int(row["priority_rank"]) for row in rows]
     require(ranks == list(range(1, 14)), f"v25 ranks must be contiguous: {ranks}")
-    require(all(row["dependency_decision"] == "BLOCKED" for row in rows), "v25 must preserve blocked dependencies")
+    ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
+    require(
+        ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"},
+        f"v25 ready ids mismatch: {ready_ids}",
+    )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
-    require(frontier[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE", "v25 first frontier must be provenance evidence")
+    require(frontier[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT", "v25 first frontier must be raw adapter input")
     require(
-        frontier[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv",
-        "v25 frontier artifact must be provenance evidence input",
+        frontier[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv",
+        "v25 frontier artifact must be raw SPARC-like input",
     )
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
     require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
-    require(row["blocked_priority_rows"] == "13", "v25 must preserve thirteen blocked rows")
+    require(row["blocked_priority_rows"] == "10", "v25 must preserve ten blocked rows")
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
-    require(row["first_frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE", "v25 frontier dependency mismatch")
+    require(row["first_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT", "v25 frontier dependency mismatch")
+    require(row["first_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv", "v25 frontier artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
@@ -792,18 +802,18 @@ def validate_frontier_provenance_evidence_acceptance_v26() -> None:
         all(row["frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows),
         "v26 must target the provenance evidence input",
     )
-    require(all(row["evidence_input_present"] == "false" for row in rows), "v26 must not see real evidence input")
-    require(all(row["missing_or_placeholder_fields"] == "input_row_missing" for row in rows), "v26 must report missing input rows")
-    require(all(row["acceptance_status"] == "PENDING_INPUT" for row in rows), "v26 rows must remain pending input")
-    require(all(row["accepted_for_promotion_review"] == "false" for row in rows), "v26 must accept zero rows")
+    require(all(row["evidence_input_present"] == "true" for row in rows), "v26 must see real evidence input")
+    require(all(row["missing_or_placeholder_fields"] == "none" for row in rows), "v26 must clear missing input fields")
+    require(all(row["acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v26 rows must be accepted")
+    require(all(row["accepted_for_promotion_review"] == "true" for row in rows), "v26 must accept all rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v26 rows cannot allow scoring")
     require(len(summary) == 1, "v26 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "FRONTIER_EVIDENCE_ACCEPTANCE_PENDING_INPUT", "v26 must remain input-pending")
+    require(row["overall_status"] == "FRONTIER_EVIDENCE_ACCEPTANCE_REVIEW_READY", "v26 must be review-ready")
     require(row["candidate_rows"] == "18", "v26 must summarize eighteen candidates")
-    require(row["evidence_input_rows_present"] == "0", "v26 must see zero evidence rows")
-    require(row["accepted_for_promotion_review_rows"] == "0", "v26 must accept zero rows")
-    require(row["blocked_rows"] == "18", "v26 must block eighteen rows")
+    require(row["evidence_input_rows_present"] == "18", "v26 must see eighteen evidence rows")
+    require(row["accepted_for_promotion_review_rows"] == "18", "v26 must accept eighteen rows")
+    require(row["blocked_rows"] == "0", "v26 must block zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v26 summary must forbid scoring")
 
 
@@ -816,7 +826,7 @@ def validate_frontier_provenance_evidence_work_order_v27() -> None:
         all(row["target_evidence_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows),
         "v27 must target the provenance evidence input",
     )
-    require(all(row["current_acceptance_status"] == "PENDING_INPUT" for row in rows), "v27 must inherit v26 pending status")
+    require(all(row["current_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v27 must inherit v26 accepted status")
     require(
         all(row["work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows),
         "v27 work orders must remain open",
@@ -838,15 +848,15 @@ def validate_frontier_work_order_completion_gate_v28() -> None:
     rows = read_csv(ROOT / "data/derived/frontier_work_order_completion_gate_v28.csv")
     summary = read_csv(ROOT / "data/derived/frontier_work_order_completion_gate_summary_v28.csv")
     require(len(rows) == 18, "v28 completion gate must cover eighteen work orders")
-    require(all(row["accepted_for_promotion_review"] == "false" for row in rows), "v28 must inherit zero accepted rows")
+    require(all(row["accepted_for_promotion_review"] == "true" for row in rows), "v28 must inherit accepted rows")
     require(
         all(row["work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows),
         "v28 must inherit open work orders",
     )
     require(all("work_order_open" in row["completion_blockers"] for row in rows), "v28 must report open work-order blocker")
     require(
-        all("not_accepted_for_promotion_review" in row["completion_blockers"] for row in rows),
-        "v28 must report promotion-review blocker",
+        all("not_accepted_for_promotion_review" not in row["completion_blockers"] for row in rows),
+        "v28 must clear promotion-review blocker",
     )
     require(
         all(row["completion_decision"] == "DO_NOT_CLOSE_WORK_ORDER" for row in rows),
@@ -872,7 +882,7 @@ def validate_frontier_evidence_write_authorization_v29() -> None:
     require(row["completion_gate_status"] == "FRONTIER_WORK_ORDER_COMPLETION_BLOCKED", "v29 must inherit blocked v28 status")
     require(row["completion_gate_rows"] == "18", "v29 must inspect eighteen completion rows")
     require(row["work_orders_closed"] == "0", "v29 must see zero closed work orders")
-    require(row["target_evidence_input_present"] == "false", "v29 target evidence input must remain absent")
+    require(row["target_evidence_input_present"] == "true", "v29 target evidence input must be present from v55")
     require("frontier_work_orders_not_closed" in row["write_blockers"], "v29 must block on open frontier work orders")
     require(row["write_authorized"] == "false", "v29 cannot authorize evidence writes")
     require(row["target_file_written"] == "false", "v29 must write no target file")
@@ -881,7 +891,7 @@ def validate_frontier_evidence_write_authorization_v29() -> None:
     summary_row = summary[0]
     require(summary_row["overall_status"] == "FRONTIER_EVIDENCE_WRITE_BLOCKED", "v29 summary must block evidence writing")
     require(summary_row["write_authorized"] == "false", "v29 summary cannot authorize writing")
-    require(summary_row["target_evidence_input_present"] == "false", "v29 summary must keep target absent")
+    require(summary_row["target_evidence_input_present"] == "true", "v29 summary must detect target")
     require(summary_row["target_file_written"] == "false", "v29 summary must write no target")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v29 summary must forbid scoring")
 
@@ -892,7 +902,7 @@ def validate_frontier_authorized_evidence_writer_v30() -> None:
     require(len(rows) == 1, "v30 authorized evidence writer must have one row")
     row = rows[0]
     require(row["write_authorized"] == "false", "v30 must inherit blocked authorization")
-    require(row["target_preexisting"] == "false", "v30 target evidence input must remain absent")
+    require(row["target_preexisting"] == "true", "v30 target evidence input must be preexisting")
     require(row["target_file_written"] == "false", "v30 must write no target file")
     require(row["rows_written"] == "0", "v30 must write zero rows")
     require(row["writer_status"] == "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION", "v30 writer must be blocked")
@@ -904,7 +914,7 @@ def validate_frontier_authorized_evidence_writer_v30() -> None:
     require(summary_row["write_authorized"] == "false", "v30 summary cannot authorize writing")
     require(summary_row["target_file_written"] == "false", "v30 summary must write no target")
     require(summary_row["rows_written"] == "0", "v30 summary must write zero rows")
-    require(summary_row["target_input_file_present_after_writer"] == "false", "v30 target must remain absent after writer")
+    require(summary_row["target_input_file_present_after_writer"] == "true", "v30 target must remain present after writer")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v30 summary must forbid scoring")
 
 
@@ -916,16 +926,20 @@ def validate_frontier_post_writer_evidence_absence_audit_v31() -> None:
     require(row["writer_status"] == "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION", "v31 must inherit blocked writer")
     require(row["writer_rows_written"] == "0", "v31 must inherit zero writer rows")
     require(row["writer_target_file_written"] == "false", "v31 must inherit no target write")
-    require(row["target_evidence_input_present_after_audit"] == "false", "v31 target evidence input must remain absent")
-    require(row["absence_confirmed"] == "true", "v31 must confirm target evidence absence")
-    require(row["evidence_gate_may_be_promoted"] == "false", "v31 cannot allow evidence gate promotion")
+    require(row["active_writer_status"] == "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITTEN", "v31 must see active v21 writer")
+    require(row["target_evidence_input_present_after_audit"] == "true", "v31 target evidence input must be present")
+    require(row["absence_confirmed"] == "false", "v31 must no longer confirm target evidence absence")
+    require(row["evidence_gate_may_be_promoted"] == "true", "v31 must allow evidence gate promotion")
     require(row["endpoint_scoring_allowed"] == "false", "v31 row cannot allow scoring")
     require(len(summary) == 1, "v31 summary must have one row")
     summary_row = summary[0]
-    require(summary_row["overall_status"] == "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED", "v31 summary must confirm absence")
-    require(summary_row["absence_confirmed"] == "true", "v31 summary must confirm absence")
-    require(summary_row["target_evidence_input_present_after_audit"] == "false", "v31 summary target must remain absent")
-    require(summary_row["evidence_gate_may_be_promoted"] == "false", "v31 summary cannot promote evidence gate")
+    require(
+        summary_row["overall_status"] == "FRONTIER_EVIDENCE_INPUT_PRESENT_VIA_ACTIVE_V21_WRITER",
+        "v31 summary must record active writer evidence presence",
+    )
+    require(summary_row["absence_confirmed"] == "false", "v31 summary must not confirm absence")
+    require(summary_row["target_evidence_input_present_after_audit"] == "true", "v31 summary target must be present")
+    require(summary_row["evidence_gate_may_be_promoted"] == "true", "v31 summary must promote evidence gate")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v31 summary must forbid scoring")
 
 
@@ -934,20 +948,22 @@ def validate_post_writer_evidence_gate_recheck_v32() -> None:
     summary = read_csv(ROOT / "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv")
     require(len(rows) == 1, "v32 post-writer evidence gate recheck must have one row")
     row = rows[0]
-    require(row["absence_confirmed"] == "true", "v32 must inherit confirmed absence")
-    require(row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v32 evidence input must remain missing")
-    require(row["valid_evidence_rows"] == "0", "v32 must see zero valid evidence rows")
-    require(row["provenance_promotion_allowed_before_recheck"] == "false", "v32 must inherit blocked promotion")
-    require("post_writer_evidence_absence_confirmed" in row["recheck_blockers"], "v32 must block on post-writer absence")
-    require("v22_provenance_promotion_not_allowed" in row["recheck_blockers"], "v32 must block on v22 promotion")
-    require(row["provenance_promotion_allowed_after_recheck"] == "false", "v32 cannot allow promotion")
+    require(row["absence_confirmed"] == "false", "v32 must inherit evidence presence")
+    require(
+        row["evidence_input_status"] == "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+        "v32 evidence input must be present",
+    )
+    require(row["valid_evidence_rows"] == "18", "v32 must see eighteen valid evidence rows")
+    require(row["provenance_promotion_allowed_before_recheck"] == "true", "v32 must inherit allowed promotion")
+    require(row["recheck_blockers"] == "none", "v32 must have no evidence recheck blockers")
+    require(row["provenance_promotion_allowed_after_recheck"] == "true", "v32 must allow promotion")
     require(row["endpoint_scoring_allowed"] == "false", "v32 row cannot allow scoring")
     require(len(summary) == 1, "v32 summary must have one row")
     summary_row = summary[0]
-    require(summary_row["overall_status"] == "POST_WRITER_EVIDENCE_GATE_RECHECK_BLOCKED", "v32 summary must block")
-    require(summary_row["absence_confirmed"] == "true", "v32 summary must inherit absence")
-    require(summary_row["valid_evidence_rows"] == "0", "v32 summary must see zero valid rows")
-    require(summary_row["provenance_promotion_allowed_after_recheck"] == "false", "v32 summary cannot promote")
+    require(summary_row["overall_status"] == "POST_WRITER_EVIDENCE_GATE_RECHECK_READY", "v32 summary must be ready")
+    require(summary_row["absence_confirmed"] == "false", "v32 summary must inherit evidence presence")
+    require(summary_row["valid_evidence_rows"] == "18", "v32 summary must see eighteen valid rows")
+    require(summary_row["provenance_promotion_allowed_after_recheck"] == "true", "v32 summary must promote")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v32 summary must forbid scoring")
 
 
@@ -955,27 +971,24 @@ def validate_post_writer_provenance_promotion_recheck_v33() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_provenance_promotion_recheck_v33.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv")
     require(len(rows) == 18, "v33 promotion recheck must cover eighteen rows")
-    require(all(row["v23_promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows), "v33 must inherit v23 no-promotion")
-    require(all(row["valid_evidence_rows_after_writer"] == "0" for row in rows), "v33 must see zero valid evidence rows")
+    require(all(row["v23_promotion_decision"] == "PROMOTE_PROVENANCE" for row in rows), "v33 must inherit v23 promotion")
+    require(all(row["valid_evidence_rows_after_writer"] == "18" for row in rows), "v33 must see valid evidence rows")
+    require(all(row["promotion_recheck_blockers"] == "none" for row in rows), "v33 must have no promotion blockers")
     require(
-        all("post_writer_evidence_gate_recheck_not_allowed" in row["promotion_recheck_blockers"] for row in rows),
-        "v33 must block on v32 evidence recheck",
+        all(row["provenance_promotion_allowed_after_recheck"] == "true" for row in rows),
+        "v33 must allow provenance promotion",
     )
-    require(
-        all(row["provenance_promotion_allowed_after_recheck"] == "false" for row in rows),
-        "v33 cannot allow provenance promotion",
-    )
-    require(all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows), "v33 must promote zero rows")
-    require(all(row["raw_import_allowed_after_recheck"] == "false" for row in rows), "v33 cannot allow raw import")
+    require(all(row["provenance_rows_promoted_after_recheck"] == "1" for row in rows), "v33 must promote all rows")
+    require(all(row["raw_import_allowed_after_recheck"] == "true" for row in rows), "v33 must allow raw import")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v33 rows cannot allow scoring")
     require(len(summary) == 1, "v33 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_BLOCKED", "v33 summary must block")
+    require(row["overall_status"] == "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_READY", "v33 summary must be ready")
     require(row["promotion_recheck_rows"] == "18", "v33 must summarize eighteen rows")
-    require(row["promotion_allowed_rows_after_recheck"] == "0", "v33 must allow zero promotions")
-    require(row["promotion_blocked_rows_after_recheck"] == "18", "v33 must block eighteen promotions")
-    require(row["provenance_rows_promoted_after_recheck"] == "0", "v33 must promote zero rows")
-    require(row["raw_import_allowed_rows_after_recheck"] == "0", "v33 must allow zero raw imports")
+    require(row["promotion_allowed_rows_after_recheck"] == "18", "v33 must allow eighteen promotions")
+    require(row["promotion_blocked_rows_after_recheck"] == "0", "v33 must block zero promotions")
+    require(row["provenance_rows_promoted_after_recheck"] == "18", "v33 must promote eighteen rows")
+    require(row["raw_import_allowed_rows_after_recheck"] == "18", "v33 must allow eighteen raw imports")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v33 summary must forbid scoring")
 
 
@@ -983,21 +996,18 @@ def validate_post_writer_raw_import_recheck_v34() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_raw_import_recheck_v34.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_raw_import_recheck_summary_v34.csv")
     require(len(rows) == 18, "v34 raw import recheck must cover eighteen rows")
-    require(all(row["v20_raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows), "v34 must inherit v20 no-import")
-    require(all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows), "v34 must inherit zero promoted provenance rows")
-    require(
-        all("post_writer_provenance_promotion_not_allowed" in row["raw_import_recheck_blockers"] for row in rows),
-        "v34 must block on v33 no-promotion",
-    )
-    require(all(row["raw_import_allowed_after_recheck"] == "false" for row in rows), "v34 cannot allow raw import")
+    require(all(row["v20_raw_import_decision"] == "ALLOW_RAW_IMPORT" for row in rows), "v34 must inherit v20 raw import allowance")
+    require(all(row["provenance_rows_promoted_after_recheck"] == "1" for row in rows), "v34 must inherit promoted provenance rows")
+    require(all(row["raw_import_recheck_blockers"] == "none" for row in rows), "v34 must have no raw import blockers")
+    require(all(row["raw_import_allowed_after_recheck"] == "true" for row in rows), "v34 must allow raw import")
     require(all(row["raw_rows_imported_after_recheck"] == "0" for row in rows), "v34 must import zero raw rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v34 rows cannot allow scoring")
     require(len(summary) == 1, "v34 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "POST_WRITER_RAW_IMPORT_RECHECK_BLOCKED", "v34 summary must block")
+    require(row["overall_status"] == "POST_WRITER_RAW_IMPORT_RECHECK_READY", "v34 summary must be ready")
     require(row["raw_import_recheck_rows"] == "18", "v34 must summarize eighteen rows")
-    require(row["raw_import_allowed_rows_after_recheck"] == "0", "v34 must allow zero raw imports")
-    require(row["raw_import_blocked_rows_after_recheck"] == "18", "v34 must block eighteen raw imports")
+    require(row["raw_import_allowed_rows_after_recheck"] == "18", "v34 must allow eighteen raw imports")
+    require(row["raw_import_blocked_rows_after_recheck"] == "0", "v34 must block zero raw imports")
     require(row["raw_rows_imported_after_recheck"] == "0", "v34 must import zero raw rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v34 summary must forbid scoring")
 
@@ -1011,7 +1021,8 @@ def validate_post_writer_raw_adapter_recheck_v35() -> None:
     require(row["raw_rows_seen"] == "0", "v35 must see zero raw rows")
     require(row["valid_raw_rows"] == "0", "v35 must validate zero raw rows")
     require(row["raw_rows_imported_after_recheck"] == "0", "v35 must inherit zero raw imports")
-    require("post_writer_raw_import_not_allowed" in row["adapter_recheck_blockers"], "v35 must block on v34 raw import")
+    require("post_writer_raw_import_not_allowed" not in row["adapter_recheck_blockers"], "v35 must not block on v34 raw import")
+    require("zero_raw_rows_imported_after_recheck" in row["adapter_recheck_blockers"], "v35 must block on zero raw rows")
     require("raw_adapter_input_not_present" in row["adapter_recheck_blockers"], "v35 must block on missing raw input")
     require(row["target_file_written_after_recheck"] == "false", "v35 must not write v12 target")
     require(row["real_values_input_may_exist_after_recheck"] == "false", "v35 cannot allow real values input")
@@ -1166,11 +1177,16 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
     require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
-    require(all(row["v24_dependency_decision"] == "BLOCKED" for row in rows), "v40 must inherit blocked v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 3, "v40 must inherit three ready v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 10, "v40 must inherit ten blocked v24 dependencies")
     require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
     require(
-        all("v24_dependency_not_ready" in row["dependency_recheck_blockers"] for row in rows),
-        "v40 must block on v24 dependency closure",
+        all(
+            ("v24_dependency_not_ready" in row["dependency_recheck_blockers"])
+            == (row["v24_dependency_decision"] != "READY")
+            for row in rows
+        ),
+        "v40 must only flag v24 blockers for non-ready dependencies",
     )
     require(
         all("post_writer_preflight_recheck_zero_ready_requirements" in row["dependency_recheck_blockers"] for row in rows),
@@ -1205,8 +1221,12 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(len(rows) == 13, "v41 priority recheck must cover thirteen rows")
     require(all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows), "v41 must inherit zero ready dependencies")
     require(
-        all("v25_priority_dependency_blocked" in row["priority_recheck_blockers"] for row in rows),
-        "v41 must block on v25 priority dependencies",
+        all(
+            ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
+            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 4)
+            for row in rows
+        ),
+        "v41 must flag v25 dependency blockers for the raw frontier and later blocked priorities",
     )
     require(
         all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
@@ -1217,10 +1237,10 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
         "v41 must block on dependency scoring denial",
     )
     require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
-    require(rows[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE", "v41 first row must remain provenance evidence")
-    require(rows[0]["frontier_now_after_recheck"] == "true", "v41 first row must be frontier")
+    frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
+    require(frontier_rows[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT", "v41 frontier row must be raw adapter input")
     require(
-        rows[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv",
+        frontier_rows[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -1230,9 +1250,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
     require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
-    require(row["first_frontier_dependency_after_recheck"] == "SCD24_PROVENANCE_EVIDENCE", "v41 frontier dependency mismatch")
+    require(row["first_frontier_dependency_after_recheck"] == "SCD24_RAW_ADAPTER_INPUT", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "data/input/source_import_provenance_evidence_v21.csv",
+        row["first_frontier_artifact_after_recheck"] == "data/input/source_import_raw_sparc_like_v15.csv",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -1247,21 +1267,17 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
-    require(all(row["v41_frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows), "v42 must inherit the v41 frontier")
+    require(all(row["v41_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT" for row in rows), "v42 must inherit the raw adapter frontier")
     require(
-        all(row["v41_frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows),
+        all(row["v41_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
-    require(all(row["v26_acceptance_status"] == "PENDING_INPUT" for row in rows), "v42 must inherit pending v26 acceptance")
-    require(all(row["v26_evidence_input_present"] == "false" for row in rows), "v42 must see zero evidence inputs")
-    require(all(row["v26_accepted_for_promotion_review"] == "false" for row in rows), "v42 must inherit zero accepted rows")
+    require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
+    require(all(row["v26_evidence_input_present"] == "true" for row in rows), "v42 must see evidence inputs")
+    require(all(row["v26_accepted_for_promotion_review"] == "true" for row in rows), "v42 must inherit accepted rows")
     require(
-        all("frontier_evidence_input_missing" in row["acceptance_recheck_blockers"] for row in rows),
-        "v42 must block on missing frontier evidence",
-    )
-    require(
-        all("v26_acceptance_not_passed" in row["acceptance_recheck_blockers"] for row in rows),
-        "v42 must block on v26 acceptance",
+        all(row["acceptance_recheck_blockers"] == "post_writer_frontier_not_provenance_evidence" for row in rows),
+        "v42 must bypass acceptance because the current frontier is raw input",
     )
     require(
         all(row["accepted_for_promotion_review_after_recheck"] == "false" for row in rows),
@@ -1272,7 +1288,7 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     row = summary[0]
     require(row["summary_id"] == "POST_WRITER_FRONTIER_EVIDENCE_ACCEPTANCE_RECHECK_V42", "v42 summary id mismatch")
     require(row["acceptance_recheck_rows"] == "18", "v42 must summarize eighteen rows")
-    require(row["evidence_input_rows_present_after_recheck"] == "0", "v42 must see zero evidence rows")
+    require(row["evidence_input_rows_present_after_recheck"] == "18", "v42 must see eighteen evidence rows")
     require(row["accepted_for_promotion_review_rows_after_recheck"] == "0", "v42 must accept zero rows")
     require(row["blocked_rows_after_recheck"] == "18", "v42 must block eighteen rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v42 summary must forbid scoring")
@@ -1852,13 +1868,37 @@ def validate_authorized_provenance_evidence_payload_v54() -> None:
     require(row["complete_provenance_payload_rows"] == "18", "v54 must have eighteen complete payload rows")
     require(row["ready_for_active_v21_write_rows"] == "18", "v54 must have eighteen ready rows")
     require(row["active_v21_target"] == "data/input/source_import_provenance_evidence_v21.csv", "v54 target mismatch")
-    require(row["active_v21_target_present"] == "false", "v54 must not create active target")
+    require(row["active_v21_target_present"] == "true", "v54 must detect active target")
     require(row["active_v21_rows_written_by_this_step"] == "0", "v54 must write zero active rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v54 summary must forbid scoring")
     require(row["overall_status"] == "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_READY_NOT_ACTIVE_INPUT", "v54 status mismatch")
     require(
         row["claim_boundary"] == "authorized_provenance_evidence_payload_only_no_active_input_no_scores_no_dark_sector_verdict",
         "v54 claim boundary mismatch",
+    )
+
+
+def validate_active_v21_provenance_evidence_writer_v55() -> None:
+    rows = read_csv(ROOT / "data/input/source_import_provenance_evidence_v21.csv")
+    summary = read_csv(ROOT / "data/derived/active_v21_provenance_evidence_writer_summary_v55.csv")
+    require(len(rows) == 18, "v55 active input must contain eighteen rows")
+    require(all(row["catalog"] == "SPARC" for row in rows), "v55 active input must use SPARC")
+    require(all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in rows), "v55 active input must use Table1")
+    require(
+        all(row["provenance_evidence_status"] == "PROVENANCE_EVIDENCE_COMPLETE" for row in rows),
+        "v55 active input rows must be complete",
+    )
+    require(len(summary) == 1, "v55 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITER_V55", "v55 summary id mismatch")
+    require(row["rows_written"] == "18", "v55 must write eighteen rows")
+    require(row["complete_provenance_rows_written"] == "18", "v55 must write eighteen complete rows")
+    require(row["target_file_written"] == "true", "v55 target must be written")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v55 cannot allow scoring")
+    require(row["overall_status"] == "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITTEN", "v55 status mismatch")
+    require(
+        row["claim_boundary"] == "active_v21_provenance_evidence_writer_only_no_observed_values_no_scores_no_dark_sector_verdict",
+        "v55 claim boundary mismatch",
     )
 
 
@@ -1931,6 +1971,7 @@ def main() -> None:
     validate_post_hash_review_promotion_package_v52()
     validate_post_hash_review_promotion_response_intake_v53()
     validate_authorized_provenance_evidence_payload_v54()
+    validate_active_v21_provenance_evidence_writer_v55()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

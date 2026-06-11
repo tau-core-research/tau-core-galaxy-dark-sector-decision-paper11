@@ -49,7 +49,7 @@ def promotion_rows() -> list[dict[str, object]]:
                 "promotion_decision": decision,
                 "promotion_blockers": blocker,
                 "provenance_rows_promoted": 1 if evidence_allows else 0,
-                "raw_import_allowed_after_promotion": "false",
+                "raw_import_allowed_after_promotion": "true" if evidence_allows else "false",
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "provenance_promotion_gate_only_no_manifest_mutation_no_scores",
             }
@@ -69,7 +69,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "promotion_allowed_rows": allowed_rows,
             "promotion_blocked_rows": blocked_rows,
             "provenance_rows_promoted": promoted_rows,
-            "raw_import_allowed_rows_after_promotion": 0,
+            "raw_import_allowed_rows_after_promotion": promoted_rows,
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "PROVENANCE_PROMOTION_BLOCKED"
             if blocked_rows

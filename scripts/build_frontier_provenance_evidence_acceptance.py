@@ -42,7 +42,6 @@ def evidence_by_galaxy() -> dict[str, dict[str, str]]:
 
 
 def acceptance_rows() -> list[dict[str, object]]:
-    priority = read_csv(DERIVED / "scoring_unblock_priority_summary_v25.csv")[0]
     manifest = read_csv(DERIVED / "source_import_provenance_manifest_v19.csv")
     evidence = evidence_by_galaxy()
     out: list[dict[str, object]] = []
@@ -67,8 +66,8 @@ def acceptance_rows() -> list[dict[str, object]]:
             {
                 "acceptance_id": f"FPEA26_{index:03d}",
                 "galaxy_id": galaxy_id,
-                "frontier_dependency": priority["first_frontier_dependency"],
-                "frontier_artifact": priority["first_frontier_artifact"],
+                "frontier_dependency": "SCD24_PROVENANCE_EVIDENCE",
+                "frontier_artifact": "data/input/source_import_provenance_evidence_v21.csv",
                 "required_fields": ";".join(REQUIRED_FIELDS),
                 "evidence_input_present": str(evidence_row is not None).lower(),
                 "missing_or_placeholder_fields": missing_fields,

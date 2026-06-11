@@ -349,6 +349,14 @@ evidence payload converts that authorization into an eighteen-row
 it is ready for a separate active v21 write gate but is not yet active source
 input.
 
+The v55 active v21 provenance-evidence writer writes all eighteen complete
+provenance rows into
+\path{data/input/source_import_provenance_evidence_v21.csv}. After
+rerunning the source-side gates, v22, v23, and v20 are ready, and the scoring
+unblock frontier moves to
+\path{data/input/source_import_raw_sparc_like_v15.csv}. Endpoint scoring
+remains disabled.
+
 \section{Claim Boundary}
 
 This paper does not claim:

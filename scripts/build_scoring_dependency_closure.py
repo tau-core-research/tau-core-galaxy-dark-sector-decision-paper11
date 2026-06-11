@@ -38,7 +38,9 @@ def dependency_row(
 ) -> dict[str, object]:
     blocked = upstream_status not in {
         "READY",
+        "PROVENANCE_EVIDENCE_READY_FOR_PROMOTION",
         "PROVENANCE_PROMOTION_READY_NOT_IMPORTED",
+        "RAW_IMPORT_READY_BY_PROVENANCE",
         "SOURCE_IMPORT_AND_LEAKAGE_READY",
         "SCORING_ACTIVATION_READY",
     }
@@ -157,6 +159,10 @@ def dependency_rows() -> list[dict[str, object]]:
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     blocked_rows = sum(row["dependency_decision"] == "BLOCKED" for row in rows)
     ready_rows = len(rows) - blocked_rows
+    next_required = next(
+        (row["next_required_artifact"] for row in rows if row["dependency_decision"] == "BLOCKED"),
+        "none",
+    )
     return [
         {
             "summary_id": "SCORING_DEPENDENCY_CLOSURE_V24",
@@ -167,7 +173,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED"
             if blocked_rows
             else "SCORING_DEPENDENCY_CLOSURE_READY",
-            "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "next_required_artifact": next_required,
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]

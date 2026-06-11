@@ -81,6 +81,7 @@ def test_required_files_exist() -> None:
         "docs/post_hash_review_promotion_package_v52.md",
         "docs/post_hash_review_promotion_response_intake_v53.md",
         "docs/authorized_provenance_evidence_payload_v54.md",
+        "docs/active_v21_provenance_evidence_writer_v55.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -224,6 +225,8 @@ def test_required_files_exist() -> None:
         "data/derived/post_hash_review_promotion_response_intake_summary_v53.csv",
         "data/derived/authorized_provenance_evidence_payload_v54.csv",
         "data/derived/authorized_provenance_evidence_payload_summary_v54.csv",
+        "data/input/source_import_provenance_evidence_v21.csv",
+        "data/derived/active_v21_provenance_evidence_writer_summary_v55.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -273,6 +276,7 @@ def test_required_files_exist() -> None:
         "scripts/build_post_hash_review_promotion_package.py",
         "scripts/ingest_post_hash_review_promotion_response.py",
         "scripts/build_authorized_provenance_evidence_payload.py",
+        "scripts/run_active_v21_provenance_evidence_writer.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -886,12 +890,12 @@ def test_v19_source_import_provenance_is_required_but_unfilled() -> None:
     ]
 
 
-def test_v20_source_import_provenance_audit_blocks_raw_import() -> None:
+def test_v20_source_import_provenance_audit_allows_raw_import_after_active_v21() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_audit_v20.csv").open()))
     assert len(rows) == 18
-    assert all(row["provenance_complete"] == "false" for row in rows)
-    assert all(row["raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows)
-    assert all("catalog_provenance_missing" in row["blocking_requirements"] for row in rows)
+    assert all(row["provenance_complete"] == "true" for row in rows)
+    assert all(row["raw_import_decision"] == "ALLOW_RAW_IMPORT" for row in rows)
+    assert all(row["blocking_requirements"] == "none" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_audit_summary_v20.csv").open()))
@@ -899,11 +903,11 @@ def test_v20_source_import_provenance_audit_blocks_raw_import() -> None:
         {
             "summary_id": "SOURCE_IMPORT_PROVENANCE_AUDIT_V20",
             "audited_rows": "18",
-            "provenance_complete_rows": "0",
-            "raw_import_allowed_rows": "0",
-            "raw_import_blocked_rows": "18",
+            "provenance_complete_rows": "18",
+            "raw_import_allowed_rows": "18",
+            "raw_import_blocked_rows": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "RAW_IMPORT_BLOCKED_BY_PROVENANCE",
+            "overall_status": "RAW_IMPORT_READY_BY_PROVENANCE",
             "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "provenance_audit_only_no_source_import_no_scores",
         }
@@ -938,7 +942,7 @@ def test_v21_source_import_provenance_template_is_not_evidence() -> None:
             "target_evidence_file": "data/input/source_import_provenance_evidence_v21.csv",
             "template_rows": "18",
             "required_columns": "9",
-            "evidence_input_file_present": "false",
+            "evidence_input_file_present": "true",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "PROVENANCE_TEMPLATE_READY_NOT_DATA",
             "claim_boundary": "provenance_template_only_no_source_import_no_scores",
@@ -946,18 +950,18 @@ def test_v21_source_import_provenance_template_is_not_evidence() -> None:
     ]
 
 
-def test_v22_source_import_provenance_evidence_gate_blocks_promotion() -> None:
+def test_v22_source_import_provenance_evidence_gate_allows_promotion() -> None:
     gate = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_evidence_gate_v22.csv").open()))
     assert gate == [
         {
             "evidence_gate_id": "SIPEG22_EVIDENCE_TO_PROVENANCE",
             "evidence_input_file": "data/input/source_import_provenance_evidence_v21.csv",
             "provenance_manifest": "data/derived/source_import_provenance_manifest_v19.csv",
-            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
-            "evidence_rows_seen": "0",
-            "valid_evidence_rows": "0",
-            "galaxies_with_valid_evidence": "0",
-            "provenance_promotion_allowed": "false",
+            "evidence_input_status": "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "evidence_rows_seen": "18",
+            "valid_evidence_rows": "18",
+            "galaxies_with_valid_evidence": "18",
+            "provenance_promotion_allowed": "true",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "provenance_evidence_gate_only_no_promotion_no_scores",
         }
@@ -967,28 +971,28 @@ def test_v22_source_import_provenance_evidence_gate_blocks_promotion() -> None:
     assert summary == [
         {
             "summary_id": "SOURCE_IMPORT_PROVENANCE_EVIDENCE_GATE_V22",
-            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
-            "evidence_rows_seen": "0",
-            "valid_evidence_rows": "0",
-            "galaxies_with_valid_evidence": "0",
-            "provenance_promotion_allowed": "false",
+            "evidence_input_status": "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "evidence_rows_seen": "18",
+            "valid_evidence_rows": "18",
+            "galaxies_with_valid_evidence": "18",
+            "provenance_promotion_allowed": "true",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "PROVENANCE_EVIDENCE_INPUT_MISSING",
+            "overall_status": "PROVENANCE_EVIDENCE_READY_FOR_PROMOTION",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "provenance_evidence_gate_only_no_source_import_no_scores",
         }
     ]
 
 
-def test_v23_source_import_provenance_promotion_gate_blocks_manifest_promotion() -> None:
+def test_v23_source_import_provenance_promotion_gate_allows_raw_import() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_promotion_gate_v23.csv").open()))
     assert len(rows) == 18
-    assert all(row["v22_provenance_promotion_allowed"] == "false" for row in rows)
-    assert all(row["promotion_allowed"] == "false" for row in rows)
-    assert all(row["promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows)
-    assert all("provenance_evidence_gate_not_allowed" in row["promotion_blockers"] for row in rows)
-    assert all(row["provenance_rows_promoted"] == "0" for row in rows)
-    assert all(row["raw_import_allowed_after_promotion"] == "false" for row in rows)
+    assert all(row["v22_provenance_promotion_allowed"] == "true" for row in rows)
+    assert all(row["promotion_allowed"] == "true" for row in rows)
+    assert all(row["promotion_decision"] == "PROMOTE_PROVENANCE" for row in rows)
+    assert all(row["promotion_blockers"] == "none" for row in rows)
+    assert all(row["provenance_rows_promoted"] == "1" for row in rows)
+    assert all(row["raw_import_allowed_after_promotion"] == "true" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_provenance_promotion_summary_v23.csv").open()))
@@ -996,12 +1000,12 @@ def test_v23_source_import_provenance_promotion_gate_blocks_manifest_promotion()
         {
             "summary_id": "SOURCE_IMPORT_PROVENANCE_PROMOTION_GATE_V23",
             "candidate_rows": "18",
-            "promotion_allowed_rows": "0",
-            "promotion_blocked_rows": "18",
-            "provenance_rows_promoted": "0",
-            "raw_import_allowed_rows_after_promotion": "0",
+            "promotion_allowed_rows": "18",
+            "promotion_blocked_rows": "0",
+            "provenance_rows_promoted": "18",
+            "raw_import_allowed_rows_after_promotion": "18",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "PROVENANCE_PROMOTION_BLOCKED",
+            "overall_status": "PROVENANCE_PROMOTION_READY_NOT_IMPORTED",
             "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "claim_boundary": "provenance_promotion_gate_only_no_source_import_no_scores",
         }
@@ -1026,9 +1030,10 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         "SCD24_CONTROL_RUNNERS",
         "SCD24_DECISION_THRESHOLDS",
     }
-    assert all(row["dependency_decision"] == "BLOCKED" for row in rows)
+    ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
+    assert ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
-    assert any(row["upstream_status"] == "PROVENANCE_PROMOTION_BLOCKED" for row in rows)
+    assert any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows)
     assert any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_dependency_closure_summary_v24.csv").open()))
@@ -1036,11 +1041,11 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         {
             "summary_id": "SCORING_DEPENDENCY_CLOSURE_V24",
             "dependencies_checked": "13",
-            "ready_dependencies": "0",
-            "blocked_dependencies": "13",
+            "ready_dependencies": "3",
+            "blocked_dependencies": "10",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
-            "next_required_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1050,22 +1055,23 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_v25.csv").open()))
     assert len(rows) == 13
     assert [row["priority_rank"] for row in rows] == [str(i) for i in range(1, 14)]
-    assert all(row["dependency_decision"] == "BLOCKED" for row in rows)
+    ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
+    assert ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     assert len(frontier) == 1
-    assert frontier[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE"
-    assert frontier[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv"
+    assert frontier[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT"
+    assert frontier[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv"
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
     assert summary == [
         {
             "summary_id": "SCORING_UNBLOCK_PRIORITY_V25",
             "priority_rows": "13",
-            "blocked_priority_rows": "13",
+            "blocked_priority_rows": "10",
             "frontier_now_rows": "1",
-            "first_frontier_dependency": "SCD24_PROVENANCE_EVIDENCE",
-            "first_frontier_artifact": "data/input/source_import_provenance_evidence_v21.csv",
+            "first_frontier_dependency": "SCD24_RAW_ADAPTER_INPUT",
+            "first_frontier_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
@@ -1073,15 +1079,15 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
     ]
 
 
-def test_v26_frontier_provenance_evidence_acceptance_waits_for_input() -> None:
+def test_v26_frontier_provenance_evidence_acceptance_is_review_ready() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_acceptance_v26.csv").open()))
     assert len(rows) == 18
     assert all(row["frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows)
     assert all(row["frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows)
-    assert all(row["evidence_input_present"] == "false" for row in rows)
-    assert all(row["missing_or_placeholder_fields"] == "input_row_missing" for row in rows)
-    assert all(row["acceptance_status"] == "PENDING_INPUT" for row in rows)
-    assert all(row["accepted_for_promotion_review"] == "false" for row in rows)
+    assert all(row["evidence_input_present"] == "true" for row in rows)
+    assert all(row["missing_or_placeholder_fields"] == "none" for row in rows)
+    assert all(row["acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
+    assert all(row["accepted_for_promotion_review"] == "true" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_evidence_acceptance_summary_v26.csv").open()))
@@ -1091,11 +1097,11 @@ def test_v26_frontier_provenance_evidence_acceptance_waits_for_input() -> None:
             "frontier_dependency": "SCD24_PROVENANCE_EVIDENCE",
             "frontier_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "candidate_rows": "18",
-            "evidence_input_rows_present": "0",
-            "accepted_for_promotion_review_rows": "0",
-            "blocked_rows": "18",
+            "evidence_input_rows_present": "18",
+            "accepted_for_promotion_review_rows": "18",
+            "blocked_rows": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "FRONTIER_EVIDENCE_ACCEPTANCE_PENDING_INPUT",
+            "overall_status": "FRONTIER_EVIDENCE_ACCEPTANCE_REVIEW_READY",
             "claim_boundary": "frontier_evidence_acceptance_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1106,7 +1112,7 @@ def test_v27_frontier_provenance_evidence_work_order_stays_open() -> None:
     assert len(rows) == 18
     assert all(row["frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows)
     assert all(row["target_evidence_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows)
-    assert all(row["current_acceptance_status"] == "PENDING_INPUT" for row in rows)
+    assert all(row["current_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
     assert all(row["work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows)
     assert all(row["may_write_evidence_input"] == "false" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
@@ -1131,10 +1137,10 @@ def test_v27_frontier_provenance_evidence_work_order_stays_open() -> None:
 def test_v28_frontier_work_order_completion_gate_blocks_closure() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/frontier_work_order_completion_gate_v28.csv").open()))
     assert len(rows) == 18
-    assert all(row["accepted_for_promotion_review"] == "false" for row in rows)
+    assert all(row["accepted_for_promotion_review"] == "true" for row in rows)
     assert all(row["work_order_status"] == "OPEN_EVIDENCE_COLLECTION_REQUIRED" for row in rows)
     assert all("work_order_open" in row["completion_blockers"] for row in rows)
-    assert all("not_accepted_for_promotion_review" in row["completion_blockers"] for row in rows)
+    assert all("not_accepted_for_promotion_review" not in row["completion_blockers"] for row in rows)
     assert all(row["completion_decision"] == "DO_NOT_CLOSE_WORK_ORDER" for row in rows)
     assert all(row["may_write_evidence_input_after_completion"] == "false" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
@@ -1164,8 +1170,8 @@ def test_v29_frontier_evidence_write_authorization_blocks_write() -> None:
             "completion_gate_status": "FRONTIER_WORK_ORDER_COMPLETION_BLOCKED",
             "completion_gate_rows": "18",
             "work_orders_closed": "0",
-            "target_evidence_input_present": "false",
-            "write_blockers": "frontier_work_orders_not_closed",
+            "target_evidence_input_present": "true",
+            "write_blockers": "frontier_work_orders_not_closed;target_evidence_input_already_present",
             "write_authorized": "false",
             "target_file_written": "false",
             "endpoint_scoring_allowed": "false",
@@ -1178,7 +1184,7 @@ def test_v29_frontier_evidence_write_authorization_blocks_write() -> None:
         {
             "summary_id": "FRONTIER_EVIDENCE_WRITE_AUTHORIZATION_V29",
             "write_authorized": "false",
-            "target_evidence_input_present": "false",
+            "target_evidence_input_present": "true",
             "target_file_written": "false",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_EVIDENCE_WRITE_BLOCKED",
@@ -1195,7 +1201,7 @@ def test_v30_frontier_authorized_evidence_writer_writes_zero_rows() -> None:
             "authorization_source": "data/derived/frontier_evidence_write_authorization_v29.csv",
             "target_evidence_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "write_authorized": "false",
-            "target_preexisting": "false",
+            "target_preexisting": "true",
             "target_file_written": "false",
             "rows_written": "0",
             "writer_status": "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION",
@@ -1212,7 +1218,7 @@ def test_v30_frontier_authorized_evidence_writer_writes_zero_rows() -> None:
             "write_authorized": "false",
             "target_file_written": "false",
             "rows_written": "0",
-            "target_input_file_present_after_writer": "false",
+            "target_input_file_present_after_writer": "true",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_AUTHORIZED_EVIDENCE_WRITER_BLOCKED",
             "claim_boundary": "frontier_authorized_evidence_writer_only_no_evidence_no_scores_no_dark_sector_verdict",
@@ -1226,15 +1232,17 @@ def test_v31_frontier_post_writer_evidence_absence_audit_confirms_absence() -> N
         {
             "audit_id": "FPWEA31_POST_WRITER_EVIDENCE_ABSENCE",
             "writer_summary_source": "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
+            "active_writer_summary_source": "data/derived/active_v21_provenance_evidence_writer_summary_v55.csv",
             "target_evidence_artifact": "data/input/source_import_provenance_evidence_v21.csv",
             "writer_status": "WRITER_BLOCKED_BY_FRONTIER_AUTHORIZATION",
             "writer_rows_written": "0",
             "writer_target_file_written": "false",
-            "target_evidence_input_present_after_audit": "false",
-            "absence_confirmed": "true",
-            "evidence_gate_may_be_promoted": "false",
+            "active_writer_status": "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITTEN",
+            "target_evidence_input_present_after_audit": "true",
+            "absence_confirmed": "false",
+            "evidence_gate_may_be_promoted": "true",
             "endpoint_scoring_allowed": "false",
-            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores",
+            "claim_boundary": "post_writer_evidence_presence_audit_only_no_scores",
         }
     ]
 
@@ -1242,12 +1250,12 @@ def test_v31_frontier_post_writer_evidence_absence_audit_confirms_absence() -> N
     assert summary == [
         {
             "summary_id": "FRONTIER_POST_WRITER_EVIDENCE_ABSENCE_AUDIT_V31",
-            "absence_confirmed": "true",
-            "target_evidence_input_present_after_audit": "false",
-            "evidence_gate_may_be_promoted": "false",
+            "absence_confirmed": "false",
+            "target_evidence_input_present_after_audit": "true",
+            "evidence_gate_may_be_promoted": "true",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED",
-            "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
+            "overall_status": "FRONTIER_EVIDENCE_INPUT_PRESENT_VIA_ACTIVE_V21_WRITER",
+            "claim_boundary": "post_writer_evidence_presence_audit_only_no_scores_no_dark_sector_verdict",
         }
     ]
 
@@ -1259,12 +1267,12 @@ def test_v32_post_writer_evidence_gate_recheck_blocks_promotion() -> None:
             "recheck_id": "PWEGR32_POST_WRITER_EVIDENCE_GATE_RECHECK",
             "absence_audit_source": "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv",
             "evidence_gate_source": "data/derived/source_import_provenance_evidence_gate_summary_v22.csv",
-            "absence_confirmed": "true",
-            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
-            "valid_evidence_rows": "0",
-            "provenance_promotion_allowed_before_recheck": "false",
-            "recheck_blockers": "post_writer_evidence_absence_confirmed;v22_provenance_promotion_not_allowed",
-            "provenance_promotion_allowed_after_recheck": "false",
+            "absence_confirmed": "false",
+            "evidence_input_status": "EVIDENCE_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "valid_evidence_rows": "18",
+            "provenance_promotion_allowed_before_recheck": "true",
+            "recheck_blockers": "none",
+            "provenance_promotion_allowed_after_recheck": "true",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "post_writer_evidence_gate_recheck_only_no_promotion_no_scores",
         }
@@ -1274,11 +1282,11 @@ def test_v32_post_writer_evidence_gate_recheck_blocks_promotion() -> None:
     assert summary == [
         {
             "summary_id": "POST_WRITER_EVIDENCE_GATE_RECHECK_V32",
-            "absence_confirmed": "true",
-            "valid_evidence_rows": "0",
-            "provenance_promotion_allowed_after_recheck": "false",
+            "absence_confirmed": "false",
+            "valid_evidence_rows": "18",
+            "provenance_promotion_allowed_after_recheck": "true",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "POST_WRITER_EVIDENCE_GATE_RECHECK_BLOCKED",
+            "overall_status": "POST_WRITER_EVIDENCE_GATE_RECHECK_READY",
             "claim_boundary": "post_writer_evidence_gate_recheck_only_no_promotion_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1287,12 +1295,12 @@ def test_v32_post_writer_evidence_gate_recheck_blocks_promotion() -> None:
 def test_v33_post_writer_provenance_promotion_recheck_blocks_all_rows() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_provenance_promotion_recheck_v33.csv").open()))
     assert len(rows) == 18
-    assert all(row["v23_promotion_decision"] == "DO_NOT_PROMOTE_PROVENANCE" for row in rows)
-    assert all(row["valid_evidence_rows_after_writer"] == "0" for row in rows)
-    assert all("post_writer_evidence_gate_recheck_not_allowed" in row["promotion_recheck_blockers"] for row in rows)
-    assert all(row["provenance_promotion_allowed_after_recheck"] == "false" for row in rows)
-    assert all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows)
-    assert all(row["raw_import_allowed_after_recheck"] == "false" for row in rows)
+    assert all(row["v23_promotion_decision"] == "PROMOTE_PROVENANCE" for row in rows)
+    assert all(row["valid_evidence_rows_after_writer"] == "18" for row in rows)
+    assert all(row["promotion_recheck_blockers"] == "none" for row in rows)
+    assert all(row["provenance_promotion_allowed_after_recheck"] == "true" for row in rows)
+    assert all(row["provenance_rows_promoted_after_recheck"] == "1" for row in rows)
+    assert all(row["raw_import_allowed_after_recheck"] == "true" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_provenance_promotion_recheck_summary_v33.csv").open()))
@@ -1300,12 +1308,12 @@ def test_v33_post_writer_provenance_promotion_recheck_blocks_all_rows() -> None:
         {
             "summary_id": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_V33",
             "promotion_recheck_rows": "18",
-            "promotion_allowed_rows_after_recheck": "0",
-            "promotion_blocked_rows_after_recheck": "18",
-            "provenance_rows_promoted_after_recheck": "0",
-            "raw_import_allowed_rows_after_recheck": "0",
+            "promotion_allowed_rows_after_recheck": "18",
+            "promotion_blocked_rows_after_recheck": "0",
+            "provenance_rows_promoted_after_recheck": "18",
+            "raw_import_allowed_rows_after_recheck": "18",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_BLOCKED",
+            "overall_status": "POST_WRITER_PROVENANCE_PROMOTION_RECHECK_READY",
             "claim_boundary": "post_writer_provenance_promotion_recheck_only_no_promotion_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1314,10 +1322,10 @@ def test_v33_post_writer_provenance_promotion_recheck_blocks_all_rows() -> None:
 def test_v34_post_writer_raw_import_recheck_blocks_all_rows() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_raw_import_recheck_v34.csv").open()))
     assert len(rows) == 18
-    assert all(row["v20_raw_import_decision"] == "DO_NOT_IMPORT_RAW" for row in rows)
-    assert all(row["provenance_rows_promoted_after_recheck"] == "0" for row in rows)
-    assert all("post_writer_provenance_promotion_not_allowed" in row["raw_import_recheck_blockers"] for row in rows)
-    assert all(row["raw_import_allowed_after_recheck"] == "false" for row in rows)
+    assert all(row["v20_raw_import_decision"] == "ALLOW_RAW_IMPORT" for row in rows)
+    assert all(row["provenance_rows_promoted_after_recheck"] == "1" for row in rows)
+    assert all(row["raw_import_recheck_blockers"] == "none" for row in rows)
+    assert all(row["raw_import_allowed_after_recheck"] == "true" for row in rows)
     assert all(row["raw_rows_imported_after_recheck"] == "0" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
@@ -1326,11 +1334,11 @@ def test_v34_post_writer_raw_import_recheck_blocks_all_rows() -> None:
         {
             "summary_id": "POST_WRITER_RAW_IMPORT_RECHECK_V34",
             "raw_import_recheck_rows": "18",
-            "raw_import_allowed_rows_after_recheck": "0",
-            "raw_import_blocked_rows_after_recheck": "18",
+            "raw_import_allowed_rows_after_recheck": "18",
+            "raw_import_blocked_rows_after_recheck": "0",
             "raw_rows_imported_after_recheck": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "POST_WRITER_RAW_IMPORT_RECHECK_BLOCKED",
+            "overall_status": "POST_WRITER_RAW_IMPORT_RECHECK_READY",
             "claim_boundary": "post_writer_raw_import_recheck_only_no_raw_import_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1347,7 +1355,7 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
             "raw_rows_seen": "0",
             "valid_raw_rows": "0",
             "raw_rows_imported_after_recheck": "0",
-            "adapter_recheck_blockers": "post_writer_raw_import_not_allowed;zero_raw_rows_imported_after_recheck;raw_adapter_input_not_present",
+            "adapter_recheck_blockers": "zero_raw_rows_imported_after_recheck;raw_adapter_input_not_present",
             "target_file_written_after_recheck": "false",
             "real_values_input_may_exist_after_recheck": "false",
             "endpoint_scoring_allowed": "false",
@@ -1478,9 +1486,14 @@ def test_v39_post_writer_scoring_preflight_recheck_blocks_scoring() -> None:
 def test_v40_post_writer_scoring_dependency_closure_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv").open()))
     assert len(rows) == 13
-    assert all(row["v24_dependency_decision"] == "BLOCKED" for row in rows)
+    assert sum(row["v24_dependency_decision"] == "READY" for row in rows) == 3
+    assert sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 10
     assert all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows)
-    assert all("v24_dependency_not_ready" in row["dependency_recheck_blockers"] for row in rows)
+    assert all(
+        ("v24_dependency_not_ready" in row["dependency_recheck_blockers"])
+        == (row["v24_dependency_decision"] != "READY")
+        for row in rows
+    )
     assert all("post_writer_preflight_recheck_zero_ready_requirements" in row["dependency_recheck_blockers"] for row in rows)
     assert all("post_writer_preflight_recheck_scoring_not_allowed" in row["dependency_recheck_blockers"] for row in rows)
     assert all(row["dependency_decision_after_recheck"] == "BLOCKED" for row in rows)
@@ -1504,13 +1517,17 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_v41.csv").open()))
     assert len(rows) == 13
     assert all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows)
-    assert all("v25_priority_dependency_blocked" in row["priority_recheck_blockers"] for row in rows)
+    assert all(
+        ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
+        == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 4)
+        for row in rows
+    )
     assert all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows)
     assert all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows)
     assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
-    assert rows[0]["dependency_id"] == "SCD24_PROVENANCE_EVIDENCE"
-    assert rows[0]["frontier_now_after_recheck"] == "true"
-    assert rows[0]["next_required_artifact"] == "data/input/source_import_provenance_evidence_v21.csv"
+    frontier = [row for row in rows if row["frontier_now_after_recheck"] == "true"][0]
+    assert frontier["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT"
+    assert frontier["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv"
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
@@ -1520,8 +1537,8 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
             "priority_rows_rechecked": "13",
             "blocked_priority_rows_after_recheck": "13",
             "frontier_now_rows_after_recheck": "1",
-            "first_frontier_dependency_after_recheck": "SCD24_PROVENANCE_EVIDENCE",
-            "first_frontier_artifact_after_recheck": "data/input/source_import_provenance_evidence_v21.csv",
+            "first_frontier_dependency_after_recheck": "SCD24_RAW_ADAPTER_INPUT",
+            "first_frontier_artifact_after_recheck": "data/input/source_import_raw_sparc_like_v15.csv",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
             "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
@@ -1532,13 +1549,12 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
 def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv").open()))
     assert len(rows) == 18
-    assert all(row["v41_frontier_dependency"] == "SCD24_PROVENANCE_EVIDENCE" for row in rows)
-    assert all(row["v41_frontier_artifact"] == "data/input/source_import_provenance_evidence_v21.csv" for row in rows)
-    assert all(row["v26_acceptance_status"] == "PENDING_INPUT" for row in rows)
-    assert all(row["v26_evidence_input_present"] == "false" for row in rows)
-    assert all(row["v26_accepted_for_promotion_review"] == "false" for row in rows)
-    assert all("frontier_evidence_input_missing" in row["acceptance_recheck_blockers"] for row in rows)
-    assert all("v26_acceptance_not_passed" in row["acceptance_recheck_blockers"] for row in rows)
+    assert all(row["v41_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT" for row in rows)
+    assert all(row["v41_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv" for row in rows)
+    assert all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
+    assert all(row["v26_evidence_input_present"] == "true" for row in rows)
+    assert all(row["v26_accepted_for_promotion_review"] == "true" for row in rows)
+    assert all(row["acceptance_recheck_blockers"] == "post_writer_frontier_not_provenance_evidence" for row in rows)
     assert all(row["accepted_for_promotion_review_after_recheck"] == "false" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
@@ -1547,7 +1563,7 @@ def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -
         {
             "summary_id": "POST_WRITER_FRONTIER_EVIDENCE_ACCEPTANCE_RECHECK_V42",
             "acceptance_recheck_rows": "18",
-            "evidence_input_rows_present_after_recheck": "0",
+            "evidence_input_rows_present_after_recheck": "18",
             "accepted_for_promotion_review_rows_after_recheck": "0",
             "blocked_rows_after_recheck": "18",
             "endpoint_scoring_allowed_anywhere": "false",
@@ -1997,7 +2013,7 @@ def test_v53_post_hash_review_promotion_response_intake_accepts_authorization() 
     ]
 
 
-def test_v54_authorized_provenance_evidence_payload_is_ready_not_active_input() -> None:
+def test_v54_authorized_provenance_evidence_payload_is_ready_for_active_input() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/authorized_provenance_evidence_payload_v54.csv").open()))
     summary = list(csv.DictReader((ROOT / "data/derived/authorized_provenance_evidence_payload_summary_v54.csv").open()))
     assert len(rows) == 18
@@ -2006,7 +2022,7 @@ def test_v54_authorized_provenance_evidence_payload_is_ready_not_active_input() 
     assert all(row["provenance_evidence_status"] == "PROVENANCE_EVIDENCE_COMPLETE" for row in rows)
     assert all(row["payload_write_status"] == "READY_FOR_SEPARATE_ACTIVE_V21_WRITE_GATE" for row in rows)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
-    assert not (ROOT / "data/input/source_import_provenance_evidence_v21.csv").exists()
+    assert (ROOT / "data/input/source_import_provenance_evidence_v21.csv").exists()
 
     assert summary == [
         {
@@ -2015,12 +2031,34 @@ def test_v54_authorized_provenance_evidence_payload_is_ready_not_active_input() 
             "complete_provenance_payload_rows": "18",
             "ready_for_active_v21_write_rows": "18",
             "active_v21_target": "data/input/source_import_provenance_evidence_v21.csv",
-            "active_v21_target_present": "false",
+            "active_v21_target_present": "true",
             "active_v21_rows_written_by_this_step": "0",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "AUTHORIZED_PROVENANCE_EVIDENCE_PAYLOAD_READY_NOT_ACTIVE_INPUT",
             "next_required_action": "run_separate_active_v21_write_gate_then_recompute_source_import_provenance_gates",
             "claim_boundary": "authorized_provenance_evidence_payload_only_no_active_input_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v55_active_v21_provenance_evidence_writer_writes_complete_input() -> None:
+    rows = list(csv.DictReader((ROOT / "data/input/source_import_provenance_evidence_v21.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/active_v21_provenance_evidence_writer_summary_v55.csv").open()))
+    assert len(rows) == 18
+    assert all(row["catalog"] == "SPARC" for row in rows)
+    assert all(row["table_or_file"] == "SPARC_Lelli2016c.mrt" for row in rows)
+    assert all(row["provenance_evidence_status"] == "PROVENANCE_EVIDENCE_COMPLETE" for row in rows)
+    assert summary == [
+        {
+            "summary_id": "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITER_V55",
+            "source_payload": "data/derived/authorized_provenance_evidence_payload_v54.csv",
+            "target_evidence_input": "data/input/source_import_provenance_evidence_v21.csv",
+            "rows_written": "18",
+            "complete_provenance_rows_written": "18",
+            "target_file_written": "true",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "ACTIVE_V21_PROVENANCE_EVIDENCE_WRITTEN",
+            "claim_boundary": "active_v21_provenance_evidence_writer_only_no_observed_values_no_scores_no_dark_sector_verdict",
         }
     ]
 
