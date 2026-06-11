@@ -52,6 +52,7 @@ def main() -> None:
     run(["python", "scripts/run_post_writer_scoring_activation_recheck.py"])
     run(["python", "scripts/run_scoring_preflight.py"])
     run(["python", "scripts/run_post_writer_scoring_preflight_recheck.py"])
+    run(["python", "scripts/run_post_writer_scoring_dependency_closure_recheck.py"])
     run(["python", "scripts/validate_protocol_manifests.py"])
     run(["tectonic", "main.tex"], cwd=SOURCE)
     run(["python", "scripts/build_arxiv_source.py"])

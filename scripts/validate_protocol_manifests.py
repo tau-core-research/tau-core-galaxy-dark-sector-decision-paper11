@@ -1161,6 +1161,43 @@ def validate_post_writer_scoring_preflight_recheck_v39() -> None:
     )
 
 
+def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
+    require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
+    require(all(row["v24_dependency_decision"] == "BLOCKED" for row in rows), "v40 must inherit blocked v24 dependencies")
+    require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
+    require(
+        all("v24_dependency_not_ready" in row["dependency_recheck_blockers"] for row in rows),
+        "v40 must block on v24 dependency closure",
+    )
+    require(
+        all("post_writer_preflight_recheck_zero_ready_requirements" in row["dependency_recheck_blockers"] for row in rows),
+        "v40 must block on zero ready preflight requirements",
+    )
+    require(
+        all("post_writer_preflight_recheck_scoring_not_allowed" in row["dependency_recheck_blockers"] for row in rows),
+        "v40 must block on preflight scoring denial",
+    )
+    require(
+        all(row["dependency_decision_after_recheck"] == "BLOCKED" for row in rows),
+        "v40 dependencies must remain blocked",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v40 rows cannot allow scoring")
+    require(len(summary) == 1, "v40 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "POST_WRITER_SCORING_DEPENDENCY_CLOSURE_RECHECK_V40", "v40 summary id mismatch")
+    require(row["dependencies_rechecked"] == "13", "v40 must summarize thirteen dependencies")
+    require(row["ready_dependencies_after_recheck"] == "0", "v40 must ready zero dependencies")
+    require(row["blocked_dependencies_after_recheck"] == "13", "v40 must block thirteen dependencies")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v40 summary must forbid scoring")
+    require(row["overall_status"] == "POST_WRITER_SCORING_DEPENDENCY_CLOSURE_RECHECK_BLOCKED", "v40 summary must block")
+    require(
+        row["claim_boundary"] == "post_writer_scoring_dependency_closure_recheck_only_no_scores_no_dark_sector_verdict",
+        "v40 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1215,6 +1252,7 @@ def main() -> None:
     validate_post_writer_leakage_audit_recheck_v37()
     validate_post_writer_scoring_activation_recheck_v38()
     validate_post_writer_scoring_preflight_recheck_v39()
+    validate_post_writer_scoring_dependency_closure_recheck_v40()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 
