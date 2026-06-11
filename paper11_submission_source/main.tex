@@ -364,6 +364,9 @@ The v63 intake gate declares the next response check. Because the completed
 collection response provides no reviewed prescore artifact identifiers or
 hash/accession values, all 72 rows remain blocked and no leakage evidence
 candidate is created.
+The v64 request ledger converts those blocked rows into explicit row-level
+requests with minimal required fields and forbidden endpoint-derived inputs,
+while still creating zero evidence rows and zero scoring rows.
 
 \section{Claim Boundary}
 

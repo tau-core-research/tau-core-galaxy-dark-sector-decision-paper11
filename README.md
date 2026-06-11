@@ -93,6 +93,9 @@ review_packages/leakage_prescore_artifact_v61_completed_collection_response/
 review_packages/leakage_prescore_artifact_v61_completed_collection_response.zip
 data/derived/leakage_prescore_artifact_collection_intake_v63.csv
 data/derived/leakage_prescore_artifact_collection_intake_summary_v63.csv
+data/derived/leakage_prescore_artifact_request_ledger_v64.csv
+data/derived/leakage_prescore_artifact_request_coverage_v64.csv
+data/derived/leakage_prescore_artifact_request_summary_v64.csv
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -250,6 +253,7 @@ docs/leakage_audit_review_response_intake_v60.md
 docs/leakage_prescore_artifact_work_order_v61.md
 docs/leakage_prescore_artifact_collection_package_v62.md
 docs/leakage_prescore_artifact_collection_intake_v63.md
+docs/leakage_prescore_artifact_request_ledger_v64.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -422,3 +426,5 @@ while still creating zero leakage evidence, zero activation rows, and zero
 endpoint scores. The v63 intake gate records the completed v62 response as a
 no-go response: it is present and readable, but provides zero reviewed prescore
 artifact identifiers or hash/accession values. All 72 rows remain blocked.
+The v64 request ledger converts those blocked rows into explicit row-level
+requests with minimal required fields and forbidden endpoint-derived inputs.
