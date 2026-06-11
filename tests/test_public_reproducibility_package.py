@@ -38,6 +38,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_leakage_audit_v09.md",
         "docs/source_import_contract_v10.md",
         "docs/source_import_values_v11.md",
+        "docs/source_import_real_values_gate_v12.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -61,12 +62,16 @@ def test_required_files_exist() -> None:
         "data/derived/observed_numeric_values_v11.csv",
         "data/derived/leakage_evidence_values_v11.csv",
         "data/derived/source_import_values_summary_v11.csv",
+        "data/derived/source_import_real_values_schema_v12.csv",
+        "data/derived/source_import_real_values_gate_v12.csv",
+        "data/derived/source_import_real_values_summary_v12.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
         "scripts/run_source_import_leakage_audit.py",
         "scripts/build_source_import_contract.py",
         "scripts/build_source_import_values.py",
+        "scripts/run_source_import_real_values_gate.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -320,12 +325,12 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
 
     requirements = list(csv.DictReader((ROOT / "data/derived/source_import_requirements_v09.csv").open()))
     assert {row["required_artifact"] for row in requirements} == {
-        "source_import_values_v11.csv",
+        "data/input/source_import_real_values_v12.csv",
         "scoring_observed_inputs_v10.csv",
         "leakage_audit_evidence_v10.csv",
         "activated_scoring_rows_v10.csv",
     }
-    assert {row["current_status"] for row in requirements} == {"PENDING", "VALUES_LEDGER_PRESENT_VALUES_PENDING"}
+    assert {row["current_status"] for row in requirements} == {"PENDING", "REAL_VALUE_GATE_PRESENT_INPUT_MISSING"}
     assert all(row["endpoint_scoring_allowed"] == "false" for row in requirements)
 
     findings = list(csv.DictReader((ROOT / "data/derived/leakage_audit_findings_v09.csv").open()))
@@ -409,6 +414,37 @@ def test_v11_source_import_values_are_declared_but_unfilled() -> None:
             "overall_status": "SOURCE_IMPORT_VALUES_DECLARED_NOT_FILLED",
             "next_required_artifact": "source_import_real_values_v12.csv",
             "claim_boundary": "source_import_values_placeholder_only_no_scores",
+        }
+    ]
+
+
+def test_v12_real_value_import_gate_blocks_until_input_file_exists() -> None:
+    schema = list(csv.DictReader((ROOT / "data/derived/source_import_real_values_schema_v12.csv").open()))
+    assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "source_route"}.issubset(
+        {row["field_name"] for row in schema}
+    )
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in schema)
+
+    gates = list(csv.DictReader((ROOT / "data/derived/source_import_real_values_gate_v12.csv").open()))
+    assert len(gates) == 18
+    assert all(row["input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in gates)
+    assert all(row["imported_numeric_rows"] == "0" for row in gates)
+    assert all(row["real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in gates)
+    assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in gates)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_real_values_summary_v12.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_REAL_VALUES_GATE_V12",
+            "expected_galaxy_rows": "18",
+            "galaxies_with_imported_rows": "0",
+            "imported_numeric_rows": "0",
+            "rows_passing_value_gate": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SOURCE_IMPORT_REAL_VALUES_BLOCKED",
+            "next_required_artifact": "data/input/source_import_real_values_v12.csv",
+            "claim_boundary": "real_value_import_gate_only_no_dark_sector_verdict",
         }
     ]
 

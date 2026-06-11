@@ -370,14 +370,19 @@ def validate_source_import_leakage_audit_v09() -> None:
     require(
         required_artifacts
         == {
-            "source_import_values_v11.csv",
+            "data/input/source_import_real_values_v12.csv",
             "scoring_observed_inputs_v10.csv",
             "leakage_audit_evidence_v10.csv",
             "activated_scoring_rows_v10.csv",
         },
         f"v09 requirement mismatch: {required_artifacts}",
     )
-    allowed_requirement_statuses = {"PENDING", "CONTRACT_PRESENT_VALUES_PENDING", "VALUES_LEDGER_PRESENT_VALUES_PENDING"}
+    allowed_requirement_statuses = {
+        "PENDING",
+        "CONTRACT_PRESENT_VALUES_PENDING",
+        "VALUES_LEDGER_PRESENT_VALUES_PENDING",
+        "REAL_VALUE_GATE_PRESENT_INPUT_MISSING",
+    }
     require(
         all(row["current_status"] in allowed_requirement_statuses for row in requirements),
         "v09 requirements must remain pending or contract-present",
@@ -451,6 +456,42 @@ def validate_source_import_values_v11() -> None:
     require(row["next_required_artifact"] == "source_import_real_values_v12.csv", "v11 must point to real value import")
 
 
+def validate_source_import_real_values_gate_v12() -> None:
+    schema = read_csv(ROOT / "data/derived/source_import_real_values_schema_v12.csv")
+    gates = read_csv(ROOT / "data/derived/source_import_real_values_gate_v12.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_real_values_summary_v12.csv")
+    fields = {row["field_name"] for row in schema}
+    required = {
+        "galaxy_id",
+        "radial_index",
+        "radius_kpc",
+        "v_obs_km_s",
+        "sigma_v_km_s",
+        "v_gas_km_s",
+        "v_disk_km_s",
+        "source_route",
+        "leakage_evidence_id",
+        "import_status",
+    }
+    require(required.issubset(fields), f"v12 source import schema incomplete: {required - fields}")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v12 schema cannot allow scoring")
+    require(len(gates) == 18, "v12 real-value gate must cover eighteen scoring rows")
+    require(all(row["input_file_status"] == "REAL_VALUE_FILE_MISSING" for row in gates), "v12 input file must remain absent in package")
+    require(all(row["imported_numeric_rows"] == "0" for row in gates), "v12 must import zero numeric rows")
+    require(all(row["real_value_gate_status"] == "REAL_VALUE_FILE_MISSING" for row in gates), "v12 gate must remain file-missing")
+    require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates), "v12 must not activate rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in gates), "v12 gates cannot allow scoring")
+    require(len(summary) == 1, "v12 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SOURCE_IMPORT_REAL_VALUES_BLOCKED", "v12 real-value import must remain blocked")
+    require(row["expected_galaxy_rows"] == "18", "v12 summary must expect eighteen rows")
+    require(row["galaxies_with_imported_rows"] == "0", "v12 must import zero galaxies")
+    require(row["imported_numeric_rows"] == "0", "v12 must import zero numeric rows")
+    require(row["rows_passing_value_gate"] == "0", "v12 must pass zero value gates")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v12 summary must forbid scoring")
+    require(row["next_required_artifact"] == "data/input/source_import_real_values_v12.csv", "v12 must point to the input file")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -477,6 +518,7 @@ def main() -> None:
     validate_source_import_leakage_audit_v09()
     validate_source_import_contract_v10()
     validate_source_import_values_v11()
+    validate_source_import_real_values_gate_v12()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

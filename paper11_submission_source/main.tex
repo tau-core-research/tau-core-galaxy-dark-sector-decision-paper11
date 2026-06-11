@@ -176,6 +176,11 @@ The v11 source-import value ledger instantiates those fields row by row. It
 contains placeholders only: no source route, observed numeric value, or leakage
 evidence has been filled.
 
+The v12 real-value import gate defines the external input file required for a
+future source import. In the present package that file is absent, so the gate
+imports zero numeric rows, passes zero value gates, and activates no scoring
+rows.
+
 \section{Claim Boundary}
 
 This paper does not claim:

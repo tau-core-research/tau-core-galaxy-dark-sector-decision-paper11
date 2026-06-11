@@ -69,9 +69,9 @@ def requirements() -> list[dict[str, object]]:
     return [
         {
             "requirement_id": "SIL09_SOURCE_ROUTE",
-            "required_artifact": "source_import_values_v11.csv",
+            "required_artifact": "data/input/source_import_real_values_v12.csv",
             "purpose": "Provide reproducible source route and file/hash provenance for every activated galaxy row",
-            "current_status": "VALUES_LEDGER_PRESENT_VALUES_PENDING",
+            "current_status": "REAL_VALUE_GATE_PRESENT_INPUT_MISSING",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "requirement_only_no_source_claim",
         },
