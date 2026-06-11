@@ -256,6 +256,9 @@ The v31 post-writer evidence-absence audit checks the filesystem state after
 that writer. It confirms that the target evidence input remains absent, so the
 evidence gate cannot be promoted.
 
+The v32 post-writer evidence-gate recheck links that absence audit back to the
+v22 evidence gate. Provenance promotion remains blocked after the writer path.
+
 \section{Claim Boundary}
 
 This paper does not claim:

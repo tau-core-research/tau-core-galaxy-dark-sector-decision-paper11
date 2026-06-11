@@ -928,6 +928,28 @@ def validate_frontier_post_writer_evidence_absence_audit_v31() -> None:
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v31 summary must forbid scoring")
 
 
+def validate_post_writer_evidence_gate_recheck_v32() -> None:
+    rows = read_csv(ROOT / "data/derived/post_writer_evidence_gate_recheck_v32.csv")
+    summary = read_csv(ROOT / "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv")
+    require(len(rows) == 1, "v32 post-writer evidence gate recheck must have one row")
+    row = rows[0]
+    require(row["absence_confirmed"] == "true", "v32 must inherit confirmed absence")
+    require(row["evidence_input_status"] == "EVIDENCE_INPUT_FILE_MISSING", "v32 evidence input must remain missing")
+    require(row["valid_evidence_rows"] == "0", "v32 must see zero valid evidence rows")
+    require(row["provenance_promotion_allowed_before_recheck"] == "false", "v32 must inherit blocked promotion")
+    require("post_writer_evidence_absence_confirmed" in row["recheck_blockers"], "v32 must block on post-writer absence")
+    require("v22_provenance_promotion_not_allowed" in row["recheck_blockers"], "v32 must block on v22 promotion")
+    require(row["provenance_promotion_allowed_after_recheck"] == "false", "v32 cannot allow promotion")
+    require(row["endpoint_scoring_allowed"] == "false", "v32 row cannot allow scoring")
+    require(len(summary) == 1, "v32 summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["overall_status"] == "POST_WRITER_EVIDENCE_GATE_RECHECK_BLOCKED", "v32 summary must block")
+    require(summary_row["absence_confirmed"] == "true", "v32 summary must inherit absence")
+    require(summary_row["valid_evidence_rows"] == "0", "v32 summary must see zero valid rows")
+    require(summary_row["provenance_promotion_allowed_after_recheck"] == "false", "v32 summary cannot promote")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v32 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -974,6 +996,7 @@ def main() -> None:
     validate_frontier_evidence_write_authorization_v29()
     validate_frontier_authorized_evidence_writer_v30()
     validate_frontier_post_writer_evidence_absence_audit_v31()
+    validate_post_writer_evidence_gate_recheck_v32()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

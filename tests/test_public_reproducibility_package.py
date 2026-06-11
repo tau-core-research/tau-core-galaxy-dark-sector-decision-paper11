@@ -58,6 +58,7 @@ def test_required_files_exist() -> None:
         "docs/frontier_evidence_write_authorization_v29.md",
         "docs/frontier_authorized_evidence_writer_v30.md",
         "docs/frontier_post_writer_evidence_absence_audit_v31.md",
+        "docs/post_writer_evidence_gate_recheck_v32.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -128,6 +129,8 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_authorized_evidence_writer_summary_v30.csv",
         "data/derived/frontier_post_writer_evidence_absence_audit_v31.csv",
         "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv",
+        "data/derived/post_writer_evidence_gate_recheck_v32.csv",
+        "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -154,6 +157,7 @@ def test_required_files_exist() -> None:
         "scripts/run_frontier_evidence_write_authorization.py",
         "scripts/run_frontier_authorized_evidence_writer.py",
         "scripts/run_frontier_post_writer_evidence_absence_audit.py",
+        "scripts/run_post_writer_evidence_gate_recheck.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1129,6 +1133,38 @@ def test_v31_frontier_post_writer_evidence_absence_audit_confirms_absence() -> N
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_EVIDENCE_INPUT_ABSENCE_CONFIRMED",
             "claim_boundary": "post_writer_absence_audit_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v32_post_writer_evidence_gate_recheck_blocks_promotion() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/post_writer_evidence_gate_recheck_v32.csv").open()))
+    assert rows == [
+        {
+            "recheck_id": "PWEGR32_POST_WRITER_EVIDENCE_GATE_RECHECK",
+            "absence_audit_source": "data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv",
+            "evidence_gate_source": "data/derived/source_import_provenance_evidence_gate_summary_v22.csv",
+            "absence_confirmed": "true",
+            "evidence_input_status": "EVIDENCE_INPUT_FILE_MISSING",
+            "valid_evidence_rows": "0",
+            "provenance_promotion_allowed_before_recheck": "false",
+            "recheck_blockers": "post_writer_evidence_absence_confirmed;v22_provenance_promotion_not_allowed",
+            "provenance_promotion_allowed_after_recheck": "false",
+            "endpoint_scoring_allowed": "false",
+            "claim_boundary": "post_writer_evidence_gate_recheck_only_no_promotion_no_scores",
+        }
+    ]
+
+    summary = list(csv.DictReader((ROOT / "data/derived/post_writer_evidence_gate_recheck_summary_v32.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "POST_WRITER_EVIDENCE_GATE_RECHECK_V32",
+            "absence_confirmed": "true",
+            "valid_evidence_rows": "0",
+            "provenance_promotion_allowed_after_recheck": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "POST_WRITER_EVIDENCE_GATE_RECHECK_BLOCKED",
+            "claim_boundary": "post_writer_evidence_gate_recheck_only_no_promotion_no_scores_no_dark_sector_verdict",
         }
     ]
 

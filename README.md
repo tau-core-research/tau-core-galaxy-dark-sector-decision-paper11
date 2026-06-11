@@ -127,6 +127,8 @@ data/derived/frontier_authorized_evidence_writer_v30.csv
 data/derived/frontier_authorized_evidence_writer_summary_v30.csv
 data/derived/frontier_post_writer_evidence_absence_audit_v31.csv
 data/derived/frontier_post_writer_evidence_absence_audit_summary_v31.csv
+data/derived/post_writer_evidence_gate_recheck_v32.csv
+data/derived/post_writer_evidence_gate_recheck_summary_v32.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -187,6 +189,7 @@ docs/frontier_work_order_completion_gate_v28.md
 docs/frontier_evidence_write_authorization_v29.md
 docs/frontier_authorized_evidence_writer_v30.md
 docs/frontier_post_writer_evidence_absence_audit_v31.md
+docs/post_writer_evidence_gate_recheck_v32.md
 ```
 
 ## Reproduce
@@ -269,4 +272,5 @@ authorization gate reports `FRONTIER_EVIDENCE_WRITE_BLOCKED`; no target evidence
 input file is written. The v30 authorized evidence writer is blocked by that
 authorization gate and writes zero rows. The v31 post-writer absence audit
 confirms that the target evidence input remains absent, so the evidence gate
-cannot be promoted.
+cannot be promoted. The v32 post-writer evidence gate recheck confirms that
+provenance promotion remains blocked after the writer path.
