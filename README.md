@@ -87,6 +87,8 @@ data/derived/leakage_audit_review_response_intake_summary_v60.csv
 data/derived/leakage_prescore_artifact_work_order_v61.csv
 data/derived/leakage_prescore_artifact_work_order_coverage_v61.csv
 data/derived/leakage_prescore_artifact_work_order_summary_v61.csv
+review_packages/leakage_prescore_artifact_v61_collection_package/
+review_packages/leakage_prescore_artifact_v61_collection_package.zip
 data/derived/source_import_values_v11.csv
 data/derived/observed_numeric_values_v11.csv
 data/derived/leakage_evidence_values_v11.csv
@@ -242,6 +244,7 @@ docs/leakage_audit_evidence_template_v58.md
 docs/leakage_audit_review_package_v59.md
 docs/leakage_audit_review_response_intake_v60.md
 docs/leakage_prescore_artifact_work_order_v61.md
+docs/leakage_prescore_artifact_collection_package_v62.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -408,4 +411,7 @@ creates zero activation/scoring rows. The v60 completed-review intake records
 the received response as `NO_GO_EVIDENCE_REQUIRED_NOT_FILLED`: 72 no-go rows,
 zero leakage-pass rows, zero activation rows, and no endpoint scoring. The v61
 work order converts that no-go into 72 concrete prescore artifact tasks across
-the four leakage checks; all remain open and non-scoring.
+the four leakage checks; all remain open and non-scoring. The v62 collection
+package turns those tasks into a fillable prescore artifact response template,
+while still creating zero leakage evidence, zero activation rows, and zero
+endpoint scores.
