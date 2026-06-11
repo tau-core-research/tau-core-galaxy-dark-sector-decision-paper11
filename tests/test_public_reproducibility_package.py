@@ -71,6 +71,7 @@ def test_required_files_exist() -> None:
         "docs/post_writer_frontier_evidence_acceptance_recheck_v42.md",
         "docs/post_writer_frontier_work_order_recheck_v43.md",
         "docs/frontier_provenance_evidence_intake_contract_v44.md",
+        "docs/frontier_provenance_source_candidate_ledger_v45.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -168,6 +169,9 @@ def test_required_files_exist() -> None:
         "data/derived/frontier_provenance_evidence_intake_contract_v44.csv",
         "data/derived/frontier_provenance_evidence_intake_checklist_v44.csv",
         "data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv",
+        "data/derived/frontier_provenance_source_candidate_ledger_v45.csv",
+        "data/derived/frontier_provenance_source_candidate_coverage_v45.csv",
+        "data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -207,6 +211,7 @@ def test_required_files_exist() -> None:
         "scripts/run_post_writer_frontier_evidence_acceptance_recheck.py",
         "scripts/run_post_writer_frontier_work_order_recheck.py",
         "scripts/build_frontier_provenance_evidence_intake_contract.py",
+        "scripts/build_frontier_provenance_source_candidate_ledger.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -1561,6 +1566,51 @@ def test_v44_frontier_provenance_evidence_intake_contract_is_not_evidence() -> N
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FRONTIER_EVIDENCE_INTAKE_CONTRACT_READY_NOT_EVIDENCE",
             "claim_boundary": "frontier_evidence_intake_contract_only_no_evidence_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v45_frontier_provenance_source_candidate_ledger_is_not_evidence() -> None:
+    sources = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_source_candidate_ledger_v45.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_source_candidate_coverage_v45.csv").open()))
+    assert len(sources) == 2
+    assert {row["source_candidate_id"] for row in sources} == {"FPSC45_SPARC_TABLE1", "FPSC45_SPARC_MASSMODELS"}
+    assert all(row["catalog"] == "SPARC" for row in sources)
+    assert any(
+        row["table_or_file"] == "SPARC_Lelli2016c.mrt"
+        and row["sha256_or_external_accession"]
+        == "sha256:5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"
+        for row in sources
+    )
+    assert any(
+        row["table_or_file"] == "MassModels_Lelli2016c.mrt"
+        and row["sha256_or_external_accession"]
+        == "sha256:9108994b12cc401b94a1768beca61c53ec354779385c9c9cc571049f3043244c"
+        for row in sources
+    )
+    assert all(row["review_status"] == "SOURCE_CANDIDATE_READY_FOR_HUMAN_REVIEW" for row in sources)
+    assert all(row["may_write_v21_evidence_input"] == "false" for row in sources)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in sources)
+
+    assert len(coverage) == 18
+    assert all(row["primary_source_candidate_id"] == "FPSC45_SPARC_TABLE1" for row in coverage)
+    assert all(row["coverage_status"] == "CANDIDATE_ROW_IDENTIFIED_NOT_V21_EVIDENCE" for row in coverage)
+    assert all(row["may_mark_provenance_complete"] == "false" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "FRONTIER_PROVENANCE_SOURCE_CANDIDATE_LEDGER_V45",
+            "source_candidate_rows": "2",
+            "ready_for_human_review_source_rows": "2",
+            "coverage_rows": "18",
+            "candidate_rows_identified": "18",
+            "v21_evidence_rows_created": "0",
+            "may_write_v21_evidence_input_anywhere": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FRONTIER_PROVENANCE_SOURCE_CANDIDATES_READY_NOT_EVIDENCE",
+            "claim_boundary": "frontier_provenance_source_candidate_ledger_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
 

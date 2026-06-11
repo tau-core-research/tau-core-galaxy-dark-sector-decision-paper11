@@ -1388,6 +1388,62 @@ def validate_frontier_provenance_evidence_intake_contract_v44() -> None:
     )
 
 
+def validate_frontier_provenance_source_candidate_ledger_v45() -> None:
+    sources = read_csv(ROOT / "data/derived/frontier_provenance_source_candidate_ledger_v45.csv")
+    coverage = read_csv(ROOT / "data/derived/frontier_provenance_source_candidate_coverage_v45.csv")
+    summary = read_csv(ROOT / "data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv")
+    require(len(sources) == 2, "v45 must define two source candidates")
+    require({row["source_candidate_id"] for row in sources} == {"FPSC45_SPARC_TABLE1", "FPSC45_SPARC_MASSMODELS"}, "v45 source ids mismatch")
+    require(all(row["catalog"] == "SPARC" for row in sources), "v45 sources must be SPARC")
+    require(
+        any(
+            row["table_or_file"] == "SPARC_Lelli2016c.mrt"
+            and row["sha256_or_external_accession"]
+            == "sha256:5aa0501f6b0d881fa579030e315e7b5b6ef561a5bd3a07472f9929c7e5728243"
+            for row in sources
+        ),
+        "v45 must record Table1 hash",
+    )
+    require(
+        any(
+            row["table_or_file"] == "MassModels_Lelli2016c.mrt"
+            and row["sha256_or_external_accession"]
+            == "sha256:9108994b12cc401b94a1768beca61c53ec354779385c9c9cc571049f3043244c"
+            for row in sources
+        ),
+        "v45 must record mass-model hash",
+    )
+    require(all(row["review_status"] == "SOURCE_CANDIDATE_READY_FOR_HUMAN_REVIEW" for row in sources), "v45 sources must be review-ready")
+    require(all(row["may_write_v21_evidence_input"] == "false" for row in sources), "v45 cannot write v21 evidence")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in sources), "v45 sources cannot allow scoring")
+    require(len(coverage) == 18, "v45 coverage must cover eighteen rows")
+    require(
+        all(row["primary_source_candidate_id"] == "FPSC45_SPARC_TABLE1" for row in coverage),
+        "v45 coverage must use SPARC Table1 as primary candidate",
+    )
+    require(
+        all(row["coverage_status"] == "CANDIDATE_ROW_IDENTIFIED_NOT_V21_EVIDENCE" for row in coverage),
+        "v45 coverage rows must remain candidate-only",
+    )
+    require(all(row["may_mark_provenance_complete"] == "false" for row in coverage), "v45 cannot mark provenance complete")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v45 coverage cannot allow scoring")
+    require(len(summary) == 1, "v45 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FRONTIER_PROVENANCE_SOURCE_CANDIDATE_LEDGER_V45", "v45 summary id mismatch")
+    require(row["source_candidate_rows"] == "2", "v45 must summarize two source candidates")
+    require(row["ready_for_human_review_source_rows"] == "2", "v45 must have two review-ready candidates")
+    require(row["coverage_rows"] == "18", "v45 must summarize eighteen coverage rows")
+    require(row["candidate_rows_identified"] == "18", "v45 must identify eighteen candidate rows")
+    require(row["v21_evidence_rows_created"] == "0", "v45 must create zero v21 evidence rows")
+    require(row["may_write_v21_evidence_input_anywhere"] == "false", "v45 cannot write v21 evidence")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v45 summary must forbid scoring")
+    require(row["overall_status"] == "FRONTIER_PROVENANCE_SOURCE_CANDIDATES_READY_NOT_EVIDENCE", "v45 summary status mismatch")
+    require(
+        row["claim_boundary"] == "frontier_provenance_source_candidate_ledger_only_no_evidence_no_scores_no_dark_sector_verdict",
+        "v45 claim boundary mismatch",
+    )
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -1447,6 +1503,7 @@ def main() -> None:
     validate_post_writer_frontier_evidence_acceptance_recheck_v42()
     validate_post_writer_frontier_work_order_recheck_v43()
     validate_frontier_provenance_evidence_intake_contract_v44()
+    validate_frontier_provenance_source_candidate_ledger_v45()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

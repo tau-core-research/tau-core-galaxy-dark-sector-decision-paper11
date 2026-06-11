@@ -154,6 +154,9 @@ data/derived/post_writer_frontier_work_order_recheck_summary_v43.csv
 data/derived/frontier_provenance_evidence_intake_contract_v44.csv
 data/derived/frontier_provenance_evidence_intake_checklist_v44.csv
 data/derived/frontier_provenance_evidence_intake_contract_summary_v44.csv
+data/derived/frontier_provenance_source_candidate_ledger_v45.csv
+data/derived/frontier_provenance_source_candidate_coverage_v45.csv
+data/derived/frontier_provenance_source_candidate_ledger_summary_v45.csv
 ```
 
 These are source-side decision artifacts. They contain no endpoint residuals
@@ -227,6 +230,7 @@ docs/post_writer_scoring_unblock_priority_recheck_v41.md
 docs/post_writer_frontier_evidence_acceptance_recheck_v42.md
 docs/post_writer_frontier_work_order_recheck_v43.md
 docs/frontier_provenance_evidence_intake_contract_v44.md
+docs/frontier_provenance_source_candidate_ledger_v45.md
 ```
 
 ## Reproduce
@@ -333,4 +337,7 @@ post-writer frontier work-order recheck keeps all eighteen work orders open,
 with zero closed work orders and zero evidence-write rows. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen
 manual collection checklist rows for the missing provenance evidence input,
-while creating zero evidence rows by itself.
+while creating zero evidence rows by itself. The v45 frontier provenance source
+candidate ledger records SPARC Table1 and MassModels source candidates and
+identifies candidate source rows for all eighteen frozen galaxies, while still
+creating zero v21 evidence rows.
