@@ -119,6 +119,13 @@ def gate_rows() -> list[dict[str, object]]:
 
 def summary(gate: list[dict[str, object]]) -> list[dict[str, object]]:
     row = gate[0]
+    overall_status = (
+        "RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW"
+        if row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW"
+        else "RAW_ADAPTER_READY_INPUT_MISSING"
+        if row["raw_input_status"] == "RAW_INPUT_FILE_MISSING"
+        else "RAW_ADAPTER_BLOCKED"
+    )
     return [
         {
             "summary_id": "SOURCE_IMPORT_RAW_ADAPTER_V15",
@@ -128,7 +135,7 @@ def summary(gate: list[dict[str, object]]) -> list[dict[str, object]]:
             "target_input_file_present": str(TARGET_INPUT.exists()).lower(),
             "target_file_written_by_adapter": row["target_file_written"],
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "RAW_ADAPTER_READY_INPUT_MISSING",
+            "overall_status": overall_status,
             "claim_boundary": "raw_adapter_only_no_source_import_no_scores",
         }
     ]

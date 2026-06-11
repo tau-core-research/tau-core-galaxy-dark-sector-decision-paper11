@@ -84,6 +84,11 @@ def writer_result() -> list[dict[str, object]]:
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     row = rows[0]
+    next_required = (
+        "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+        if row["raw_input_present"] == "true" and row["write_authorized"] == "false"
+        else "data/input/source_import_raw_sparc_like_v15.csv"
+    )
     return [
         {
             "summary_id": "SOURCE_IMPORT_AUTHORIZED_WRITER_V17",
@@ -93,7 +98,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "target_input_file_present_after_writer": str(TARGET_INPUT.exists()).lower(),
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "AUTHORIZED_WRITER_BLOCKED",
-            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "next_required_artifact": next_required,
             "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
         }
     ]

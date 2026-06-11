@@ -29,8 +29,8 @@ The expected status is:
 POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED
 ```
 
-The raw input file is absent, zero valid raw rows are present, no v12 target is
-written, and scoring remains closed.
+The raw input file is present and 450 rows validate for review, but no v12
+target is written and scoring remains closed.
 
 ## Claim Boundary
 

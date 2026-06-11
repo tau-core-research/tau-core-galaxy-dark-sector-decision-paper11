@@ -28,8 +28,10 @@ The expected status is:
 WRITE_AUTHORIZATION_BLOCKED
 ```
 
-The current package has no raw input file and no explicit write authorization,
-so no `data/input/source_import_real_values_v12.csv` file is written.
+The current package has a valid raw input file, but no explicit write
+authorization. The next required authorization is
+`PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1`, and no
+`data/input/source_import_real_values_v12.csv` file is written.
 
 ## Claim Boundary
 

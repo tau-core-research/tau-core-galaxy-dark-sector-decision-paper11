@@ -353,9 +353,12 @@ The v55 active v21 provenance-evidence writer writes all eighteen complete
 provenance rows into
 \path{data/input/source_import_provenance_evidence_v21.csv}. After
 rerunning the source-side gates, v22, v23, and v20 are ready, and the scoring
-unblock frontier moves to
-\path{data/input/source_import_raw_sparc_like_v15.csv}. Endpoint scoring
-remains disabled.
+unblock frontier moves to raw source input. The v56 active raw SPARC-like input
+writer writes 450 MassModels rows for the eighteen frozen galaxies into
+\path{data/input/source_import_raw_sparc_like_v15.csv}. The current frontier is
+now explicit v12 write authorization,
+\path{PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1}. Endpoint scoring remains
+disabled.
 
 \section{Claim Boundary}
 

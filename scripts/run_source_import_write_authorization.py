@@ -57,6 +57,11 @@ def authorization_row() -> list[dict[str, object]]:
 
 def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     row = rows[0]
+    next_required = (
+        "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
+        if row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW"
+        else "data/input/source_import_raw_sparc_like_v15.csv"
+    )
     return [
         {
             "summary_id": "SOURCE_IMPORT_WRITE_AUTHORIZATION_V16",
@@ -65,7 +70,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "target_input_file_present": row["target_input_file_present"],
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
-            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "next_required_artifact": next_required,
             "claim_boundary": "write_authorization_only_no_source_import_no_scores",
         }
     ]

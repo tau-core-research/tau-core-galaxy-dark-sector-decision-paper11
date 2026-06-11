@@ -540,15 +540,22 @@ def validate_source_import_raw_adapter_v15() -> None:
     require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v15 schema cannot allow scoring")
     require(len(gate) == 1, "v15 raw adapter gate must have one row")
     gate_row = gate[0]
-    require(gate_row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v15 raw input must remain absent")
-    require(gate_row["raw_rows_seen"] == "0", "v15 must see zero raw rows")
-    require(gate_row["valid_raw_rows"] == "0", "v15 must validate zero raw rows")
+    require(
+        gate_row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+        "v15 raw input must be present for review",
+    )
+    require(gate_row["raw_rows_seen"] == "450", "v15 must see 450 raw rows")
+    require(gate_row["valid_raw_rows"] == "450", "v15 must validate 450 raw rows")
+    require(gate_row["galaxies_with_valid_raw_rows"] == "18", "v15 must cover eighteen galaxies")
     require(gate_row["target_file_written"] == "false", "v15 must not write the target input")
     require(gate_row["endpoint_scoring_allowed"] == "false", "v15 gate cannot allow scoring")
     require(len(summary) == 1, "v15 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "RAW_ADAPTER_READY_INPUT_MISSING", "v15 must remain raw-input missing")
-    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v15 summary must report missing raw input")
+    require(
+        row["overall_status"] == "RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW",
+        "v15 must be raw-input validation-pending",
+    )
+    require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v15 summary must report raw input")
     require(row["target_input_file_present"] == "false", "v15 target input must remain absent")
     require(row["target_file_written_by_adapter"] == "false", "v15 adapter must not write target file")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v15 summary must forbid scoring")
@@ -560,11 +567,11 @@ def validate_source_import_write_authorization_v16() -> None:
     require(len(rows) == 1, "v16 write authorization must have one row")
     row = rows[0]
     require(row["explicit_write_authorization"] == "false", "v16 explicit write authorization must be absent")
-    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v16 raw input must remain missing")
+    require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v16 raw input must be present")
     require(row["target_input_file_present"] == "false", "v16 target input must remain absent")
     require(row["write_authorized"] == "false", "v16 write authorization must be blocked")
     require("explicit_write_authorization_missing" in row["write_blockers"], "v16 must require explicit authorization")
-    require("raw_input_not_validated" in row["write_blockers"], "v16 must require validated raw input")
+    require("raw_input_not_validated" not in row["write_blockers"], "v16 must not block on raw validation")
     require(row["target_file_written"] == "false", "v16 must not write target input")
     require(row["endpoint_scoring_allowed"] == "false", "v16 row cannot allow scoring")
     require(len(summary) == 1, "v16 summary must have one row")
@@ -573,6 +580,10 @@ def validate_source_import_write_authorization_v16() -> None:
     require(summary_row["write_authorized"] == "false", "v16 summary must block writing")
     require(summary_row["target_file_written"] == "false", "v16 summary must not write target file")
     require(summary_row["target_input_file_present"] == "false", "v16 summary must report absent target file")
+    require(
+        summary_row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+        "v16 next required artifact must be explicit write authorization",
+    )
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v16 summary must forbid scoring")
 
 
@@ -582,7 +593,7 @@ def validate_source_import_authorized_writer_v17() -> None:
     require(len(rows) == 1, "v17 authorized writer must have one row")
     row = rows[0]
     require(row["write_authorized"] == "false", "v17 write authorization must remain false")
-    require(row["raw_input_present"] == "false", "v17 raw input must remain absent")
+    require(row["raw_input_present"] == "true", "v17 raw input must be present")
     require(row["target_preexisting"] == "false", "v17 target input must not preexist")
     require(row["target_file_written"] == "false", "v17 must not write target input")
     require(row["rows_written"] == "0", "v17 must write zero rows")
@@ -594,7 +605,29 @@ def validate_source_import_authorized_writer_v17() -> None:
     require(summary_row["target_file_written"] == "false", "v17 summary must not write target input")
     require(summary_row["rows_written"] == "0", "v17 summary must write zero rows")
     require(summary_row["target_input_file_present_after_writer"] == "false", "v17 target input must remain absent after writer")
+    require(
+        summary_row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+        "v17 next required artifact must be explicit write authorization",
+    )
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v17 summary must forbid scoring")
+
+
+def validate_active_v15_raw_sparc_like_input_writer_v56() -> None:
+    rows = read_csv(ROOT / "data/input/source_import_raw_sparc_like_v15.csv")
+    summary = read_csv(ROOT / "data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv")
+    require(len(rows) == 450, "v56 raw input must contain 450 rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v56 raw input must cover eighteen galaxies")
+    require(all(row["catalog"] == "SPARC" for row in rows), "v56 rows must use SPARC catalog")
+    require(all(row["table_or_file"] == "MassModels_Lelli2016c.mrt" for row in rows), "v56 table mismatch")
+    require(all(row["sha256_or_external_accession"].startswith("sha256:") for row in rows), "v56 rows need sha256 source")
+    require(len(summary) == 1, "v56 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "ACTIVE_V15_RAW_SPARC_LIKE_INPUT_WRITER_V56", "v56 summary id mismatch")
+    require(row["raw_rows_written"] == "450", "v56 summary row count mismatch")
+    require(row["galaxies_written"] == "18", "v56 summary galaxy count mismatch")
+    require(row["target_file_written"] == "true", "v56 target file must be written")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v56 summary must forbid scoring")
+    require(row["overall_status"] == "ACTIVE_V15_RAW_SPARC_LIKE_INPUT_WRITTEN", "v56 status mismatch")
 
 
 def validate_source_import_raw_template_v18() -> None:
@@ -610,7 +643,7 @@ def validate_source_import_raw_template_v18() -> None:
     require(row["overall_status"] == "RAW_TEMPLATE_READY_NOT_DATA", "v18 must remain template-only")
     require(row["template_rows"] == "18", "v18 summary must report eighteen template rows")
     require(row["required_columns"] == "15", "v18 summary must report fifteen raw columns")
-    require(row["raw_input_file_present"] == "false", "v18 must not include the real raw input file")
+    require(row["raw_input_file_present"] == "true", "v18 must report the active raw input file")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v18 summary must forbid scoring")
 
 
@@ -747,7 +780,13 @@ def validate_scoring_dependency_closure_v24() -> None:
     require(ids == required, f"v24 dependency ids mismatch: {ids ^ required}")
     ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
     require(
-        ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"},
+        ready_ids
+        == {
+            "SCD24_PROVENANCE_EVIDENCE",
+            "SCD24_PROVENANCE_PROMOTION",
+            "SCD24_PROVENANCE_AUDIT",
+            "SCD24_RAW_ADAPTER_INPUT",
+        },
         f"v24 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v24 rows cannot allow scoring")
@@ -757,9 +796,9 @@ def validate_scoring_dependency_closure_v24() -> None:
     row = summary[0]
     require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
-    require(row["ready_dependencies"] == "3", "v24 must have three ready dependencies")
-    require(row["blocked_dependencies"] == "10", "v24 must block ten dependencies")
-    require(row["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv", "v24 next artifact mismatch")
+    require(row["ready_dependencies"] == "4", "v24 must have four ready dependencies")
+    require(row["blocked_dependencies"] == "9", "v24 must block nine dependencies")
+    require(row["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1", "v24 next artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
 
 
@@ -771,25 +810,31 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(ranks == list(range(1, 14)), f"v25 ranks must be contiguous: {ranks}")
     ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
     require(
-        ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"},
+        ready_ids
+        == {
+            "SCD24_PROVENANCE_EVIDENCE",
+            "SCD24_PROVENANCE_PROMOTION",
+            "SCD24_PROVENANCE_AUDIT",
+            "SCD24_RAW_ADAPTER_INPUT",
+        },
         f"v25 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
-    require(frontier[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT", "v25 first frontier must be raw adapter input")
+    require(frontier[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION", "v25 first frontier must be write authorization")
     require(
-        frontier[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv",
-        "v25 frontier artifact must be raw SPARC-like input",
+        frontier[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
+        "v25 frontier artifact must be explicit write authorization",
     )
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
     require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
-    require(row["blocked_priority_rows"] == "10", "v25 must preserve ten blocked rows")
+    require(row["blocked_priority_rows"] == "9", "v25 must preserve nine blocked rows")
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
-    require(row["first_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT", "v25 frontier dependency mismatch")
-    require(row["first_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv", "v25 frontier artifact mismatch")
+    require(row["first_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION", "v25 frontier dependency mismatch")
+    require(row["first_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1", "v25 frontier artifact mismatch")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
@@ -1017,21 +1062,21 @@ def validate_post_writer_raw_adapter_recheck_v35() -> None:
     summary = read_csv(ROOT / "data/derived/post_writer_raw_adapter_recheck_summary_v35.csv")
     require(len(rows) == 1, "v35 raw adapter recheck must have one row")
     row = rows[0]
-    require(row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v35 raw input must remain missing")
-    require(row["raw_rows_seen"] == "0", "v35 must see zero raw rows")
-    require(row["valid_raw_rows"] == "0", "v35 must validate zero raw rows")
+    require(row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v35 raw input must be present")
+    require(row["raw_rows_seen"] == "450", "v35 must see 450 raw rows")
+    require(row["valid_raw_rows"] == "450", "v35 must validate 450 raw rows")
     require(row["raw_rows_imported_after_recheck"] == "0", "v35 must inherit zero raw imports")
     require("post_writer_raw_import_not_allowed" not in row["adapter_recheck_blockers"], "v35 must not block on v34 raw import")
     require("zero_raw_rows_imported_after_recheck" in row["adapter_recheck_blockers"], "v35 must block on zero raw rows")
-    require("raw_adapter_input_not_present" in row["adapter_recheck_blockers"], "v35 must block on missing raw input")
+    require("raw_adapter_input_not_present" not in row["adapter_recheck_blockers"], "v35 must not block on raw input")
     require(row["target_file_written_after_recheck"] == "false", "v35 must not write v12 target")
     require(row["real_values_input_may_exist_after_recheck"] == "false", "v35 cannot allow real values input")
     require(row["endpoint_scoring_allowed"] == "false", "v35 row cannot allow scoring")
     require(len(summary) == 1, "v35 summary must have one row")
     summary_row = summary[0]
     require(summary_row["overall_status"] == "POST_WRITER_RAW_ADAPTER_RECHECK_BLOCKED", "v35 summary must block")
-    require(summary_row["raw_input_status"] == "RAW_INPUT_FILE_MISSING", "v35 summary raw input mismatch")
-    require(summary_row["valid_raw_rows"] == "0", "v35 summary must validate zero rows")
+    require(summary_row["raw_input_status"] == "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW", "v35 summary raw input mismatch")
+    require(summary_row["valid_raw_rows"] == "450", "v35 summary must validate 450 rows")
     require(summary_row["target_file_written_after_recheck"] == "false", "v35 summary must not write target")
     require(summary_row["real_values_input_may_exist_after_recheck"] == "false", "v35 summary cannot allow real values")
     require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "v35 summary must forbid scoring")
@@ -1177,8 +1222,8 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
     require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
-    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 3, "v40 must inherit three ready v24 dependencies")
-    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 10, "v40 must inherit ten blocked v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 4, "v40 must inherit four ready v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 9, "v40 must inherit nine blocked v24 dependencies")
     require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
     require(
         all(
@@ -1223,10 +1268,10 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(
         all(
             ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 4)
+            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 5)
             for row in rows
         ),
-        "v41 must flag v25 dependency blockers for the raw frontier and later blocked priorities",
+        "v41 must flag v25 dependency blockers for the write-authorization frontier and later blocked priorities",
     )
     require(
         all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
@@ -1238,9 +1283,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     )
     require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
-    require(frontier_rows[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT", "v41 frontier row must be raw adapter input")
+    require(frontier_rows[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION", "v41 frontier row must be write authorization")
     require(
-        frontier_rows[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv",
+        frontier_rows[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -1250,9 +1295,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
     require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
-    require(row["first_frontier_dependency_after_recheck"] == "SCD24_RAW_ADAPTER_INPUT", "v41 frontier dependency mismatch")
+    require(row["first_frontier_dependency_after_recheck"] == "SCD24_WRITE_AUTHORIZATION", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "data/input/source_import_raw_sparc_like_v15.csv",
+        row["first_frontier_artifact_after_recheck"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -1267,9 +1312,9 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
-    require(all(row["v41_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT" for row in rows), "v42 must inherit the raw adapter frontier")
+    require(all(row["v41_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION" for row in rows), "v42 must inherit the write-authorization frontier")
     require(
-        all(row["v41_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv" for row in rows),
+        all(row["v41_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -1931,6 +1976,7 @@ def main() -> None:
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()
+    validate_active_v15_raw_sparc_like_input_writer_v56()
     validate_source_import_raw_adapter_v15()
     validate_source_import_write_authorization_v16()
     validate_source_import_authorized_writer_v17()

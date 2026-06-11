@@ -27,7 +27,7 @@ The expected status is:
 AUTHORIZED_WRITER_BLOCKED
 ```
 
-The current package has no valid raw input and no write authorization. The
+The current package has a valid raw input but no write authorization. The
 writer therefore writes zero rows and does not create
 `data/input/source_import_real_values_v12.csv`.
 

@@ -31,7 +31,7 @@ def recheck_rows() -> list[dict[str, object]]:
         blockers.append("post_writer_raw_import_not_allowed")
     if raw_recheck["raw_rows_imported_after_recheck"] == "0":
         blockers.append("zero_raw_rows_imported_after_recheck")
-    if adapter["raw_input_status"] != "RAW_INPUT_PRESENT_VALIDATION_PENDING":
+    if adapter["raw_input_status"] != "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW":
         blockers.append("raw_adapter_input_not_present")
     return [
         {

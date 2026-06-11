@@ -92,6 +92,8 @@ data/derived/source_import_template_summary_v14.csv
 data/derived/source_import_raw_adapter_schema_v15.csv
 data/derived/source_import_raw_adapter_gate_v15.csv
 data/derived/source_import_raw_adapter_summary_v15.csv
+data/input/source_import_raw_sparc_like_v15.csv
+data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv
 data/derived/source_import_write_authorization_v16.csv
 data/derived/source_import_write_authorization_summary_v16.csv
 data/derived/source_import_authorized_writer_v17.csv
@@ -227,6 +229,7 @@ docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
 docs/source_import_real_values_template_v14.md
 docs/source_import_raw_adapter_v15.md
+docs/active_v15_raw_sparc_like_input_writer_v56.md
 docs/source_import_write_authorization_v16.md
 docs/source_import_authorized_writer_v17.md
 docs/source_import_raw_template_v18.md
@@ -319,35 +322,38 @@ numeric counts, controls, and thresholds remain blocked. The v14 source-import
 template is present as `data/input/source_import_real_values_v12_TEMPLATE.csv`,
 but it is not data and cannot activate scoring rows. The v15 raw adapter
 declares a machine-readable path from a SPARC-like raw input into the v12 real
-input shape, and currently reports `RAW_ADAPTER_READY_INPUT_MISSING`. The v16
-write-authorization gate currently reports `WRITE_AUTHORIZATION_BLOCKED`, so no
-real v12 input file is written. The v17 authorized writer path is implemented
-but currently reports `AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18
-raw-input template is present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`,
-but it is not data and cannot be used for scoring. The v19 provenance manifest
-still declares the provenance requirements, and v21 keeps the provenance
-evidence column contract. The active v21 input is now present via v55. With that
-input in place, v22 reports `PROVENANCE_EVIDENCE_READY_FOR_PROMOTION`, v23
-promotes all eighteen provenance rows, and v20 reports
-`RAW_IMPORT_READY_BY_PROVENANCE`. The v24 scoring dependency closure now has
-three ready provenance-side dependencies and ten blocked downstream
-dependencies. The v25 scoring unblock priority ledger identifies the first
-current frontier as `SCD24_RAW_ADAPTER_INPUT`, with
-`data/input/source_import_raw_sparc_like_v15.csv` as the next required
-artifact. The legacy v26-v30 frontier-provenance work-order/writer path remains
+input shape, and now reports `RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW`.
+The v16 write-authorization gate currently reports
+`WRITE_AUTHORIZATION_BLOCKED`, so no real v12 input file is written. The v17
+authorized writer path is implemented but currently reports
+`AUTHORIZED_WRITER_BLOCKED` and writes zero rows. The v18 raw-input template is
+present as `data/input/source_import_raw_sparc_like_v15_TEMPLATE.csv`, but it
+is not data and cannot be used for scoring. The v19 provenance manifest still
+declares the provenance requirements, and v21 keeps the provenance evidence
+column contract. The active v21 input is now present via v55. With that input
+in place, v22 reports `PROVENANCE_EVIDENCE_READY_FOR_PROMOTION`, v23 promotes
+all eighteen provenance rows, and v20 reports `RAW_IMPORT_READY_BY_PROVENANCE`.
+The v56 active raw SPARC-like input writer extracts 450 MassModels rows for the
+eighteen frozen galaxies into `data/input/source_import_raw_sparc_like_v15.csv`;
+this is raw source input only and does not write v12 real values. The v24
+scoring dependency closure now has four ready source-side dependencies and nine
+blocked downstream dependencies. The v25 scoring unblock priority ledger
+identifies the first current frontier as `SCD24_WRITE_AUTHORIZATION`, with
+`PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1` as the next required authorization.
+The legacy v26-v30 frontier-provenance work-order/writer path remains
 review-only and write-blocked; it does not override the separate active v55
 writer. The v31 audit records the active v55 provenance input as present, v32
 allows evidence-gate promotion, v33 promotes all eighteen provenance rows on
 recheck, and v34 allows raw import in principle while importing zero raw rows.
 The v35 post-writer raw adapter recheck is therefore the current source-side
-blocker: `data/input/source_import_raw_sparc_like_v15.csv` is still missing, so
-the v12 real-values target remains unwritten. The v36-v39 post-writer rechecks
-keep real values, leakage audit, scoring activation, and scoring preflight
-blocked. The v40 recheck keeps all endpoint-scoring paths blocked because
-preflight readiness is still zero, and v41 confirms the current frontier as
-`SCD24_RAW_ADAPTER_INPUT`. The v42-v43 frontier-evidence rechecks remain
-blocked/bypassed with respect to scoring because the active frontier is no
-longer provenance evidence. The v44 frontier
+blocker: raw input is present and valid for review, but the v12 real-values
+target remains unwritten until explicit write authorization is supplied. The
+v36-v39 post-writer rechecks keep real values, leakage audit, scoring
+activation, and scoring preflight blocked. The v40 recheck keeps all
+endpoint-scoring paths blocked because preflight readiness is still zero, and
+v41 confirms the current frontier as `SCD24_WRITE_AUTHORIZATION`. The v42-v43
+frontier-evidence rechecks remain blocked/bypassed with respect to scoring
+because the active frontier is no longer provenance evidence. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen
 manual collection checklist rows for the missing provenance evidence input,
 while creating zero evidence rows by itself. The v45 frontier provenance source
@@ -381,6 +387,8 @@ under `data/derived/`; it is ready for a separate active v21 write gate but is
 not yet active source input. The v55 active v21 provenance evidence writer
 writes all eighteen complete provenance rows into
 `data/input/source_import_provenance_evidence_v21.csv`. After rerunning the
-source-side gates, v22, v23, and v20 are ready, and the scoring unblock frontier
-moves to `data/input/source_import_raw_sparc_like_v15.csv`; endpoint scoring
-remains disabled.
+source-side gates, v22, v23, and v20 are ready. The v56 active raw SPARC-like
+input writer then writes 450 MassModels raw rows for the eighteen frozen
+galaxies into `data/input/source_import_raw_sparc_like_v15.csv`. The scoring
+unblock frontier moves to `PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1`; endpoint
+scoring remains disabled.

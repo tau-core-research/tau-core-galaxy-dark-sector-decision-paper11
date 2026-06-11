@@ -1,7 +1,7 @@
 # Source Import Raw Adapter v15
 
 **Doc class:** raw source-import adapter gate  
-**Status:** adapter declared; raw input missing; no target input written  
+**Status:** raw input present for validation review; no target input written
 
 Script:
 
@@ -37,10 +37,11 @@ to the v12 real-value input shape.
 The expected status is:
 
 ```text
-RAW_ADAPTER_READY_INPUT_MISSING
+RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW
 ```
 
-No raw source file is included in the package, and the adapter does not write
+The active v15 raw input is present and validates 450 rows across eighteen
+frozen galaxies. The adapter still does not write
 `data/input/source_import_real_values_v12.csv`.
 
 ## Claim Boundary

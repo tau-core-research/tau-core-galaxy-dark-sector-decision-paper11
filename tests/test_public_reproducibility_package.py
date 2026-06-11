@@ -42,6 +42,7 @@ def test_required_files_exist() -> None:
         "docs/scoring_activation_gate_v13.md",
         "docs/source_import_real_values_template_v14.md",
         "docs/source_import_raw_adapter_v15.md",
+        "docs/active_v15_raw_sparc_like_input_writer_v56.md",
         "docs/source_import_write_authorization_v16.md",
         "docs/source_import_authorized_writer_v17.md",
         "docs/source_import_raw_template_v18.md",
@@ -117,6 +118,8 @@ def test_required_files_exist() -> None:
         "data/derived/source_import_raw_adapter_schema_v15.csv",
         "data/derived/source_import_raw_adapter_gate_v15.csv",
         "data/derived/source_import_raw_adapter_summary_v15.csv",
+        "data/input/source_import_raw_sparc_like_v15.csv",
+        "data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv",
         "data/derived/source_import_write_authorization_v16.csv",
         "data/derived/source_import_write_authorization_summary_v16.csv",
         "data/derived/source_import_authorized_writer_v17.csv",
@@ -237,6 +240,7 @@ def test_required_files_exist() -> None:
         "scripts/run_scoring_activation_gate.py",
         "scripts/build_source_import_real_values_template.py",
         "scripts/run_source_import_raw_adapter.py",
+        "scripts/run_active_v15_raw_sparc_like_input_writer.py",
         "scripts/run_source_import_write_authorization.py",
         "scripts/run_source_import_authorized_writer.py",
         "scripts/build_source_import_raw_template.py",
@@ -717,7 +721,7 @@ def test_v14_source_import_template_is_not_data() -> None:
     ]
 
 
-def test_v15_raw_adapter_is_ready_but_has_no_raw_input() -> None:
+def test_v15_raw_adapter_validates_raw_input_without_writing_v12() -> None:
     schema = list(csv.DictReader((ROOT / "data/derived/source_import_raw_adapter_schema_v15.csv").open()))
     assert len(schema) == 16
     assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "import_status"}.issubset(
@@ -731,10 +735,10 @@ def test_v15_raw_adapter_is_ready_but_has_no_raw_input() -> None:
             "adapter_gate_id": "SIRA15_RAW_TO_V12",
             "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
-            "raw_input_status": "RAW_INPUT_FILE_MISSING",
-            "raw_rows_seen": "0",
-            "valid_raw_rows": "0",
-            "galaxies_with_valid_raw_rows": "0",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "raw_rows_seen": "450",
+            "valid_raw_rows": "450",
+            "galaxies_with_valid_raw_rows": "18",
             "target_file_written": "false",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "raw_adapter_gate_only_no_source_import_no_scores",
@@ -747,12 +751,36 @@ def test_v15_raw_adapter_is_ready_but_has_no_raw_input() -> None:
             "summary_id": "SOURCE_IMPORT_RAW_ADAPTER_V15",
             "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
-            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
             "target_input_file_present": "false",
             "target_file_written_by_adapter": "false",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "RAW_ADAPTER_READY_INPUT_MISSING",
+            "overall_status": "RAW_ADAPTER_READY_VALIDATION_PENDING_REVIEW",
             "claim_boundary": "raw_adapter_only_no_source_import_no_scores",
+        }
+    ]
+
+
+def test_v56_active_raw_sparc_like_writer_outputs_frozen_rows() -> None:
+    rows = list(csv.DictReader((ROOT / "data/input/source_import_raw_sparc_like_v15.csv").open()))
+    assert len(rows) == 450
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert all(row["catalog"] == "SPARC" for row in rows)
+    assert all(row["table_or_file"] == "MassModels_Lelli2016c.mrt" for row in rows)
+    assert all(row["sha256_or_external_accession"].startswith("sha256:") for row in rows)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/active_v15_raw_sparc_like_input_writer_summary_v56.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "ACTIVE_V15_RAW_SPARC_LIKE_INPUT_WRITER_V56",
+            "source_file": "data/external/sparc_hash_audit_v50/MassModels_Lelli2016c.mrt",
+            "target_raw_input": "data/input/source_import_raw_sparc_like_v15.csv",
+            "raw_rows_written": "450",
+            "galaxies_written": "18",
+            "target_file_written": "true",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "ACTIVE_V15_RAW_SPARC_LIKE_INPUT_WRITTEN",
+            "claim_boundary": "active_v15_raw_input_writer_only_no_v12_write_no_scores_no_dark_sector_verdict",
         }
     ]
 
@@ -765,10 +793,10 @@ def test_v16_write_authorization_blocks_target_input_creation() -> None:
             "source_adapter_gate": "source_import_raw_adapter_gate_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
             "explicit_write_authorization": "false",
-            "raw_input_status": "RAW_INPUT_FILE_MISSING",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
             "target_input_file_present": "false",
             "write_authorized": "false",
-            "write_blockers": "explicit_write_authorization_missing;raw_input_not_validated",
+            "write_blockers": "explicit_write_authorization_missing",
             "target_file_written": "false",
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "write_authorization_only_no_source_import_no_scores",
@@ -784,7 +812,7 @@ def test_v16_write_authorization_blocks_target_input_creation() -> None:
             "target_input_file_present": "false",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "WRITE_AUTHORIZATION_BLOCKED",
-            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
             "claim_boundary": "write_authorization_only_no_source_import_no_scores",
         }
     ]
@@ -799,7 +827,7 @@ def test_v17_authorized_writer_is_implemented_but_blocked() -> None:
             "raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
             "target_input_file": "data/input/source_import_real_values_v12.csv",
             "write_authorized": "false",
-            "raw_input_present": "false",
+            "raw_input_present": "true",
             "target_preexisting": "false",
             "target_file_written": "false",
             "rows_written": "0",
@@ -819,7 +847,7 @@ def test_v17_authorized_writer_is_implemented_but_blocked() -> None:
             "target_input_file_present_after_writer": "false",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "AUTHORIZED_WRITER_BLOCKED",
-            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
             "claim_boundary": "authorized_writer_only_no_source_import_no_scores",
         }
     ]
@@ -846,7 +874,7 @@ def test_v18_raw_template_is_not_data() -> None:
             "target_raw_input_file": "data/input/source_import_raw_sparc_like_v15.csv",
             "template_rows": "18",
             "required_columns": "15",
-            "raw_input_file_present": "false",
+            "raw_input_file_present": "true",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "RAW_TEMPLATE_READY_NOT_DATA",
             "claim_boundary": "raw_template_only_no_source_import_no_scores",
@@ -1031,7 +1059,12 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         "SCD24_DECISION_THRESHOLDS",
     }
     ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
-    assert ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"}
+    assert ready_ids == {
+        "SCD24_PROVENANCE_EVIDENCE",
+        "SCD24_PROVENANCE_PROMOTION",
+        "SCD24_PROVENANCE_AUDIT",
+        "SCD24_RAW_ADAPTER_INPUT",
+    }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
     assert any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows)
     assert any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows)
@@ -1041,11 +1074,11 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
         {
             "summary_id": "SCORING_DEPENDENCY_CLOSURE_V24",
             "dependencies_checked": "13",
-            "ready_dependencies": "3",
-            "blocked_dependencies": "10",
+            "ready_dependencies": "4",
+            "blocked_dependencies": "9",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
-            "next_required_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "next_required_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -1056,22 +1089,27 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
     assert len(rows) == 13
     assert [row["priority_rank"] for row in rows] == [str(i) for i in range(1, 14)]
     ready_ids = {row["dependency_id"] for row in rows if row["dependency_decision"] == "READY"}
-    assert ready_ids == {"SCD24_PROVENANCE_EVIDENCE", "SCD24_PROVENANCE_PROMOTION", "SCD24_PROVENANCE_AUDIT"}
+    assert ready_ids == {
+        "SCD24_PROVENANCE_EVIDENCE",
+        "SCD24_PROVENANCE_PROMOTION",
+        "SCD24_PROVENANCE_AUDIT",
+        "SCD24_RAW_ADAPTER_INPUT",
+    }
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     assert len(frontier) == 1
-    assert frontier[0]["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT"
-    assert frontier[0]["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv"
+    assert frontier[0]["dependency_id"] == "SCD24_WRITE_AUTHORIZATION"
+    assert frontier[0]["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
     assert summary == [
         {
             "summary_id": "SCORING_UNBLOCK_PRIORITY_V25",
             "priority_rows": "13",
-            "blocked_priority_rows": "10",
+            "blocked_priority_rows": "9",
             "frontier_now_rows": "1",
-            "first_frontier_dependency": "SCD24_RAW_ADAPTER_INPUT",
-            "first_frontier_artifact": "data/input/source_import_raw_sparc_like_v15.csv",
+            "first_frontier_dependency": "SCD24_WRITE_AUTHORIZATION",
+            "first_frontier_artifact": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
@@ -1351,11 +1389,11 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
             "recheck_id": "PWRAR35_POST_WRITER_RAW_ADAPTER_RECHECK",
             "raw_import_recheck_source": "data/derived/post_writer_raw_import_recheck_summary_v34.csv",
             "raw_adapter_source": "data/derived/source_import_raw_adapter_gate_v15.csv",
-            "raw_input_status": "RAW_INPUT_FILE_MISSING",
-            "raw_rows_seen": "0",
-            "valid_raw_rows": "0",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "raw_rows_seen": "450",
+            "valid_raw_rows": "450",
             "raw_rows_imported_after_recheck": "0",
-            "adapter_recheck_blockers": "zero_raw_rows_imported_after_recheck;raw_adapter_input_not_present",
+            "adapter_recheck_blockers": "zero_raw_rows_imported_after_recheck",
             "target_file_written_after_recheck": "false",
             "real_values_input_may_exist_after_recheck": "false",
             "endpoint_scoring_allowed": "false",
@@ -1367,8 +1405,8 @@ def test_v35_post_writer_raw_adapter_recheck_blocks_v12_write() -> None:
     assert summary == [
         {
             "summary_id": "POST_WRITER_RAW_ADAPTER_RECHECK_V35",
-            "raw_input_status": "RAW_INPUT_FILE_MISSING",
-            "valid_raw_rows": "0",
+            "raw_input_status": "RAW_INPUT_PRESENT_VALIDATION_PENDING_REVIEW",
+            "valid_raw_rows": "450",
             "target_file_written_after_recheck": "false",
             "real_values_input_may_exist_after_recheck": "false",
             "endpoint_scoring_allowed_anywhere": "false",
@@ -1486,8 +1524,8 @@ def test_v39_post_writer_scoring_preflight_recheck_blocks_scoring() -> None:
 def test_v40_post_writer_scoring_dependency_closure_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv").open()))
     assert len(rows) == 13
-    assert sum(row["v24_dependency_decision"] == "READY" for row in rows) == 3
-    assert sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 10
+    assert sum(row["v24_dependency_decision"] == "READY" for row in rows) == 4
+    assert sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 9
     assert all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows)
     assert all(
         ("v24_dependency_not_ready" in row["dependency_recheck_blockers"])
@@ -1519,15 +1557,15 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
     assert all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows)
     assert all(
         ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-        == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 4)
+        == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 5)
         for row in rows
     )
     assert all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows)
     assert all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows)
     assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
     frontier = [row for row in rows if row["frontier_now_after_recheck"] == "true"][0]
-    assert frontier["dependency_id"] == "SCD24_RAW_ADAPTER_INPUT"
-    assert frontier["next_required_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv"
+    assert frontier["dependency_id"] == "SCD24_WRITE_AUTHORIZATION"
+    assert frontier["next_required_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1"
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
@@ -1537,8 +1575,8 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
             "priority_rows_rechecked": "13",
             "blocked_priority_rows_after_recheck": "13",
             "frontier_now_rows_after_recheck": "1",
-            "first_frontier_dependency_after_recheck": "SCD24_RAW_ADAPTER_INPUT",
-            "first_frontier_artifact_after_recheck": "data/input/source_import_raw_sparc_like_v15.csv",
+            "first_frontier_dependency_after_recheck": "SCD24_WRITE_AUTHORIZATION",
+            "first_frontier_artifact_after_recheck": "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
             "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
@@ -1549,8 +1587,8 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
 def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv").open()))
     assert len(rows) == 18
-    assert all(row["v41_frontier_dependency"] == "SCD24_RAW_ADAPTER_INPUT" for row in rows)
-    assert all(row["v41_frontier_artifact"] == "data/input/source_import_raw_sparc_like_v15.csv" for row in rows)
+    assert all(row["v41_frontier_dependency"] == "SCD24_WRITE_AUTHORIZATION" for row in rows)
+    assert all(row["v41_frontier_artifact"] == "PAPER11_ALLOW_REAL_SOURCE_IMPORT_WRITE=1" for row in rows)
     assert all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
     assert all(row["v26_evidence_input_present"] == "true" for row in rows)
     assert all(row["v26_accepted_for_promotion_review"] == "true" for row in rows)
