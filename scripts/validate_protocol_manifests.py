@@ -514,6 +514,23 @@ def validate_scoring_activation_gate_v13() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
 
 
+def validate_source_import_template_v14() -> None:
+    template = read_csv(ROOT / "data/input/source_import_real_values_v12_TEMPLATE.csv")
+    columns = read_csv(ROOT / "data/derived/source_import_template_columns_v14.csv")
+    summary = read_csv(ROOT / "data/derived/source_import_template_summary_v14.csv")
+    require(len(template) == 18, "v14 template must include one placeholder row per candidate galaxy")
+    require(all(row["import_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in template), "v14 template rows must not be importable")
+    require(len(columns) == 16, "v14 template must document sixteen required columns")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in columns), "v14 template columns cannot allow scoring")
+    require(len(summary) == 1, "v14 summary must have one row")
+    row = summary[0]
+    require(row["overall_status"] == "SOURCE_IMPORT_TEMPLATE_READY_NOT_DATA", "v14 must remain template-only")
+    require(row["template_rows"] == "18", "v14 summary must report eighteen template rows")
+    require(row["required_columns"] == "16", "v14 summary must report sixteen columns")
+    require(row["real_input_file_present"] == "false", "v14 must not include the real input file")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v14 summary must forbid scoring")
+
+
 def main() -> None:
     validate_model_families()
     validate_freeze_requirements()
@@ -542,6 +559,7 @@ def main() -> None:
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()
+    validate_source_import_template_v14()
     print("PAPER11_PROTOCOL_MANIFESTS_VALID")
 
 

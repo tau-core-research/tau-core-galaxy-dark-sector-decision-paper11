@@ -40,6 +40,7 @@ def test_required_files_exist() -> None:
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
+        "docs/source_import_real_values_template_v14.md",
         "data/derived/activation_blockers_v06.csv",
         "data/derived/formula_and_count_blockers_v06.csv",
         "data/derived/control_runner_blockers_v06.csv",
@@ -69,6 +70,9 @@ def test_required_files_exist() -> None:
         "data/derived/scoring_activation_gate_v13.csv",
         "data/derived/scoring_activation_global_blockers_v13.csv",
         "data/derived/scoring_activation_summary_v13.csv",
+        "data/input/source_import_real_values_v12_TEMPLATE.csv",
+        "data/derived/source_import_template_columns_v14.csv",
+        "data/derived/source_import_template_summary_v14.csv",
         "scripts/run_readiness_audit.py",
         "scripts/run_scoring_preflight.py",
         "scripts/build_scoring_input_scaffold.py",
@@ -77,6 +81,7 @@ def test_required_files_exist() -> None:
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
+        "scripts/build_source_import_real_values_template.py",
         "scripts/reproduce.py",
         "scripts/validate_protocol_manifests.py",
     ]
@@ -484,6 +489,35 @@ def test_v13_scoring_activation_gate_blocks_all_rows() -> None:
             "overall_status": "SCORING_ACTIVATION_BLOCKED",
             "next_required_artifact": "data/input/source_import_real_values_v12.csv",
             "claim_boundary": "activation_gate_only_no_dark_sector_verdict",
+        }
+    ]
+
+
+def test_v14_source_import_template_is_not_data() -> None:
+    template = list(csv.DictReader((ROOT / "data/input/source_import_real_values_v12_TEMPLATE.csv").open()))
+    assert len(template) == 18
+    assert all(row["import_status"] == "TEMPLATE_ROW_DO_NOT_IMPORT" for row in template)
+    assert all(row["v_obs_km_s"] == "FILL_NUMERIC_OBSERVED_VELOCITY" for row in template)
+
+    columns = list(csv.DictReader((ROOT / "data/derived/source_import_template_columns_v14.csv").open()))
+    assert len(columns) == 16
+    assert {"galaxy_id", "radius_kpc", "v_obs_km_s", "import_status"}.issubset(
+        {row["field_name"] for row in columns}
+    )
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in columns)
+
+    summary = list(csv.DictReader((ROOT / "data/derived/source_import_template_summary_v14.csv").open()))
+    assert summary == [
+        {
+            "summary_id": "SOURCE_IMPORT_TEMPLATE_V14",
+            "template_file": "data/input/source_import_real_values_v12_TEMPLATE.csv",
+            "target_real_input_file": "data/input/source_import_real_values_v12.csv",
+            "template_rows": "18",
+            "required_columns": "16",
+            "real_input_file_present": "false",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "SOURCE_IMPORT_TEMPLATE_READY_NOT_DATA",
+            "claim_boundary": "template_only_no_source_import_no_scores",
         }
     ]
 
