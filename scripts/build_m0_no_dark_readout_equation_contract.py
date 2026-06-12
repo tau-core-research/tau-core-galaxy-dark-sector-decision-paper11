@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,20 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    kernel_contract_path = DERIVED / "m0_no_dark_equation_kernel_contract_summary_v09.csv"
+    kernel_contract = read_csv(kernel_contract_path)[0] if kernel_contract_path.exists() else {}
+    kernel_next = (
+        str(kernel_contract["next_required_artifact"])
+        if kernel_contract
+        else "m0_no_dark_equation_kernel_v09"
+    )
     rows = [
         {
             "equation_slot_id": "M0NDRE08_KERNEL",
             "equation_slot_class": "equation_kernel",
             "required_specification": "explicit frozen algebraic or algorithmic kernel mapping declared arguments to a velocity prediction",
             "completion_status": "EQUATION_KERNEL_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_equation_kernel_v09",
+            "next_required_artifact": kernel_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {

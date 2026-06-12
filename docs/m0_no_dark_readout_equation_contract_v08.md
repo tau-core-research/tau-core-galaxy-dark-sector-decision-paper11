@@ -32,7 +32,7 @@ The readout-equation contract exists, but zero equations and zero numeric
 prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_equation_kernel_v09
+m0_no_dark_kernel_expression_v10
 ```
 
 ## Claim Boundary
@@ -40,4 +40,5 @@ m0_no_dark_equation_kernel_v09
 This contract does not define the M0 equation kernel, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing
-readout-equation artifact to the first missing no-dark equation kernel.
+readout-equation artifact through the v09 kernel contract to the first missing
+no-dark kernel expression.
