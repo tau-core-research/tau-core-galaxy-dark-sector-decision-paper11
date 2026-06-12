@@ -43,10 +43,10 @@ endpoint_scoring_allowed_anywhere = false
 
 This gate is not endpoint scoring, not a model comparison, not empirical
 validation, and not a dark-sector verdict. It only clears the leakage-audit
-pass blocker and moves the first scoring-facing blocker to row activation.
+pass blocker and hands the protocol to row activation.
 
 Next honest target:
 
 ```text
-scoring_activation_gate_recheck_after_leakage_pass
+scoring_row_activation_policy_v79
 ```

@@ -33,35 +33,55 @@ def frontier_rows() -> list[dict[str, object]]:
     v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
     v78_path = DERIVED / "leakage_audit_pass_review_summary_v78.csv"
     v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
+    v79_path = DERIVED / "scoring_row_activation_policy_summary_v79.csv"
+    v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
     partial_blocked = int(v73["blocked_or_missing_rows"])
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
-    if v78_passed:
+    v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
+    if v79_ready:
+        rank2_status = str(v78["overall_status"])
+        rank2_blocked = "leakage pass is reviewed and row activation has been handed to v79"
+        rank2_next = str(v79["next_required_artifact"])
+        rank3_status = str(v79["overall_status"])
+        rank3_blocked = "row activation is ready; global scoring prerequisites remain blocked"
+        rank3_next = str(v79["next_required_artifact"])
+    elif v78_passed:
         rank2_status = str(v78["overall_status"])
         rank2_blocked = "leakage pass is reviewed, but scoring row activation remains blocked"
         rank2_next = str(v78["next_required_artifact"])
         rank3_status = "READY_FOR_SCORING_ACTIVATION_RECHECK_AFTER_LEAKAGE_PASS"
+        rank3_blocked = "row activation is forbidden until leakage pass exists for every scoring row"
+        rank3_next = "scoring_activation_gate_recheck_after_leakage_pass"
     elif v77_written:
         rank2_status = str(v77["overall_status"])
         rank2_blocked = "target leakage evidence rows are written, but leakage pass review is still pending"
         rank2_next = str(v77["next_required_artifact"])
         rank3_status = "WAITING_ON_LEAKAGE_PASS_REVIEW"
+        rank3_blocked = "row activation is forbidden until leakage pass exists for every scoring row"
+        rank3_next = "scoring_activation_gate_recheck_after_leakage_pass"
     elif v76_ready:
         rank2_status = str(v76["overall_status"])
         rank2_blocked = "full leakage evidence components are ready, but target evidence rows are not written yet"
         rank2_next = str(v76["next_required_artifact"])
         rank3_status = "WAITING_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE"
+        rank3_blocked = "row activation is forbidden until leakage pass exists for every scoring row"
+        rank3_next = "scoring_activation_gate_recheck_after_leakage_pass"
     elif partial_blocked == 0:
         rank2_status = "READY_FOR_FULL_LEAKAGE_EVIDENCE_INGESTION_AFTER_ACCEPTED_V71_RESPONSE"
         rank2_blocked = "full leakage evidence has not yet been ingested even though the partial sufficiency response is accepted"
         rank2_next = "run_full_leakage_evidence_ingestion_gate_v76"
         rank3_status = "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION"
+        rank3_blocked = "row activation is forbidden until leakage pass exists for every scoring row"
+        rank3_next = "scoring_activation_gate_recheck_after_leakage_pass"
     else:
         rank2_status = "WAITING_ON_RANK_1_SUFFICIENCY_RESPONSE"
         rank2_blocked = "full leakage evidence cannot be created until the two partial components pass sufficiency review"
         rank2_next = "accepted_v71_sufficiency_response_then_full_leakage_evidence_ingestion_gate"
         rank3_status = "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION"
+        rank3_blocked = "row activation is forbidden until leakage pass exists for every scoring row"
+        rank3_next = "scoring_activation_gate_recheck_after_leakage_pass"
     rank1_blocked = (
         "partial sufficiency blocker cleared; accepted sufficiency rows still do not create evidence"
         if partial_blocked == 0
@@ -111,10 +131,10 @@ def frontier_rows() -> list[dict[str, object]]:
             "frontier_rank": 3,
             "frontier_class": "row_activation_after_leakage_pass",
             "current_status": rank3_status,
-            "ready_detail": "real source values are already present but validation remains leakage-gated",
-            "blocked_detail": "row activation is forbidden until leakage pass exists for every scoring row",
+            "ready_detail": "real source values and leakage pass are present for all 18 galaxies",
+            "blocked_detail": rank3_blocked,
             "required_before_scoring": "true",
-            "next_required_artifact": "scoring_activation_gate_recheck_after_leakage_pass",
+            "next_required_artifact": rank3_next,
             "next_gate_after_artifact": "scoring_dependency_closure_recheck",
             "target_evidence_rows_created": "0",
             "leakage_pass_authorized": "false",
@@ -134,11 +154,17 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
     v78_path = DERIVED / "leakage_audit_pass_review_summary_v78.csv"
     v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
+    v79_path = DERIVED / "scoring_row_activation_policy_summary_v79.csv"
+    v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
     partial_blocked = v73["blocked_or_missing_rows"]
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
-    if v78_passed:
+    v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
+    if v79_ready:
+        overall_status = "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES"
+        first_artifact = str(v79["next_required_artifact"])
+    elif v78_passed:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_SCORING_ROW_ACTIVATION"
         first_artifact = str(v78["next_required_artifact"])
     elif v77_written:

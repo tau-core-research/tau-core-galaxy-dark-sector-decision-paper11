@@ -28,12 +28,12 @@ The expected status is:
 POST_WRITER_SCORING_ACTIVATION_RECHECK_BLOCKED
 ```
 
-All eighteen candidate rows remain blocked from activation, zero rows are
-activated for scoring, and the four v13 global activation blockers remain
-recorded.
+All eighteen candidate rows are activated at the row-gate level, and the four
+v13 global activation blockers remain recorded. Endpoint scoring is still
+disabled.
 
 ## Claim Boundary
 
 This recheck is not endpoint scoring and not a dark-sector verdict. It only
-records that the current post-writer source path still does not satisfy the
-activation requirements needed before scoring.
+records that the current post-writer source path satisfies row activation but
+does not satisfy the global prerequisites needed before scoring.

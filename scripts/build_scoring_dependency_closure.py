@@ -47,6 +47,7 @@ def dependency_row(
         "SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE",
         "SOURCE_IMPORT_AND_LEAKAGE_READY",
         "SCORING_ACTIVATION_READY",
+        "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED",
     }
     return {
         "dependency_id": dependency_id,

@@ -47,7 +47,7 @@ def recheck_rows() -> list[dict[str, object]]:
                 "rows_passing_value_gate_after_recheck": value_row["rows_passing_value_gate_after_recheck"],
                 "leakage_recheck_blockers": ";".join(blockers),
                 "leakage_pass_after_recheck": str(leakage_pass).lower(),
-                "activation_allowed_after_recheck": "false",
+                "activation_allowed_after_recheck": str(leakage_pass).lower(),
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_leakage_audit_recheck_only_no_activation_no_scores",
             }

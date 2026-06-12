@@ -400,7 +400,7 @@ def validate_source_import_leakage_audit_v09() -> None:
     require(row["activated_rows"] == "0", "v09 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
     require(
-        row["next_required_artifact"] == "scoring_activation_gate_recheck_after_leakage_pass",
+        row["next_required_artifact"] == "scoring_row_activation_policy_v79",
         "v09 must point to scoring activation recheck",
     )
 
@@ -1457,7 +1457,7 @@ def validate_leakage_audit_pass_review_gate_v78() -> None:
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v78 must forbid scoring")
     require(row["overall_status"] == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING", "v78 status mismatch")
     require(
-        row["next_required_artifact"] == "scoring_activation_gate_recheck_after_leakage_pass",
+        row["next_required_artifact"] == "scoring_row_activation_policy_v79",
         "v78 next artifact mismatch",
     )
 
@@ -1540,26 +1540,52 @@ def validate_scoring_activation_gate_v13() -> None:
     blockers = read_csv(ROOT / "data/derived/scoring_activation_global_blockers_v13.csv")
     summary = read_csv(ROOT / "data/derived/scoring_activation_summary_v13.csv")
     require(len(gates) == 18, "v13 activation gate must cover eighteen rows")
-    require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in gates), "v13 must activate zero rows")
+    require(all(row["activation_decision"] == "ACTIVATE_FOR_SCORING" for row in gates), "v13 must activate rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in gates), "v13 row gates cannot allow scoring")
     require(all("real_source_values_missing" not in row["blocking_requirements"] for row in gates), "v13 rows must not be blocked by missing real values")
     require(all("leakage_audit_not_passed" not in row["blocking_requirements"] for row in gates), "v13 rows must clear leakage blocker")
-    require(all("source_row_not_activated" in row["blocking_requirements"] for row in gates), "v13 rows must wait on source row activation")
+    require(all("source_row_not_activated" not in row["blocking_requirements"] for row in gates), "v13 rows must clear source row activation")
     require(len(blockers) == 4, "v13 must list four global blockers")
     require(all(row["current_status"] == "BLOCKED" for row in blockers), "v13 global blockers must remain blocked")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in blockers), "v13 blockers cannot allow scoring")
     require(len(summary) == 1, "v13 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SCORING_ACTIVATION_BLOCKED", "v13 activation must remain blocked")
+    require(
+        row["overall_status"] == "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED",
+        "v13 row activation must be ready while global scoring remains blocked",
+    )
     require(row["candidate_rows"] == "18", "v13 summary must cover eighteen candidate rows")
-    require(row["rows_activated_for_scoring"] == "0", "v13 must activate zero rows")
-    require(row["row_level_blocked_rows"] == "18", "v13 must block eighteen rows")
+    require(row["rows_activated_for_scoring"] == "18", "v13 must activate eighteen rows")
+    require(row["row_level_blocked_rows"] == "0", "v13 must block zero rows at row level")
     require(row["global_blockers"] == "4", "v13 must report four global blockers")
     require(
-        row["next_required_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
-        "v13 must point to activation policy",
+        row["next_required_artifact"] == "family_prediction_tables_v08.csv",
+        "v13 must point to family prediction tables",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
+
+
+def validate_scoring_row_activation_policy_v79() -> None:
+    rows = read_csv(ROOT / "data/derived/activated_scoring_rows_v10.csv")
+    summary = read_csv(ROOT / "data/derived/scoring_row_activation_policy_summary_v79.csv")
+    require(len(rows) == 18, "v79 activation policy must cover eighteen rows")
+    require(all(row["activation_status"] == "ACTIVATED" for row in rows), "v79 must activate all rows")
+    require(all(row["activation_policy_blockers"] == "" for row in rows), "v79 rows must have no activation policy blockers")
+    require(all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PASS" for row in rows), "v79 rows must inherit leakage pass")
+    require(all(row["v78_leakage_pass_authorized"] == "true" for row in rows), "v79 rows must inherit v78 pass authorization")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v79 rows cannot allow scoring")
+    require(len(summary) == 1, "v79 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "SCORING_ROW_ACTIVATION_POLICY_V79", "v79 summary id mismatch")
+    require(row["candidate_rows"] == "18", "v79 must summarize eighteen rows")
+    require(row["activated_rows_written"] == "18", "v79 must write eighteen activated rows")
+    require(row["blocked_rows"] == "0", "v79 must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v79 summary must forbid scoring")
+    require(
+        row["overall_status"] == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED",
+        "v79 status mismatch",
+    )
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "v79 next artifact mismatch")
 
 
 def validate_source_import_template_v14() -> None:
@@ -1855,20 +1881,24 @@ def validate_scoring_dependency_closure_v24() -> None:
             "SCD24_AUTHORIZED_WRITER",
             "SCD24_REAL_VALUES",
             "SCD24_LEAKAGE_AUDIT",
+            "SCD24_ROW_ACTIVATION",
         },
         f"v24 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v24 rows cannot allow scoring")
     require(any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows), "v24 must include v23 ready")
-    require(any(row["upstream_status"] == "SCORING_ACTIVATION_BLOCKED" for row in rows), "v24 must include v13 block")
+    require(
+        any(row["upstream_status"] == "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED" for row in rows),
+        "v24 must include v13 row activation readiness",
+    )
     require(len(summary) == 1, "v24 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
-    require(row["ready_dependencies"] == "8", "v24 must have eight ready dependencies")
-    require(row["blocked_dependencies"] == "5", "v24 must block five dependencies")
+    require(row["ready_dependencies"] == "9", "v24 must have nine ready dependencies")
+    require(row["blocked_dependencies"] == "4", "v24 must block four dependencies")
     require(
-        row["next_required_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
+        row["next_required_artifact"] == "family_prediction_tables_v08.csv",
         "v24 next artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
@@ -1892,26 +1922,27 @@ def validate_scoring_unblock_priority_v25() -> None:
             "SCD24_AUTHORIZED_WRITER",
             "SCD24_REAL_VALUES",
             "SCD24_LEAKAGE_AUDIT",
+            "SCD24_ROW_ACTIVATION",
         },
         f"v25 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
-    require(frontier[0]["dependency_id"] == "SCD24_ROW_ACTIVATION", "v25 first frontier must be row activation")
+    require(frontier[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 first frontier must be family formula tables")
     require(
-        frontier[0]["next_required_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
-        "v25 frontier artifact must be activation policy",
+        frontier[0]["next_required_artifact"] == "family_prediction_tables_v08.csv",
+        "v25 frontier artifact must be family prediction tables",
     )
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
     require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
     require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
-    require(row["blocked_priority_rows"] == "5", "v25 must preserve five blocked rows")
+    require(row["blocked_priority_rows"] == "4", "v25 must preserve four blocked rows")
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
-    require(row["first_frontier_dependency"] == "SCD24_ROW_ACTIVATION", "v25 frontier dependency mismatch")
+    require(row["first_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
+        row["first_frontier_artifact"] == "family_prediction_tables_v08.csv",
         "v25 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
@@ -1952,8 +1983,16 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 second frontier must reflect v78 leakage pass",
     )
     require(
-        rows[2]["current_status"] == "READY_FOR_SCORING_ACTIVATION_RECHECK_AFTER_LEAKAGE_PASS",
-        "v72 third frontier must wait on scoring activation",
+        rows[1]["next_required_artifact"] == "family_prediction_tables_v08.csv",
+        "v72 second frontier must hand off to family prediction tables after v79",
+    )
+    require(
+        rows[2]["current_status"] == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED",
+        "v72 third frontier must reflect v79 row activation readiness",
+    )
+    require(
+        rows[2]["next_required_artifact"] == "family_prediction_tables_v08.csv",
+        "v72 third frontier must point to family prediction tables",
     )
     require(len(summary) == 1, "v72 summary must have one row")
     row = summary[0]
@@ -1962,7 +2001,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "scoring_activation_gate_recheck_after_leakage_pass",
+        row["first_frontier_artifact"] == "family_prediction_tables_v08.csv",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
@@ -1972,7 +2011,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
     require(
-        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_SCORING_ROW_ACTIVATION",
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES",
         "v72 status mismatch",
     )
 
@@ -2269,7 +2308,7 @@ def validate_post_writer_leakage_audit_recheck_v37() -> None:
         "v37 must clear the v09 leakage audit blocker",
     )
     require(all(row["leakage_pass_after_recheck"] == "true" for row in rows), "v37 must pass leakage")
-    require(all(row["activation_allowed_after_recheck"] == "false" for row in rows), "v37 cannot allow activation")
+    require(all(row["activation_allowed_after_recheck"] == "true" for row in rows), "v37 must allow activation handoff")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v37 rows cannot allow scoring")
     require(len(summary) == 1, "v37 summary must have one row")
     row = summary[0]
@@ -2277,7 +2316,7 @@ def validate_post_writer_leakage_audit_recheck_v37() -> None:
     require(row["leakage_recheck_rows"] == "18", "v37 must summarize eighteen rows")
     require(row["leakage_pass_rows_after_recheck"] == "18", "v37 must pass eighteen leakage rows")
     require(row["leakage_blocked_rows_after_recheck"] == "0", "v37 must block zero leakage rows")
-    require(row["activation_allowed_rows_after_recheck"] == "0", "v37 must allow zero activations")
+    require(row["activation_allowed_rows_after_recheck"] == "18", "v37 must allow eighteen activation handoffs")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v37 summary must forbid scoring")
     require(row["overall_status"] == "POST_WRITER_LEAKAGE_AUDIT_RECHECK_READY", "v37 summary must be ready")
     require(
@@ -2292,30 +2331,30 @@ def validate_post_writer_scoring_activation_recheck_v38() -> None:
     require(len(rows) == 18, "v38 activation recheck must cover eighteen rows")
     require(all(row["v37_leakage_pass_after_recheck"] == "true" for row in rows), "v38 must inherit leakage passes")
     require(
-        all(row["v37_activation_allowed_after_recheck"] == "false" for row in rows),
-        "v38 must inherit zero activation-allowed rows",
+        all(row["v37_activation_allowed_after_recheck"] == "true" for row in rows),
+        "v38 must inherit activation handoff allowance",
     )
-    require(all(row["v13_activation_decision"] == "DO_NOT_ACTIVATE" for row in rows), "v38 must inherit v13 no-activation")
+    require(all(row["v13_activation_decision"] == "ACTIVATE_FOR_SCORING" for row in rows), "v38 must inherit v13 row activation")
     require(
         all("post_writer_leakage_audit_not_passed" not in row["activation_recheck_blockers"] for row in rows),
         "v38 must clear the v37 leakage failure blocker",
     )
     require(
-        all("post_writer_leakage_recheck_disallows_activation" in row["activation_recheck_blockers"] for row in rows),
-        "v38 must block on v37 activation denial",
+        all("post_writer_leakage_recheck_disallows_activation" not in row["activation_recheck_blockers"] for row in rows),
+        "v38 must clear v37 activation denial",
     )
     require(
-        all("v13_activation_gate_not_passed" in row["activation_recheck_blockers"] for row in rows),
-        "v38 must block on v13 activation gate",
+        all("v13_activation_gate_not_passed" not in row["activation_recheck_blockers"] for row in rows),
+        "v38 must clear v13 activation gate",
     )
-    require(all(row["activation_decision_after_recheck"] == "DO_NOT_ACTIVATE" for row in rows), "v38 cannot activate rows")
+    require(all(row["activation_decision_after_recheck"] == "ACTIVATE_FOR_SCORING" for row in rows), "v38 must activate rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v38 rows cannot allow scoring")
     require(len(summary) == 1, "v38 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_V38", "v38 summary id mismatch")
     require(row["activation_recheck_rows"] == "18", "v38 must summarize eighteen rows")
-    require(row["rows_activated_after_recheck"] == "0", "v38 must activate zero rows")
-    require(row["row_level_blocked_rows_after_recheck"] == "18", "v38 must block eighteen rows")
+    require(row["rows_activated_after_recheck"] == "18", "v38 must activate eighteen rows")
+    require(row["row_level_blocked_rows_after_recheck"] == "0", "v38 must block zero rows at row level")
     require(row["global_blockers_after_recheck"] == "4", "v38 must preserve four global blockers")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v38 summary must forbid scoring")
     require(row["overall_status"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_BLOCKED", "v38 summary must block")
@@ -2330,14 +2369,14 @@ def validate_post_writer_scoring_preflight_recheck_v39() -> None:
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv")
     require(len(rows) == 6, "v39 preflight recheck must cover six requirements")
     require(all(row["v07_current_status"].startswith("BLOCKED") for row in rows), "v39 must inherit blocked v07 requirements")
-    require(all(row["v38_rows_activated_after_recheck"] == "0" for row in rows), "v39 must inherit zero activated rows")
+    require(all(row["v38_rows_activated_after_recheck"] == "18" for row in rows), "v39 must inherit eighteen activated rows")
     require(
         all("v07_requirement_blocked" in row["preflight_recheck_blockers"] for row in rows),
         "v39 must block on v07 requirements",
     )
     require(
-        all("post_writer_activation_recheck_zero_rows" in row["preflight_recheck_blockers"] for row in rows),
-        "v39 must block on zero activated rows",
+        all("post_writer_activation_recheck_zero_rows" not in row["preflight_recheck_blockers"] for row in rows),
+        "v39 must clear zero-row activation blocker",
     )
     require(
         all("post_writer_activation_recheck_scoring_not_allowed" in row["preflight_recheck_blockers"] for row in rows),
@@ -2367,8 +2406,8 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
     require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
-    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 8, "v40 must inherit eight ready v24 dependencies")
-    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 5, "v40 must inherit five blocked v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 9, "v40 must inherit nine ready v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 4, "v40 must inherit four blocked v24 dependencies")
     require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
     require(
         all(
@@ -2413,10 +2452,10 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(
         all(
             ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 9)
+            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 10)
             for row in rows
         ),
-        "v41 must flag v25 dependency blockers for the row-activation frontier and later blocked priorities",
+        "v41 must flag v25 dependency blockers for the formula-table frontier and later blocked priorities",
     )
     require(
         all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
@@ -2428,9 +2467,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     )
     require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
-    require(frontier_rows[0]["dependency_id"] == "SCD24_ROW_ACTIVATION", "v41 frontier row must be row activation")
+    require(frontier_rows[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier row must be formula tables")
     require(
-        frontier_rows[0]["next_required_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
+        frontier_rows[0]["next_required_artifact"] == "family_prediction_tables_v08.csv",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -2440,9 +2479,9 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
     require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
-    require(row["first_frontier_dependency_after_recheck"] == "SCD24_ROW_ACTIVATION", "v41 frontier dependency mismatch")
+    require(row["first_frontier_dependency_after_recheck"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass",
+        row["first_frontier_artifact_after_recheck"] == "family_prediction_tables_v08.csv",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -2457,9 +2496,9 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
-    require(all(row["v41_frontier_dependency"] == "SCD24_ROW_ACTIVATION" for row in rows), "v42 must inherit the row activation frontier")
+    require(all(row["v41_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES" for row in rows), "v42 must inherit the formula-table frontier")
     require(
-        all(row["v41_frontier_artifact"] == "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass" for row in rows),
+        all(row["v41_frontier_artifact"] == "family_prediction_tables_v08.csv" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -3139,6 +3178,7 @@ def main() -> None:
     validate_leakage_audit_pass_review_gate_v78()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
+    validate_scoring_row_activation_policy_v79()
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()
     validate_active_v15_raw_sparc_like_input_writer_v56()

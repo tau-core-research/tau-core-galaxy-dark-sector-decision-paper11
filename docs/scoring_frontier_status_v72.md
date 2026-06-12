@@ -7,7 +7,7 @@ candidate sufficiency review package.
 
 - First frontier: `SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE`
 - First required artifact:
-  `scoring_activation_gate_recheck_after_leakage_pass`
+  `family_prediction_tables_v08.csv`
 - Full leakage components required before endpoint scoring: 4
 - Partial candidate rows still requiring review: 0
 - Full leakage ingestion status:
@@ -18,7 +18,7 @@ candidate sufficiency review package.
 This status layer creates no evidence rows, authorizes no leakage pass,
 activates no rows, computes no scores, and makes no dark-sector verdict.
 
-It only clarifies the next scoring-facing blocker: v78 has reviewed the v10
-target evidence input and cleared the leakage-pass blocker, but a separate
-row-activation policy or activation gate must still pass before any score can
-be reconsidered.
+It only clarifies the next scoring-facing blocker: v78 has cleared leakage
+pass and v79 has cleared row activation, but the global scoring prerequisites
+remain blocked. The current first concrete artifact is the frozen family
+prediction table.

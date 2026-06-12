@@ -189,7 +189,7 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             if leakage_pending == len(rows)
             else "leakage_audit_pass_review_gate_after_v10_evidence"
             if evidence_review_pending == len(rows)
-            else "scoring_activation_gate_recheck_after_leakage_pass"
+            else "scoring_row_activation_policy_v79"
             if leakage_passed == len(rows)
             else "source_import_real_values_v12.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",

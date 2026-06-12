@@ -42,5 +42,5 @@ does not produce a dark-sector verdict.
 Next honest target:
 
 ```text
-scoring_activation_gate_recheck_after_leakage_pass
+scoring_row_activation_policy_v79
 ```

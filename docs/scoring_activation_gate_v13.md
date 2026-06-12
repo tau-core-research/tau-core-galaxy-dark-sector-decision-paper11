@@ -1,7 +1,7 @@
 # Scoring Activation Gate v13
 
-**Doc class:** executable scoring-activation gate  
-**Status:** activation blocked; zero rows activated; no scoring allowed  
+**Doc class:** executable scoring-activation gate
+**Status:** row activation ready; global scoring blocked; no scoring allowed
 
 Script:
 
@@ -46,10 +46,12 @@ numeric decision thresholds
 The expected status is:
 
 ```text
-SCORING_ACTIVATION_BLOCKED
+SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED
 ```
 
-The current package activates zero rows and keeps all endpoint scoring disabled.
+The current package activates all eighteen rows at the row-gate level, but
+keeps endpoint scoring disabled because all four global scoring prerequisites
+remain blocked.
 
 ## Claim Boundary
 

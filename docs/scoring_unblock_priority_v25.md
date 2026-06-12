@@ -32,13 +32,13 @@ SCORING_UNBLOCK_FRONTIER_IDENTIFIED
 The first frontier dependency is:
 
 ```text
-SCD24_ROW_ACTIVATION
+SCD24_FAMILY_FORMULA_TABLES
 ```
 
 The first required artifact is:
 
 ```text
-activated_scoring_rows_v10_or_activation_policy_after_leakage_pass
+family_prediction_tables_v08.csv
 ```
 
 ## Claim Boundary

@@ -164,9 +164,9 @@ imports zero observed numeric rows, so scoring remains blocked pending source
 import and leakage audit.
 
 The v09 source-import and leakage audit evaluates the v08 placeholders. It
-now finds source-side values present but leakage review pending. No
-leakage-audit row passes and zero rows are activated. This is a scoring gate
-result only: it does not compute scores or compare model families.
+now finds source-side values present and the leakage pass reviewed. No endpoint
+score is allowed at this layer. This is a scoring-gate result only: it does
+not compute scores or compare model families.
 
 The v10 source-import contract defines the required provenance, source-route,
 observed-input, and leakage-evidence fields for each declared scoring row. The
@@ -203,8 +203,9 @@ leakage review, but it activates no scoring rows.
 
 The v13 scoring-activation gate combines row-level source/leakage status with
 global formula, parameter-count, control-runner, and threshold prerequisites.
-It reports that scoring activation remains blocked: zero rows are activated
-and all four global prerequisite classes remain blocked.
+It reports that row activation is ready for all eighteen rows, while endpoint
+scoring remains blocked because all four global prerequisite classes remain
+blocked.
 
 The v14 source-import template supplies the CSV shape needed for the future
 real-value input file. It is template material only, not observed data, and it
@@ -270,12 +271,12 @@ activation. It sees 450 imported numeric rows and eighteen value-gate passes,
 but zero rows are activated.
 
 The v37 post-writer leakage-audit recheck links the real-values state back to
-the leakage gate. All eighteen rows pass the leakage recheck, while zero rows
-are allowed for activation.
+the leakage gate. All eighteen rows pass the leakage recheck and can hand off
+to row activation.
 
 The v38 post-writer scoring-activation recheck links that leakage result back
-to the activation gate. All eighteen rows remain blocked from activation and
-zero rows are activated for scoring.
+to the activation gate. All eighteen rows are activated at the row-gate level,
+but endpoint scoring remains blocked by the global prerequisite classes.
 
 The v39 post-writer scoring-preflight recheck links the blocked activation
 state back to the preflight checklist. All six preflight requirements remain
@@ -287,8 +288,8 @@ blocked because no preflight requirement is ready after activation.
 
 The v41 post-writer scoring-unblock priority recheck links that blocked
 dependency graph back to the unblock ledger. The first frontier is
-\texttt{SCD24\_ROW\_ACTIVATION}, requiring
-\path{activated_scoring_rows_v10_or_activation_policy_after_leakage_pass}.
+\texttt{SCD24\_FAMILY\_FORMULA\_TABLES}, requiring
+\path{family_prediction_tables_v08.csv}.
 
 The v42 post-writer frontier evidence-acceptance recheck records that the
 current frontier is no longer provenance evidence. All eighteen rows remain
@@ -414,7 +415,10 @@ The v77 leakage-audit evidence writer writes
 evidence rows. It still authorizes no leakage pass, activates no rows, and
 computes no score. The v78 leakage-audit pass review gate authorizes all 72
 component passes and all 18 galaxy-level leakage passes, but still authorizes
-zero activation rows and computes no score; the next blocker is row activation.
+zero activation rows and computes no score. The v79 row-activation policy then
+activates all 18 galaxy rows for the later scoring prerequisite chain, but
+still computes no score; the next blocker is the frozen family prediction
+table.
 
 \section{Claim Boundary}
 

@@ -93,7 +93,7 @@ def summary(rows: list[dict[str, object]], coverage: list[dict[str, object]]) ->
             "overall_status": "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
             if galaxy_passes == len(coverage)
             else "LEAKAGE_AUDIT_PASS_REVIEW_BLOCKED",
-            "next_required_artifact": "scoring_activation_gate_recheck_after_leakage_pass",
+            "next_required_artifact": "scoring_row_activation_policy_v79",
             "claim_boundary": "leakage_audit_pass_review_gate_only_no_activation_no_scores_no_dark_sector_verdict",
         }
     ]

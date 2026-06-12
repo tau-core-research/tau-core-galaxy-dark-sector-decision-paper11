@@ -1,7 +1,7 @@
 # Post-Writer Leakage Audit Recheck v37
 
-**Doc class:** post-writer leakage-audit recheck  
-**Status:** leakage audit recheck blocked; no activation; no scoring allowed  
+**Doc class:** post-writer leakage-audit recheck
+**Status:** leakage audit recheck ready; activation handoff allowed; no scoring allowed
 
 Script:
 
@@ -17,23 +17,22 @@ data/derived/post_writer_leakage_audit_recheck_summary_v37.csv
 ```
 
 This layer links the v36 post-writer real-values gate recheck back to the v09
-leakage audit. It confirms that no row can pass leakage audit after the writer
-path because no real-values row passed the value gate. It does not activate rows
-or compute scores.
+leakage audit. It confirms that all rows can hand off to the row-activation
+gate after the value gate and leakage pass. It does not compute scores.
 
 ## Current Result
 
 The expected status is:
 
 ```text
-POST_WRITER_LEAKAGE_AUDIT_RECHECK_BLOCKED
+POST_WRITER_LEAKAGE_AUDIT_RECHECK_READY
 ```
 
-All eighteen candidate rows remain leakage-blocked, zero rows pass the leakage
-audit, and zero rows are allowed for activation.
+All eighteen candidate rows pass the leakage recheck and are allowed to hand
+off to the row-activation gate. This layer still computes no score and does not
+itself run endpoint scoring.
 
 ## Claim Boundary
 
-This recheck is not a leakage pass and not a scoring result. It only records
-that the leakage audit remains blocked after the current writer and real-values
-path.
+This recheck is not endpoint scoring and not a dark-sector verdict. It only
+records that the leakage recheck no longer blocks row activation.

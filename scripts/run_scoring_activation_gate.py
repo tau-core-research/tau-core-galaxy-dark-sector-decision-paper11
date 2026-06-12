@@ -25,7 +25,8 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def row_gates() -> list[dict[str, object]]:
-    scoring_rows = read_csv(DERIVED / "activated_scoring_rows_v08.csv")
+    scoring_source = DERIVED / "activated_scoring_rows_v10.csv"
+    scoring_rows = read_csv(scoring_source if scoring_source.exists() else DERIVED / "activated_scoring_rows_v08.csv")
     value_gates = {row["galaxy_id"]: row for row in read_csv(DERIVED / "source_import_real_values_gate_v12.csv")}
     leakage = {row["galaxy_id"]: row for row in read_csv(DERIVED / "leakage_audit_findings_v09.csv")}
     out: list[dict[str, object]] = []
@@ -115,8 +116,12 @@ def summary(rows: list[dict[str, object]], blockers: list[dict[str, object]]) ->
             "row_level_blocked_rows": len(rows) - activated,
             "global_blockers": blocked_global,
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SCORING_ACTIVATION_BLOCKED",
-            "next_required_artifact": "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass"
+            "overall_status": "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED"
+            if activated == len(rows) and blocked_global
+            else "SCORING_ACTIVATION_BLOCKED",
+            "next_required_artifact": "family_prediction_tables_v08.csv"
+            if activated == len(rows) and blocked_global
+            else "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass"
             if leakage_ready
             else "data/derived/source_import_leakage_summary_v09.csv"
             if value_ready
