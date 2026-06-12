@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,20 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    frozen_contract_path = DERIVED / "m0_no_dark_frozen_expression_contract_summary_v11.csv"
+    frozen_contract = read_csv(frozen_contract_path)[0] if frozen_contract_path.exists() else {}
+    frozen_next = (
+        str(frozen_contract["next_required_artifact"])
+        if frozen_contract
+        else "m0_no_dark_frozen_expression_v11"
+    )
     rows = [
         {
             "expression_slot_id": "M0NDKE10_FROZEN_EXPRESSION",
             "expression_slot_class": "frozen_expression",
             "required_specification": "complete symbolic or algorithmic expression with no endpoint-selected terms",
             "completion_status": "FROZEN_EXPRESSION_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_frozen_expression_v11",
+            "next_required_artifact": frozen_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {
