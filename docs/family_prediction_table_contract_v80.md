@@ -31,11 +31,12 @@ FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED
 
 The schema is ready, but zero formula slots are ready and zero numeric
 prediction rows are written. The `m0_no_dark_formula_table_v06`,
-`m0_no_dark_formula_body_v07`, and `m0_no_dark_readout_equation_v08` contracts
-are now present, so the first concrete missing formula artifact is:
+`m0_no_dark_formula_body_v07`, `m0_no_dark_readout_equation_v08`,
+`m0_no_dark_equation_kernel_v09`, and `m0_no_dark_kernel_expression_v10`
+contracts are now present, so the first concrete missing formula artifact is:
 
 ```text
-m0_no_dark_kernel_expression_v10
+m0_no_dark_frozen_expression_v11
 ```
 
 ## Claim Boundary
@@ -43,4 +44,4 @@ m0_no_dark_kernel_expression_v10
 This contract does not define a Tau response formula, does not compute
 predicted velocities, does not compare families, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from the broad family
-prediction table to the first missing no-dark kernel expression.
+prediction table to the first missing frozen no-dark expression.

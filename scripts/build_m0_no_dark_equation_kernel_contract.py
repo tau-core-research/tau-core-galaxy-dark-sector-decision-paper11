@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,20 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    expression_contract_path = DERIVED / "m0_no_dark_kernel_expression_contract_summary_v10.csv"
+    expression_contract = read_csv(expression_contract_path)[0] if expression_contract_path.exists() else {}
+    expression_next = (
+        str(expression_contract["next_required_artifact"])
+        if expression_contract
+        else "m0_no_dark_kernel_expression_v10"
+    )
     rows = [
         {
             "kernel_slot_id": "M0NDEK09_EXPRESSION",
             "kernel_slot_class": "kernel_expression",
             "required_specification": "frozen symbolic or algorithmic expression for the no-dark velocity readout kernel",
             "completion_status": "KERNEL_EXPRESSION_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_kernel_expression_v10",
+            "next_required_artifact": expression_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {

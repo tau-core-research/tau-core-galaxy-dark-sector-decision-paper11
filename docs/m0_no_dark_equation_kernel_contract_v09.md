@@ -32,7 +32,7 @@ The equation-kernel contract exists, but zero kernel expressions and zero
 numeric prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_kernel_expression_v10
+m0_no_dark_frozen_expression_v11
 ```
 
 ## Claim Boundary
@@ -40,4 +40,5 @@ m0_no_dark_kernel_expression_v10
 This contract does not define the M0 kernel expression, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing
-equation-kernel artifact to the first missing no-dark kernel expression.
+equation-kernel artifact through the v10 kernel-expression contract to the
+first missing frozen no-dark expression.
