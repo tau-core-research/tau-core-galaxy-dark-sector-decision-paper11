@@ -270,8 +270,8 @@ activation. It sees 450 imported numeric rows and eighteen value-gate passes,
 but zero rows are activated.
 
 The v37 post-writer leakage-audit recheck links the real-values state back to
-the leakage gate. Zero rows pass leakage audit and zero rows are allowed for
-activation.
+the leakage gate. All eighteen rows pass the leakage recheck, while zero rows
+are allowed for activation.
 
 The v38 post-writer scoring-activation recheck links that leakage result back
 to the activation gate. All eighteen rows remain blocked from activation and
@@ -287,8 +287,8 @@ blocked because no preflight requirement is ready after activation.
 
 The v41 post-writer scoring-unblock priority recheck links that blocked
 dependency graph back to the unblock ledger. The first frontier is
-\texttt{SCD24\_LEAKAGE\_AUDIT}, requiring
-\path{leakage_audit_pass_review_gate_after_v10_evidence}.
+\texttt{SCD24\_ROW\_ACTIVATION}, requiring
+\path{activated_scoring_rows_v10_or_activation_policy_after_leakage_pass}.
 
 The v42 post-writer frontier evidence-acceptance recheck records that the
 current frontier is no longer provenance evidence. All eighteen rows remain
@@ -412,7 +412,9 @@ activates no rows, and computes no score.
 The v77 leakage-audit evidence writer writes
 \path{data/input/leakage_audit_evidence_v10.csv} with 72 review-pending
 evidence rows. It still authorizes no leakage pass, activates no rows, and
-computes no score; the next blocker is the leakage-pass review gate.
+computes no score. The v78 leakage-audit pass review gate authorizes all 72
+component passes and all 18 galaxy-level leakage passes, but still authorizes
+zero activation rows and computes no score; the next blocker is row activation.
 
 \section{Claim Boundary}
 

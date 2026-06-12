@@ -140,7 +140,7 @@ def dependency_rows() -> list[dict[str, object]]:
             "scoring_activation",
             "data/derived/scoring_activation_gate_v13.csv",
             summary_row("scoring_activation_summary_v13.csv")["overall_status"],
-            "data/input/source_import_real_values_v12.csv",
+            summary_row("scoring_activation_summary_v13.csv")["next_required_artifact"],
             "zero rows are activated for scoring",
             "dependency_closure_only_no_scoring_activation",
         ),

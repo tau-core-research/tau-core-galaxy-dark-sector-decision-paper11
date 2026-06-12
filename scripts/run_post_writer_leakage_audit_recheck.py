@@ -36,6 +36,7 @@ def recheck_rows() -> list[dict[str, object]]:
             blockers.append("post_writer_real_values_gate_not_passed")
         if row["leakage_status"] != "LEAKAGE_AUDIT_PASS":
             blockers.append("v09_leakage_audit_not_passed")
+        leakage_pass = row["leakage_status"] == "LEAKAGE_AUDIT_PASS" and not blockers
         out.append(
             {
                 "recheck_id": f"PWLAR37_{index:03d}",
@@ -45,7 +46,7 @@ def recheck_rows() -> list[dict[str, object]]:
                 "v09_leakage_status": row["leakage_status"],
                 "rows_passing_value_gate_after_recheck": value_row["rows_passing_value_gate_after_recheck"],
                 "leakage_recheck_blockers": ";".join(blockers),
-                "leakage_pass_after_recheck": "false",
+                "leakage_pass_after_recheck": str(leakage_pass).lower(),
                 "activation_allowed_after_recheck": "false",
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "post_writer_leakage_audit_recheck_only_no_activation_no_scores",

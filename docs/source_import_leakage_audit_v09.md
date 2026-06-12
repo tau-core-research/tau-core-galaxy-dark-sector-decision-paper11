@@ -1,7 +1,7 @@
 # Source Import and Leakage Audit v09
 
 **Doc class:** executable source-import/leakage gate
-**Status:** source values and leakage evidence present; pass review pending; no rows activated
+**Status:** source values and leakage pass ready; no rows activated
 
 Script:
 
@@ -18,19 +18,21 @@ data/derived/leakage_audit_findings_v09.csv
 data/derived/source_import_leakage_summary_v09.csv
 ```
 
-This layer audits the v08 scoring-input scaffold. It now sees both the v12
-real-values input and the v77-written v10 leakage evidence input, but it keeps
-every row blocked until a separate leakage-pass review gate passes.
+This layer audits the v08 scoring-input scaffold. It now sees the v12
+real-values input, the v77-written v10 leakage evidence input, and the v78
+leakage-pass review result. It records the source-import and leakage audit as
+ready, but it keeps every row unactivated until a separate scoring activation
+policy or gate allows activation.
 
 ## Current Result
 
 The expected status is:
 
 ```text
-SOURCE_IMPORT_READY_LEAKAGE_EVIDENCE_REVIEW_PENDING
+SOURCE_IMPORT_AND_LEAKAGE_READY
 ```
 
-No row passes leakage audit and no row is activated for scoring.
+All eighteen rows pass leakage audit. No row is activated for scoring.
 
 ## Claim Boundary
 
@@ -40,5 +42,5 @@ does not produce a dark-sector verdict.
 Next honest target:
 
 ```text
-leakage_audit_pass_review_gate_after_v10_evidence
+scoring_activation_gate_recheck_after_leakage_pass
 ```

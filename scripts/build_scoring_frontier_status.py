@@ -31,10 +31,18 @@ def frontier_rows() -> list[dict[str, object]]:
     v76 = read_csv(v76_path)[0] if v76_path.exists() else {}
     v77_path = DERIVED / "leakage_audit_evidence_v10_writer_summary_v77.csv"
     v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
+    v78_path = DERIVED / "leakage_audit_pass_review_summary_v78.csv"
+    v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
     partial_blocked = int(v73["blocked_or_missing_rows"])
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
-    if v77_written:
+    v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
+    if v78_passed:
+        rank2_status = str(v78["overall_status"])
+        rank2_blocked = "leakage pass is reviewed, but scoring row activation remains blocked"
+        rank2_next = str(v78["next_required_artifact"])
+        rank3_status = "READY_FOR_SCORING_ACTIVATION_RECHECK_AFTER_LEAKAGE_PASS"
+    elif v77_written:
         rank2_status = str(v77["overall_status"])
         rank2_blocked = "target leakage evidence rows are written, but leakage pass review is still pending"
         rank2_next = str(v77["next_required_artifact"])
@@ -124,10 +132,16 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     v76 = read_csv(v76_path)[0] if v76_path.exists() else {}
     v77_path = DERIVED / "leakage_audit_evidence_v10_writer_summary_v77.csv"
     v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
+    v78_path = DERIVED / "leakage_audit_pass_review_summary_v78.csv"
+    v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
     partial_blocked = v73["blocked_or_missing_rows"]
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
-    if v77_written:
+    v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
+    if v78_passed:
+        overall_status = "SCORING_FRONTIER_BLOCKED_ON_SCORING_ROW_ACTIVATION"
+        first_artifact = str(v78["next_required_artifact"])
+    elif v77_written:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_PASS_REVIEW"
         first_artifact = str(v77["next_required_artifact"])
     elif v76_ready:
