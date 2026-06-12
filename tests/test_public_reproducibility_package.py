@@ -58,6 +58,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_audit_evidence_v10_writer_v77.md",
         "docs/leakage_audit_pass_review_gate_v78.md",
         "docs/scoring_row_activation_policy_v79.md",
+        "docs/m0_no_dark_formula_table_contract_v06.md",
         "docs/family_prediction_table_contract_v80.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
@@ -240,6 +241,8 @@ def test_required_files_exist() -> None:
         "data/derived/leakage_audit_pass_review_summary_v78.csv",
         "data/derived/activated_scoring_rows_v10.csv",
         "data/derived/scoring_row_activation_policy_summary_v79.csv",
+        "data/derived/m0_no_dark_formula_table_contract_v06.csv",
+        "data/derived/m0_no_dark_formula_table_contract_summary_v06.csv",
         "data/derived/family_prediction_table_schema_v80.csv",
         "data/derived/family_prediction_table_slot_requirements_v80.csv",
         "data/derived/family_prediction_table_contract_summary_v80.csv",
@@ -410,6 +413,7 @@ def test_required_files_exist() -> None:
         "scripts/run_leakage_audit_evidence_v10_writer.py",
         "scripts/run_leakage_audit_pass_review_gate.py",
         "scripts/run_scoring_row_activation_policy.py",
+        "scripts/build_m0_no_dark_formula_table_contract.py",
         "scripts/build_family_prediction_table_contract.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
@@ -1803,7 +1807,7 @@ def test_v13_scoring_activation_gate_blocks_all_rows() -> None:
             "global_blockers": "4",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED",
-            "next_required_artifact": "m0_no_dark_formula_table_v06",
+            "next_required_artifact": "m0_no_dark_formula_body_v07",
             "claim_boundary": "activation_gate_only_no_dark_sector_verdict",
         }
     ]
@@ -1832,6 +1836,38 @@ def test_v79_scoring_row_activation_policy_activates_rows_not_scores() -> None:
     ]
 
 
+def test_v06_m0_no_dark_formula_table_contract_blocks_formula_body() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/m0_no_dark_formula_table_contract_v06.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/m0_no_dark_formula_table_contract_summary_v06.csv").open()))
+    assert len(rows) == 6
+    assert {row["component_id"] for row in rows} == {
+        "M0ND06_SOURCE_INPUTS",
+        "M0ND06_READOUT_MAP",
+        "M0ND06_COEFFICIENT_POLICY",
+        "M0ND06_FIXED_SCALES",
+        "M0ND06_FALLBACK_POLICY",
+        "M0ND06_OUTPUT_SCHEMA",
+    }
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert all("endpoint_residual" in row["forbidden_inputs"] for row in rows)
+    assert rows[0]["next_required_artifact"] == "m0_no_dark_formula_body_v07"
+    assert summary == [
+        {
+            "summary_id": "M0_NO_DARK_FORMULA_TABLE_CONTRACT_V06",
+            "formula_artifact": "m0_no_dark_formula_table_v06",
+            "required_components": "6",
+            "ready_components": "0",
+            "blocked_components": "6",
+            "formula_body_rows_written": "0",
+            "numeric_predictions_written": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "M0_NO_DARK_FORMULA_TABLE_CONTRACT_READY_BODY_BLOCKED",
+            "next_required_artifact": "m0_no_dark_formula_body_v07",
+            "claim_boundary": "m0_no_dark_formula_table_contract_only_no_formula_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
 def test_v80_family_prediction_table_contract_blocks_on_formula_slots() -> None:
     schema = list(csv.DictReader((ROOT / "data/derived/family_prediction_table_schema_v80.csv").open()))
     slots = list(csv.DictReader((ROOT / "data/derived/family_prediction_table_slot_requirements_v80.csv").open()))
@@ -1839,9 +1875,12 @@ def test_v80_family_prediction_table_contract_blocks_on_formula_slots() -> None:
     assert {"scoring_row_id", "family_id", "v_pred_km_s"}.issubset({row["field_name"] for row in schema})
     assert all(row["endpoint_scoring_allowed"] == "false" for row in schema)
     assert len(slots) == 8
-    assert all(row["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING" for row in slots)
+    assert slots[0]["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_BODY_MISSING"
+    assert all(
+        row["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING" for row in slots[1:]
+    )
     assert all(row["endpoint_scoring_allowed"] == "false" for row in slots)
-    assert slots[0]["required_formula_artifact"] == "m0_no_dark_formula_table_v06"
+    assert slots[0]["required_formula_artifact"] == "m0_no_dark_formula_body_v07"
     assert summary == [
         {
             "summary_id": "FAMILY_PREDICTION_TABLE_CONTRACT_V80",
@@ -1851,7 +1890,7 @@ def test_v80_family_prediction_table_contract_blocks_on_formula_slots() -> None:
             "numeric_prediction_rows_written": "0",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
-            "next_required_artifact": "m0_no_dark_formula_table_v06",
+            "next_required_artifact": "m0_no_dark_formula_body_v07",
             "claim_boundary": "family_prediction_table_contract_only_no_predictions_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -2263,7 +2302,7 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
             "blocked_dependencies": "4",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
-            "next_required_artifact": "m0_no_dark_formula_table_v06",
+            "next_required_artifact": "m0_no_dark_formula_body_v07",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -2289,7 +2328,7 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     assert len(frontier) == 1
     assert frontier[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES"
-    assert frontier[0]["next_required_artifact"] == "m0_no_dark_formula_table_v06"
+    assert frontier[0]["next_required_artifact"] == "m0_no_dark_formula_body_v07"
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
     assert summary == [
@@ -2299,7 +2338,7 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
             "blocked_priority_rows": "4",
             "frontier_now_rows": "1",
             "first_frontier_dependency": "SCD24_FAMILY_FORMULA_TABLES",
-            "first_frontier_artifact": "m0_no_dark_formula_table_v06",
+            "first_frontier_artifact": "m0_no_dark_formula_body_v07",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
@@ -2325,16 +2364,16 @@ def test_v72_scoring_frontier_status_targets_completed_v71_response_not_scores()
     assert "36 partial rows are preaudit review-ready" in rows[0]["ready_detail"]
     assert rows[0]["next_required_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response"
     assert rows[1]["current_status"] == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
-    assert rows[1]["next_required_artifact"] == "m0_no_dark_formula_table_v06"
+    assert rows[1]["next_required_artifact"] == "m0_no_dark_formula_body_v07"
     assert rows[2]["current_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
-    assert rows[2]["next_required_artifact"] == "m0_no_dark_formula_table_v06"
+    assert rows[2]["next_required_artifact"] == "m0_no_dark_formula_body_v07"
     assert summary == [
         {
             "summary_id": "SCORING_FRONTIER_STATUS_V72",
             "frontier_rows": "3",
             "blocked_frontier_rows": "3",
             "first_frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
-            "first_frontier_artifact": "m0_no_dark_formula_table_v06",
+            "first_frontier_artifact": "m0_no_dark_formula_body_v07",
             "required_components_for_full_scoring_leakage_pass": "4",
             "partial_candidate_rows_requiring_review": "0",
             "target_evidence_rows_created": "0",
@@ -2794,7 +2833,7 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
     assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
     frontier = [row for row in rows if row["frontier_now_after_recheck"] == "true"][0]
     assert frontier["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES"
-    assert frontier["next_required_artifact"] == "m0_no_dark_formula_table_v06"
+    assert frontier["next_required_artifact"] == "m0_no_dark_formula_body_v07"
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
@@ -2805,7 +2844,7 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
             "blocked_priority_rows_after_recheck": "13",
             "frontier_now_rows_after_recheck": "1",
             "first_frontier_dependency_after_recheck": "SCD24_FAMILY_FORMULA_TABLES",
-            "first_frontier_artifact_after_recheck": "m0_no_dark_formula_table_v06",
+            "first_frontier_artifact_after_recheck": "m0_no_dark_formula_body_v07",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
             "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
@@ -2817,7 +2856,7 @@ def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv").open()))
     assert len(rows) == 18
     assert all(row["v41_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES" for row in rows)
-    assert all(row["v41_frontier_artifact"] == "m0_no_dark_formula_table_v06" for row in rows)
+    assert all(row["v41_frontier_artifact"] == "m0_no_dark_formula_body_v07" for row in rows)
     assert all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
     assert all(row["v26_evidence_input_present"] == "true" for row in rows)
     assert all(row["v26_accepted_for_promotion_review"] == "true" for row in rows)

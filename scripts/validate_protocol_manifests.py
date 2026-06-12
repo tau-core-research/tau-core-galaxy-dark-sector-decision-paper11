@@ -1559,7 +1559,7 @@ def validate_scoring_activation_gate_v13() -> None:
     require(row["row_level_blocked_rows"] == "0", "v13 must block zero rows at row level")
     require(row["global_blockers"] == "4", "v13 must report four global blockers")
     require(
-        row["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        row["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v13 must point to first missing formula slot",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
@@ -1588,6 +1588,42 @@ def validate_scoring_row_activation_policy_v79() -> None:
     require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "v79 next artifact mismatch")
 
 
+def validate_m0_no_dark_formula_table_contract_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_formula_table_contract_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_formula_table_contract_summary_v06.csv")
+    require(len(rows) == 6, "M0 v06 contract must define six components")
+    require(
+        {row["component_id"] for row in rows}
+        == {
+            "M0ND06_SOURCE_INPUTS",
+            "M0ND06_READOUT_MAP",
+            "M0ND06_COEFFICIENT_POLICY",
+            "M0ND06_FIXED_SCALES",
+            "M0ND06_FALLBACK_POLICY",
+            "M0ND06_OUTPUT_SCHEMA",
+        },
+        "M0 v06 component ids mismatch",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v06 cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v06 must forbid residual leakage")
+    require(rows[0]["next_required_artifact"] == "m0_no_dark_formula_body_v07", "M0 v06 next body artifact mismatch")
+    require(len(summary) == 1, "M0 v06 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FORMULA_TABLE_CONTRACT_V06", "M0 v06 summary id mismatch")
+    require(row["formula_artifact"] == "m0_no_dark_formula_table_v06", "M0 v06 artifact id mismatch")
+    require(row["required_components"] == "6", "M0 v06 must require six components")
+    require(row["ready_components"] == "0", "M0 v06 must ready zero components")
+    require(row["blocked_components"] == "6", "M0 v06 must block six components")
+    require(row["formula_body_rows_written"] == "0", "M0 v06 must write zero formula-body rows")
+    require(row["numeric_predictions_written"] == "0", "M0 v06 must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v06 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_FORMULA_TABLE_CONTRACT_READY_BODY_BLOCKED",
+        "M0 v06 status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_formula_body_v07", "M0 v06 next artifact mismatch")
+
+
 def validate_family_prediction_table_contract_v80() -> None:
     schema = read_csv(ROOT / "data/derived/family_prediction_table_schema_v80.csv")
     slots = read_csv(ROOT / "data/derived/family_prediction_table_slot_requirements_v80.csv")
@@ -1597,11 +1633,15 @@ def validate_family_prediction_table_contract_v80() -> None:
     require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v80 schema cannot allow scoring")
     require(len(slots) == 8, "v80 must cover eight formula slots")
     require(
-        all(row["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING" for row in slots),
-        "v80 slots must remain blocked on formula tables",
+        slots[0]["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_BODY_MISSING",
+        "v80 first M0 slot must be blocked on formula body",
+    )
+    require(
+        all(row["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING" for row in slots[1:]),
+        "v80 non-M0 slots must remain blocked on formula tables",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in slots), "v80 slots cannot allow scoring")
-    require(slots[0]["required_formula_artifact"] == "m0_no_dark_formula_table_v06", "v80 first formula artifact mismatch")
+    require(slots[0]["required_formula_artifact"] == "m0_no_dark_formula_body_v07", "v80 first formula artifact mismatch")
     require(len(summary) == 1, "v80 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "FAMILY_PREDICTION_TABLE_CONTRACT_V80", "v80 summary id mismatch")
@@ -1614,7 +1654,7 @@ def validate_family_prediction_table_contract_v80() -> None:
         row["overall_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
         "v80 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_formula_table_v06", "v80 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_formula_body_v07", "v80 next artifact mismatch")
 
 
 def validate_source_import_template_v14() -> None:
@@ -1927,7 +1967,7 @@ def validate_scoring_dependency_closure_v24() -> None:
     require(row["ready_dependencies"] == "9", "v24 must have nine ready dependencies")
     require(row["blocked_dependencies"] == "4", "v24 must block four dependencies")
     require(
-        row["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        row["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v24 next artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
@@ -1960,7 +2000,7 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
     require(frontier[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 first frontier must be family formula tables")
     require(
-        frontier[0]["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        frontier[0]["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v25 frontier artifact must be family prediction tables",
     )
     require(len(summary) == 1, "v25 summary must have one row")
@@ -1971,7 +2011,7 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
     require(row["first_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact"] == "m0_no_dark_formula_table_v06",
+        row["first_frontier_artifact"] == "m0_no_dark_formula_body_v07",
         "v25 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
@@ -2012,7 +2052,7 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 second frontier must reflect v78 leakage pass",
     )
     require(
-        rows[1]["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        rows[1]["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v72 second frontier must hand off to family prediction tables after v79",
     )
     require(
@@ -2020,7 +2060,7 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 third frontier must reflect v80 formula-slot blocker",
     )
     require(
-        rows[2]["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        rows[2]["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v72 third frontier must point to family prediction tables",
     )
     require(len(summary) == 1, "v72 summary must have one row")
@@ -2030,7 +2070,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "m0_no_dark_formula_table_v06",
+        row["first_frontier_artifact"] == "m0_no_dark_formula_body_v07",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
@@ -2498,7 +2538,7 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
     require(frontier_rows[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier row must be formula tables")
     require(
-        frontier_rows[0]["next_required_artifact"] == "m0_no_dark_formula_table_v06",
+        frontier_rows[0]["next_required_artifact"] == "m0_no_dark_formula_body_v07",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -2510,7 +2550,7 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
     require(row["first_frontier_dependency_after_recheck"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "m0_no_dark_formula_table_v06",
+        row["first_frontier_artifact_after_recheck"] == "m0_no_dark_formula_body_v07",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -2527,7 +2567,7 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
     require(all(row["v41_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES" for row in rows), "v42 must inherit the formula-table frontier")
     require(
-        all(row["v41_frontier_artifact"] == "m0_no_dark_formula_table_v06" for row in rows),
+        all(row["v41_frontier_artifact"] == "m0_no_dark_formula_body_v07" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -3208,6 +3248,7 @@ def main() -> None:
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_row_activation_policy_v79()
+    validate_m0_no_dark_formula_table_contract_v06()
     validate_family_prediction_table_contract_v80()
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()

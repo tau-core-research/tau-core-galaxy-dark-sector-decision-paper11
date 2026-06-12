@@ -51,18 +51,25 @@ def schema_rows() -> list[dict[str, object]]:
 
 def slot_rows() -> list[dict[str, object]]:
     formula_rows = read_csv(SOURCE / "family_formula_table_v05.csv")
+    m0_contract_path = DERIVED / "m0_no_dark_formula_table_contract_summary_v06.csv"
+    m0_contract = read_csv(m0_contract_path)[0] if m0_contract_path.exists() else {}
     out: list[dict[str, object]] = []
     for index, row in enumerate(formula_rows, start=1):
         ready = row["formula_table_status"] == "FORMULA_TABLE_READY"
+        required_artifact = row["next_required_artifact"]
+        prediction_status = "PREDICTION_SLOT_READY" if ready else "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING"
+        if row["next_required_artifact"] == "m0_no_dark_formula_table_v06" and m0_contract:
+            required_artifact = str(m0_contract["next_required_artifact"])
+            prediction_status = "PREDICTION_SLOT_BLOCKED_FORMULA_BODY_MISSING"
         out.append(
             {
                 "slot_requirement_id": f"FPT80_{index:03d}",
                 "family_id": row["family_id"],
                 "formula_slot": row["formula_slot"],
-                "required_formula_artifact": row["next_required_artifact"],
+                "required_formula_artifact": required_artifact,
                 "minimum_required_entries": row["minimum_required_entries"],
                 "formula_table_status": row["formula_table_status"],
-                "prediction_slot_status": "PREDICTION_SLOT_READY" if ready else "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING",
+                "prediction_slot_status": prediction_status,
                 "forbidden_inputs": row["forbidden_inputs"],
                 "endpoint_scoring_allowed": "false",
                 "claim_boundary": "family_prediction_slot_requirement_only_no_formula_claim",
