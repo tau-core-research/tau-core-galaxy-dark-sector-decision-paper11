@@ -63,14 +63,25 @@ def global_blockers() -> list[dict[str, object]]:
     count_rows = read_csv(SOURCE / "numeric_count_readiness_v05.csv")
     runners = read_csv(SOURCE / "control_runner_contract_v04.csv")
     thresholds = read_csv(SOURCE / "decision_threshold_v01.csv")
+    prediction_contract_path = DERIVED / "family_prediction_table_contract_summary_v80.csv"
+    prediction_contract = read_csv(prediction_contract_path)[0] if prediction_contract_path.exists() else {}
+    formula_ready = all(row["formula_table_status"] == "FORMULA_TABLE_READY" for row in formula_rows)
+    formula_required_artifact = (
+        prediction_contract.get("next_required_artifact")
+        if prediction_contract.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
+        else "family_prediction_tables_v08.csv"
+    )
+    formula_blocking_detail = (
+        "family prediction contract is ready, but formula slot tables are not filled"
+        if prediction_contract.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
+        else "family formula tables are not filled"
+    )
     return [
         {
             "blocker_id": "SAG13_FAMILY_FORMULA_TABLES",
-            "required_artifact": "family_prediction_tables_v08.csv",
-            "current_status": "BLOCKED"
-            if any(row["formula_table_status"] != "FORMULA_TABLE_READY" for row in formula_rows)
-            else "READY",
-            "blocking_detail": "family formula tables are not filled",
+            "required_artifact": formula_required_artifact,
+            "current_status": "BLOCKED" if not formula_ready else "READY",
+            "blocking_detail": formula_blocking_detail,
             "endpoint_scoring_allowed": "false",
             "claim_boundary": "global_activation_blocker_only_no_formula_claim",
         },
@@ -108,6 +119,10 @@ def summary(rows: list[dict[str, object]], blockers: list[dict[str, object]]) ->
     blocked_global = sum(1 for row in blockers if row["current_status"] == "BLOCKED")
     value_ready = all(row["real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in rows)
     leakage_ready = all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PASS" for row in rows)
+    first_blocker_artifact = next(
+        (row["required_artifact"] for row in blockers if row["current_status"] == "BLOCKED"),
+        "none",
+    )
     return [
         {
             "summary_id": "SCORING_ACTIVATION_GATE_V13",
@@ -119,7 +134,7 @@ def summary(rows: list[dict[str, object]], blockers: list[dict[str, object]]) ->
             "overall_status": "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED"
             if activated == len(rows) and blocked_global
             else "SCORING_ACTIVATION_BLOCKED",
-            "next_required_artifact": "family_prediction_tables_v08.csv"
+            "next_required_artifact": first_blocker_artifact
             if activated == len(rows) and blocked_global
             else "activated_scoring_rows_v10_or_activation_policy_after_leakage_pass"
             if leakage_ready

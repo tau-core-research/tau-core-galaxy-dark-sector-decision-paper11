@@ -1,0 +1,10 @@
+field_name,field_type,definition,required_before_scoring,endpoint_scoring_allowed,claim_boundary
+scoring_row_id,string,Activated scoring row id from activated_scoring_rows_v10.csv,true,false,family_prediction_table_schema_only_no_predictions
+galaxy_id,string,Galaxy identifier matching the activated row,true,false,family_prediction_table_schema_only_no_predictions
+family_id,enum,"One of M0, M1, or M2",true,false,family_prediction_table_schema_only_no_predictions
+radial_index,integer,Radial grid index shared with the observed-input table,true,false,family_prediction_table_schema_only_no_predictions
+radius_kpc,float,Radius in kpc on the frozen shared radial grid,true,false,family_prediction_table_schema_only_no_predictions
+v_pred_km_s,float,Frozen family prediction at this radial point,true,false,family_prediction_table_schema_only_no_predictions
+prediction_source_slot,string,Formula slot used to produce the prediction,true,false,family_prediction_table_schema_only_no_predictions
+formula_table_status,string,Formula-slot readiness status before scoring,true,false,family_prediction_table_schema_only_no_predictions
+prediction_status,string,Prediction-row readiness status,true,false,family_prediction_table_schema_only_no_predictions

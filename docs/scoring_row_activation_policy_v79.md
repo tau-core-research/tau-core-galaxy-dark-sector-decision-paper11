@@ -42,5 +42,5 @@ family_prediction_tables_v08.csv
 This gate is not endpoint scoring, not a model comparison, not empirical
 validation, and not a dark-sector verdict. It only clears the row-activation
 blocker after the leakage pass and hands the protocol to the global scoring
-prerequisites: family prediction tables, parameter counts, control outputs,
-and decision thresholds.
+prerequisites. The downstream v80 contract narrows the first family-table
+blocker to `m0_no_dark_formula_table_v06`.

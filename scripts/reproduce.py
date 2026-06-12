@@ -57,6 +57,7 @@ def main() -> None:
     run(["python", "scripts/run_leakage_audit_pass_review_gate.py"])
     run(["python", "scripts/run_source_import_leakage_audit.py"])
     run(["python", "scripts/run_scoring_row_activation_policy.py"])
+    run(["python", "scripts/build_family_prediction_table_contract.py"])
     run(["python", "scripts/run_scoring_activation_gate.py"])
     run(["python", "scripts/build_scoring_dependency_closure.py"])
     run(["python", "scripts/build_scoring_unblock_priority.py"])

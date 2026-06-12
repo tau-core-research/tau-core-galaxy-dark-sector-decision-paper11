@@ -35,18 +35,26 @@ def frontier_rows() -> list[dict[str, object]]:
     v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
     v79_path = DERIVED / "scoring_row_activation_policy_summary_v79.csv"
     v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
+    v80_path = DERIVED / "family_prediction_table_contract_summary_v80.csv"
+    v80 = read_csv(v80_path)[0] if v80_path.exists() else {}
     partial_blocked = int(v73["blocked_or_missing_rows"])
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
     v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
+    v80_blocked = v80.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
     if v79_ready:
+        next_global_artifact = str(v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
         rank2_status = str(v78["overall_status"])
         rank2_blocked = "leakage pass is reviewed and row activation has been handed to v79"
-        rank2_next = str(v79["next_required_artifact"])
-        rank3_status = str(v79["overall_status"])
-        rank3_blocked = "row activation is ready; global scoring prerequisites remain blocked"
-        rank3_next = str(v79["next_required_artifact"])
+        rank2_next = next_global_artifact
+        rank3_status = str(v80["overall_status"]) if v80_blocked else str(v79["overall_status"])
+        rank3_blocked = (
+            "family prediction table contract is ready, but formula slot tables remain blocked"
+            if v80_blocked
+            else "row activation is ready; global scoring prerequisites remain blocked"
+        )
+        rank3_next = next_global_artifact
     elif v78_passed:
         rank2_status = str(v78["overall_status"])
         rank2_blocked = "leakage pass is reviewed, but scoring row activation remains blocked"
@@ -156,14 +164,17 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     v78 = read_csv(v78_path)[0] if v78_path.exists() else {}
     v79_path = DERIVED / "scoring_row_activation_policy_summary_v79.csv"
     v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
+    v80_path = DERIVED / "family_prediction_table_contract_summary_v80.csv"
+    v80 = read_csv(v80_path)[0] if v80_path.exists() else {}
     partial_blocked = v73["blocked_or_missing_rows"]
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
     v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
+    v80_blocked = v80.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
     if v79_ready:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES"
-        first_artifact = str(v79["next_required_artifact"])
+        first_artifact = str(v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
     elif v78_passed:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_SCORING_ROW_ACTIVATION"
         first_artifact = str(v78["next_required_artifact"])

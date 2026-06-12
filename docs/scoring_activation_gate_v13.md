@@ -51,7 +51,8 @@ SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED
 
 The current package activates all eighteen rows at the row-gate level, but
 keeps endpoint scoring disabled because all four global scoring prerequisites
-remain blocked.
+remain blocked. The first concrete global blocker is
+`m0_no_dark_formula_table_v06`.
 
 ## Claim Boundary
 
