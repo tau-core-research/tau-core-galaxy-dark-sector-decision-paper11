@@ -32,7 +32,7 @@ The kernel-expression contract exists, but zero frozen expressions and zero
 numeric prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_expression_source_rule_v12
+m0_no_dark_expression_rule_derivation_v13
 ```
 
 ## Claim Boundary
@@ -41,4 +41,4 @@ This contract does not define the M0 no-dark expression, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing kernel
 expression through the v11 frozen-expression contract to the first missing
-source-side expression rule.
+source-rule derivation record.

@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,20 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    source_rule_contract_path = DERIVED / "m0_no_dark_expression_source_rule_contract_summary_v12.csv"
+    source_rule_contract = read_csv(source_rule_contract_path)[0] if source_rule_contract_path.exists() else {}
+    source_rule_next = (
+        str(source_rule_contract["next_required_artifact"])
+        if source_rule_contract
+        else "m0_no_dark_expression_source_rule_v12"
+    )
     rows = [
         {
             "freeze_slot_id": "M0NDFE11_SOURCE_RULE",
             "freeze_slot_class": "source_rule",
             "required_specification": "source-side derivation rule selecting the no-dark response form before endpoint data are used",
             "completion_status": "SOURCE_RULE_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_expression_source_rule_v12",
+            "next_required_artifact": source_rule_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {

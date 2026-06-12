@@ -33,7 +33,7 @@ The table contract exists, but zero formula-body rows and zero numeric
 prediction rows are written. The next concrete missing artifact is:
 
 ```text
-m0_no_dark_expression_source_rule_v12
+m0_no_dark_expression_rule_derivation_v13
 ```
 
 ## Claim Boundary

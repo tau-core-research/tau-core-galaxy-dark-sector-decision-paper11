@@ -32,7 +32,7 @@ The formula-body contract exists, but zero formula equations and zero numeric
 prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_expression_source_rule_v12
+m0_no_dark_expression_rule_derivation_v13
 ```
 
 ## Claim Boundary
@@ -41,4 +41,4 @@ This contract does not provide the M0 readout equation, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing
 formula-body artifact through the v08 readout-equation contract and v09 kernel
-contract to the first missing source-side expression rule.
+contract to the first missing source-rule derivation record.
