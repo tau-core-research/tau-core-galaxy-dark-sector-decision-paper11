@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,20 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    equation_contract_path = DERIVED / "m0_no_dark_readout_equation_contract_summary_v08.csv"
+    equation_contract = read_csv(equation_contract_path)[0] if equation_contract_path.exists() else {}
+    equation_next = (
+        str(equation_contract["next_required_artifact"])
+        if equation_contract
+        else "m0_no_dark_readout_equation_v08"
+    )
     rows = [
         {
             "body_slot_id": "M0NDB07_READOUT_EQUATION",
             "body_slot_class": "readout_equation",
             "required_specification": "single source-to-rotation equation mapping frozen Tau/source inputs to v_pred_km_s",
             "completion_status": "READOUT_EQUATION_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_readout_equation_v08",
+            "next_required_artifact": equation_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {
