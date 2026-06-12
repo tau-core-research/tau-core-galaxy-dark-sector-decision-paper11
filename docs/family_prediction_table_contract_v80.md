@@ -38,7 +38,7 @@ source-rule contract is declared. The first concrete missing formula artifact
 is:
 
 ```text
-m0_no_dark_expression_rule_derivation_v13
+m0_no_dark_rule_parent_assumption_basis_v14
 ```
 
 ## Claim Boundary
@@ -46,4 +46,5 @@ m0_no_dark_expression_rule_derivation_v13
 This contract does not define a Tau response formula, does not compute
 predicted velocities, does not compare families, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from the broad family
-prediction table to the first missing source-rule derivation record.
+prediction table to the first missing parent-assumption basis for the no-dark
+rule derivation.

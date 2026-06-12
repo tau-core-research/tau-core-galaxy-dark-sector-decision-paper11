@@ -32,7 +32,7 @@ The frozen-expression contract exists, but zero frozen expressions and zero
 numeric prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_expression_rule_derivation_v13
+m0_no_dark_rule_parent_assumption_basis_v14
 ```
 
 ## Claim Boundary
@@ -41,4 +41,4 @@ This contract does not define the M0 no-dark expression, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing frozen
 expression through the v12 source-rule contract to the first missing
-source-rule derivation record.
+parent-assumption basis for the no-dark rule derivation.

@@ -136,6 +136,8 @@ data/derived/leakage_audit_pass_review_coverage_v78.csv
 data/derived/leakage_audit_pass_review_summary_v78.csv
 data/derived/activated_scoring_rows_v10.csv
 data/derived/scoring_row_activation_policy_summary_v79.csv
+data/derived/m0_no_dark_expression_rule_derivation_contract_v13.csv
+data/derived/m0_no_dark_expression_rule_derivation_contract_summary_v13.csv
 data/derived/m0_no_dark_expression_source_rule_contract_v12.csv
 data/derived/m0_no_dark_expression_source_rule_contract_summary_v12.csv
 data/derived/m0_no_dark_frozen_expression_contract_v11.csv
@@ -329,6 +331,7 @@ docs/full_leakage_evidence_ingestion_gate_v76.md
 docs/leakage_audit_evidence_v10_writer_v77.md
 docs/leakage_audit_pass_review_gate_v78.md
 docs/scoring_row_activation_policy_v79.md
+docs/m0_no_dark_expression_rule_derivation_contract_v13.md
 docs/m0_no_dark_expression_source_rule_contract_v12.md
 docs/m0_no_dark_frozen_expression_contract_v11.md
 docs/m0_no_dark_kernel_expression_contract_v10.md
@@ -450,10 +453,11 @@ dependencies. The v80 family-prediction table contract narrows the first
 family-table blocker through the v06 M0 no-dark contract, v07 body contract,
 v08 readout-equation contract, v09 kernel contract, and v10
 kernel-expression contract, then through the v11 frozen-expression contract to
-the v12 source-rule contract and `m0_no_dark_expression_rule_derivation_v13`.
+the v12 source-rule contract and v13 rule-derivation contract:
+`m0_no_dark_rule_parent_assumption_basis_v14`.
 The v25 scoring
 unblock priority ledger identifies the first current frontier as
-`SCD24_FAMILY_FORMULA_TABLES`, with `m0_no_dark_expression_rule_derivation_v13` as the next
+`SCD24_FAMILY_FORMULA_TABLES`, with `m0_no_dark_rule_parent_assumption_basis_v14` as the next
 required artifact.
 The legacy v26-v30 frontier-provenance work-order/writer path remains
 review-only and write-blocked; it does not override the separate active v55
@@ -467,7 +471,7 @@ leakage pass after recheck, and v38 confirms row activation while keeping
 endpoint scoring blocked by global prerequisites. The v39-v40 rechecks keep
 all endpoint-scoring paths blocked because preflight readiness is still zero,
 and v41 confirms the current frontier as `SCD24_FAMILY_FORMULA_TABLES` /
-`m0_no_dark_expression_rule_derivation_v13`. The v42-v43 frontier-evidence rechecks remain
+`m0_no_dark_rule_parent_assumption_basis_v14`. The v42-v43 frontier-evidence rechecks remain
 blocked/bypassed with respect to scoring because the active frontier is no
 longer provenance evidence. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen
@@ -580,5 +584,6 @@ still authorizes zero endpoint scores. The v80 family-prediction table
 contract then narrows the blocker through the v06 M0 no-dark formula contract,
 v07 body contract, v08 readout-equation contract, v09 kernel contract, and v10
 kernel-expression contract, then through the v11 frozen-expression contract to
-the v12 source-rule contract and the first missing source-rule derivation:
-`m0_no_dark_expression_rule_derivation_v13`.
+the v12 source-rule contract and v13 rule-derivation contract. The first
+missing source-side derivation prerequisite is:
+`m0_no_dark_rule_parent_assumption_basis_v14`.

@@ -30,7 +30,7 @@ POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED
 
 All thirteen priority rows remain blocked after the conservative post-writer
 dependency recheck. The first frontier is now `SCD24_FAMILY_FORMULA_TABLES`,
-requiring `m0_no_dark_expression_rule_derivation_v13`.
+requiring `m0_no_dark_rule_parent_assumption_basis_v14`.
 
 ## Claim Boundary
 

@@ -7,7 +7,7 @@ candidate sufficiency review package.
 
 - First frontier: `SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE`
 - First required artifact:
-  `m0_no_dark_expression_rule_derivation_v13`
+  `m0_no_dark_rule_parent_assumption_basis_v14`
 - Full leakage components required before endpoint scoring: 4
 - Partial candidate rows still requiring review: 0
 - Full leakage ingestion status:
@@ -21,5 +21,5 @@ activates no rows, computes no scores, and makes no dark-sector verdict.
 It only clarifies the next scoring-facing blocker: v78 has cleared leakage
 pass and v79 has cleared row activation, but the global scoring prerequisites
 remain blocked. The current first concrete artifact is the first missing M0
-no-dark source-rule derivation record:
-`m0_no_dark_expression_rule_derivation_v13`.
+no-dark parent-assumption basis for the rule derivation:
+`m0_no_dark_rule_parent_assumption_basis_v14`.
