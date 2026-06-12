@@ -30,7 +30,7 @@ POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED
 
 All thirteen priority rows remain blocked after the post-writer dependency
 recheck. The first frontier is now `SCD24_LEAKAGE_AUDIT`, requiring
-`leakage_audit_evidence_v10.csv`.
+`leakage_audit_pass_review_gate_after_v10_evidence`.
 
 ## Claim Boundary
 

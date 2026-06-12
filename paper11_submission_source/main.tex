@@ -288,7 +288,7 @@ blocked because no preflight requirement is ready after activation.
 The v41 post-writer scoring-unblock priority recheck links that blocked
 dependency graph back to the unblock ledger. The first frontier is
 \texttt{SCD24\_LEAKAGE\_AUDIT}, requiring
-\path{leakage_audit_evidence_v10.csv}.
+\path{leakage_audit_pass_review_gate_after_v10_evidence}.
 
 The v42 post-writer frontier evidence-acceptance recheck records that the
 current frontier is no longer provenance evidence. All eighteen rows remain
@@ -352,7 +352,7 @@ writer writes 450 MassModels rows for the eighteen frozen galaxies into
 \path{data/input/source_import_raw_sparc_like_v15.csv}. The v57 active
 write-authorization artifact permits the v17 writer to populate
 \path{data/input/source_import_real_values_v12.csv}. The current frontier is
-now leakage audit evidence, \path{leakage_audit_evidence_v10.csv}. Endpoint
+now the leakage-pass review gate after the v10 leakage evidence input. Endpoint
 scoring remains disabled.
 
 The v58 leakage-evidence template, v59 review package, v60 no-go intake, and
@@ -409,6 +409,10 @@ sufficiency rows. All 72 component rows, covering all four leakage components
 for all 18 galaxies, are ready for a later v10 target evidence writer; however,
 the gate still creates no target evidence rows, authorizes no leakage pass,
 activates no rows, and computes no score.
+The v77 leakage-audit evidence writer writes
+\path{data/input/leakage_audit_evidence_v10.csv} with 72 review-pending
+evidence rows. It still authorizes no leakage pass, activates no rows, and
+computes no score; the next blocker is the leakage-pass review gate.
 
 \section{Claim Boundary}
 

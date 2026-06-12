@@ -38,7 +38,7 @@ SCD24_LEAKAGE_AUDIT
 The first required artifact is:
 
 ```text
-leakage_audit_evidence_v10.csv
+leakage_audit_pass_review_gate_after_v10_evidence
 ```
 
 ## Claim Boundary

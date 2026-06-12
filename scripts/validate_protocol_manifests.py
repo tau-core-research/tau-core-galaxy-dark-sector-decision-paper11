@@ -361,8 +361,8 @@ def validate_source_import_leakage_audit_v09() -> None:
         "v09 source import must be present pending leakage",
     )
     require(
-        all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in audit),
-        "v09 leakage must be pending review",
+        all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in audit),
+        "v09 leakage evidence must be present with pass review pending",
     )
     require(all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit), "v09 must not activate rows")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in audit), "v09 audit cannot allow scoring")
@@ -389,16 +389,22 @@ def validate_source_import_leakage_audit_v09() -> None:
     )
     require(len(findings) == 18, "v09 leakage findings must cover eighteen rows")
     require(
-        all(row["leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in findings),
-        "v09 findings must be leakage-pending",
+        all(row["leakage_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in findings),
+        "v09 findings must be leakage evidence review-pending",
     )
     require(len(summary) == 1, "v09 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SOURCE_IMPORT_READY_LEAKAGE_PENDING", "v09 status must be leakage-pending")
+    require(
+        row["overall_status"] == "SOURCE_IMPORT_READY_LEAKAGE_EVIDENCE_REVIEW_PENDING",
+        "v09 status must be leakage evidence review-pending",
+    )
     require(row["source_import_pending_rows"] == "0", "v09 source import must have zero pending rows")
     require(row["activated_rows"] == "0", "v09 must activate zero rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary must forbid scoring")
-    require(row["next_required_artifact"] == "leakage_audit_evidence_v10.csv", "v09 must point to leakage evidence")
+    require(
+        row["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
+        "v09 must point to leakage pass review",
+    )
 
 
 def validate_source_import_contract_v10() -> None:
@@ -1382,6 +1388,51 @@ def validate_full_leakage_evidence_ingestion_gate_v76() -> None:
     )
 
 
+def validate_leakage_audit_evidence_v10_writer_v77() -> None:
+    rows = read_csv(ROOT / "data/input/leakage_audit_evidence_v10.csv")
+    coverage = read_csv(ROOT / "data/derived/leakage_audit_evidence_v10_writer_coverage_v77.csv")
+    summary = read_csv(ROOT / "data/derived/leakage_audit_evidence_v10_writer_summary_v77.csv")
+    require(len(rows) == 72, "v77 must write 72 target evidence rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v77 must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v77 must write all four leakage evidence components",
+    )
+    require(all(row["review_decision"] == "READY_FOR_LEAKAGE_REVIEW_NOT_PASS" for row in rows), "v77 rows must await review")
+    require(
+        all(row["evidence_status"] == "TARGET_EVIDENCE_ROW_WRITTEN_REVIEW_PENDING" for row in rows),
+        "v77 rows must be written but review-pending",
+    )
+    require(all(row["reviewer_leakage_pass_authorized"] == "false" for row in rows), "v77 cannot authorize leakage pass")
+    require(all(row["may_activate_row_after_ingestion"] == "false" for row in rows), "v77 cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v77 cannot allow scoring")
+    require(len(coverage) == 18, "v77 coverage must have eighteen galaxy rows")
+    require(all(row["target_evidence_rows_written"] == "4" for row in coverage), "v77 coverage must write four rows per galaxy")
+    require(all(row["leakage_review_ready"] == "true" for row in coverage), "v77 coverage must be review-ready")
+    require(all(row["leakage_pass_authorized"] == "false" for row in coverage), "v77 coverage cannot authorize leakage pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in coverage), "v77 coverage cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v77 coverage cannot allow scoring")
+    require(len(summary) == 1, "v77 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "LEAKAGE_AUDIT_EVIDENCE_V10_WRITER_V77", "v77 summary id mismatch")
+    require(row["target_evidence_file"] == "data/input/leakage_audit_evidence_v10.csv", "v77 target file mismatch")
+    require(row["target_evidence_rows_written"] == "72", "v77 summary must record 72 written rows")
+    require(row["galaxies_covered"] == "18", "v77 summary must record eighteen galaxies")
+    require(row["galaxies_ready_for_leakage_review"] == "18", "v77 summary must mark 18 galaxies review-ready")
+    require(row["leakage_pass_rows_authorized"] == "0", "v77 summary cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v77 summary cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v77 summary must forbid scoring")
+    require(
+        row["overall_status"] == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING",
+        "v77 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
+        "v77 next artifact mismatch",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -1785,7 +1836,10 @@ def validate_scoring_dependency_closure_v24() -> None:
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
     require(row["ready_dependencies"] == "7", "v24 must have seven ready dependencies")
     require(row["blocked_dependencies"] == "6", "v24 must block six dependencies")
-    require(row["next_required_artifact"] == "leakage_audit_evidence_v10.csv", "v24 next artifact mismatch")
+    require(
+        row["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
+        "v24 next artifact mismatch",
+    )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
 
 
@@ -1814,8 +1868,8 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(len(frontier) == 1, "v25 must identify exactly one current frontier")
     require(frontier[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT", "v25 first frontier must be leakage audit")
     require(
-        frontier[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv",
-        "v25 frontier artifact must be leakage evidence",
+        frontier[0]["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
+        "v25 frontier artifact must be leakage pass review",
     )
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
@@ -1824,7 +1878,10 @@ def validate_scoring_unblock_priority_v25() -> None:
     require(row["blocked_priority_rows"] == "6", "v25 must preserve six blocked rows")
     require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
     require(row["first_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT", "v25 frontier dependency mismatch")
-    require(row["first_frontier_artifact"] == "leakage_audit_evidence_v10.csv", "v25 frontier artifact mismatch")
+    require(
+        row["first_frontier_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
+        "v25 frontier artifact mismatch",
+    )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
 
 
@@ -1859,12 +1916,12 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 first frontier must expose v74 preaudit readiness",
     )
     require(
-        rows[1]["current_status"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE",
-        "v72 second frontier must reflect v76 full ingestion readiness",
+        rows[1]["current_status"] == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING",
+        "v72 second frontier must reflect v77 evidence writer readiness",
     )
     require(
-        rows[2]["current_status"] == "WAITING_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
-        "v72 third frontier must wait on v10 leakage evidence write",
+        rows[2]["current_status"] == "WAITING_ON_LEAKAGE_PASS_REVIEW",
+        "v72 third frontier must wait on leakage pass review",
     )
     require(len(summary) == 1, "v72 summary must have one row")
     row = summary[0]
@@ -1873,7 +1930,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
+        row["first_frontier_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
@@ -1883,7 +1940,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
     require(
-        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_PASS_REVIEW",
         "v72 status mismatch",
     )
 
@@ -2167,7 +2224,7 @@ def validate_post_writer_leakage_audit_recheck_v37() -> None:
     summary = read_csv(ROOT / "data/derived/post_writer_leakage_audit_recheck_summary_v37.csv")
     require(len(rows) == 18, "v37 leakage recheck must cover eighteen rows")
     require(
-        all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in rows),
+        all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in rows),
         "v37 must inherit the pending v09 leakage status",
     )
     require(all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows), "v37 must pass value rows")
@@ -2341,7 +2398,7 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
     require(frontier_rows[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT", "v41 frontier row must be leakage audit")
     require(
-        frontier_rows[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv",
+        frontier_rows[0]["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence",
         "v41 frontier artifact mismatch",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
@@ -2353,7 +2410,7 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
     require(row["first_frontier_dependency_after_recheck"] == "SCD24_LEAKAGE_AUDIT", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "leakage_audit_evidence_v10.csv",
+        row["first_frontier_artifact_after_recheck"] == "leakage_audit_pass_review_gate_after_v10_evidence",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
@@ -2370,7 +2427,7 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
     require(all(row["v41_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT" for row in rows), "v42 must inherit the leakage frontier")
     require(
-        all(row["v41_frontier_artifact"] == "leakage_audit_evidence_v10.csv" for row in rows),
+        all(row["v41_frontier_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -3046,6 +3103,7 @@ def main() -> None:
     validate_leakage_partial_candidate_sufficiency_preaudit_v74()
     validate_leakage_partial_candidate_sufficiency_response_draft_v75()
     validate_full_leakage_evidence_ingestion_gate_v76()
+    validate_leakage_audit_evidence_v10_writer_v77()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

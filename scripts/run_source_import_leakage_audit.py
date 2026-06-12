@@ -37,6 +37,11 @@ def row_audit() -> list[dict[str, object]]:
     source_values = {}
     if source_values_path.exists():
         source_values = {row["galaxy_id"]: row for row in read_csv(source_values_path)}
+    leakage_evidence_path = ROOT / "data/input/leakage_audit_evidence_v10.csv"
+    leakage_evidence: dict[str, list[dict[str, str]]] = {}
+    if leakage_evidence_path.exists():
+        for evidence_row in read_csv(leakage_evidence_path):
+            leakage_evidence.setdefault(evidence_row["galaxy_id"], []).append(evidence_row)
     out: list[dict[str, object]] = []
     for row in scoring_rows:
         obs = observed[row["galaxy_id"]]
@@ -53,11 +58,20 @@ def row_audit() -> list[dict[str, object]]:
         )
         value_gate = real_value_gates[row["galaxy_id"]]
         real_values_present = value_gate["real_value_gate_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE"
-        leakage_status = (
-            "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT"
-            if real_values_present
-            else "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING"
+        evidence_rows = leakage_evidence.get(row["galaxy_id"], [])
+        evidence_review_pending = (
+            len(evidence_rows) == 4
+            and all(evidence["evidence_status"] == "TARGET_EVIDENCE_ROW_WRITTEN_REVIEW_PENDING" for evidence in evidence_rows)
         )
+        if evidence_review_pending:
+            leakage_status = "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING"
+            blocking_reason = "leakage evidence written but pass review remains pending"
+        elif real_values_present:
+            leakage_status = "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT"
+            blocking_reason = "leakage audit pending after real-value import"
+        else:
+            leakage_status = "LEAKAGE_AUDIT_NOT_RUN_SOURCE_MISSING"
+            blocking_reason = "observed source import and leakage audit are incomplete"
         out.append(
             {
                 "audit_id": row["scoring_row_id"].replace("ASR08", "SIL09"),
@@ -70,9 +84,7 @@ def row_audit() -> list[dict[str, object]]:
                 "leakage_audit_status": leakage_status,
                 "activation_decision": "DO_NOT_ACTIVATE",
                 "endpoint_scoring_allowed": "false",
-                "blocking_reason": "leakage audit pending after real-value import"
-                if real_values_present
-                else "observed source import and leakage audit are incomplete",
+                "blocking_reason": blocking_reason,
                 "claim_boundary": "source_import_leakage_audit_only_no_scores",
             }
         )
@@ -126,6 +138,8 @@ def leakage_findings(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "endpoint_scoring_allowed": "false",
             "finding": "source import is present; leakage audit pass is still pending"
             if row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT"
+            else "leakage evidence input is present; leakage pass review is still pending"
+            if row["leakage_audit_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING"
             else "cannot pass leakage audit before source import is present",
             "claim_boundary": "leakage_placeholder_only_no_pass_claim",
         }
@@ -141,6 +155,9 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
         in {"SOURCE_IMPORT_PENDING", "SOURCE_ROUTE_REQUIRED_NOT_FILLED", "VALUE_REQUIRED_NOT_FILLED"}
     )
     leakage_pending = sum(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in rows)
+    evidence_review_pending = sum(
+        row["leakage_audit_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in rows
+    )
     return [
         {
             "summary_id": "SOURCE_IMPORT_LEAKAGE_AUDIT_V09",
@@ -151,9 +168,13 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SOURCE_IMPORT_READY_LEAKAGE_PENDING"
             if leakage_pending == len(rows)
+            else "SOURCE_IMPORT_READY_LEAKAGE_EVIDENCE_REVIEW_PENDING"
+            if evidence_review_pending == len(rows)
             else "SOURCE_IMPORT_AND_LEAKAGE_BLOCKED",
             "next_required_artifact": "leakage_audit_evidence_v10.csv"
             if leakage_pending == len(rows)
+            else "leakage_audit_pass_review_gate_after_v10_evidence"
+            if evidence_review_pending == len(rows)
             else "source_import_real_values_v12.csv",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }

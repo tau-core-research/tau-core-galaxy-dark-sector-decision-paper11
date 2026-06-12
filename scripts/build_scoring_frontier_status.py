@@ -29,9 +29,17 @@ def frontier_rows() -> list[dict[str, object]]:
     v74 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv")[0]
     v76_path = DERIVED / "full_leakage_evidence_ingestion_summary_v76.csv"
     v76 = read_csv(v76_path)[0] if v76_path.exists() else {}
+    v77_path = DERIVED / "leakage_audit_evidence_v10_writer_summary_v77.csv"
+    v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
     partial_blocked = int(v73["blocked_or_missing_rows"])
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
-    if v76_ready:
+    v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
+    if v77_written:
+        rank2_status = str(v77["overall_status"])
+        rank2_blocked = "target leakage evidence rows are written, but leakage pass review is still pending"
+        rank2_next = str(v77["next_required_artifact"])
+        rank3_status = "WAITING_ON_LEAKAGE_PASS_REVIEW"
+    elif v76_ready:
         rank2_status = str(v76["overall_status"])
         rank2_blocked = "full leakage evidence components are ready, but target evidence rows are not written yet"
         rank2_next = str(v76["next_required_artifact"])
@@ -114,9 +122,15 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     v73 = read_csv(DERIVED / "leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv")[0]
     v76_path = DERIVED / "full_leakage_evidence_ingestion_summary_v76.csv"
     v76 = read_csv(v76_path)[0] if v76_path.exists() else {}
+    v77_path = DERIVED / "leakage_audit_evidence_v10_writer_summary_v77.csv"
+    v77 = read_csv(v77_path)[0] if v77_path.exists() else {}
     partial_blocked = v73["blocked_or_missing_rows"]
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
-    if v76_ready:
+    v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
+    if v77_written:
+        overall_status = "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_PASS_REVIEW"
+        first_artifact = str(v77["next_required_artifact"])
+    elif v76_ready:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE"
         first_artifact = str(v76["next_required_artifact"])
     elif partial_blocked == "0":

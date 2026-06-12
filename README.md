@@ -77,6 +77,7 @@ data/derived/observed_input_contract_v10.csv
 data/derived/leakage_evidence_contract_v10.csv
 data/derived/source_import_contract_summary_v10.csv
 data/input/leakage_audit_evidence_v10_TEMPLATE.csv
+data/input/leakage_audit_evidence_v10.csv
 data/derived/leakage_audit_evidence_template_summary_v58.csv
 review_packages/leakage_audit_v58_review_package/
 review_packages/leakage_audit_v58_review_package.zip
@@ -128,6 +129,8 @@ data/derived/leakage_partial_candidate_sufficiency_response_draft_summary_v75.cs
 data/derived/full_leakage_evidence_ingestion_gate_v76.csv
 data/derived/full_leakage_evidence_ingestion_coverage_v76.csv
 data/derived/full_leakage_evidence_ingestion_summary_v76.csv
+data/derived/leakage_audit_evidence_v10_writer_coverage_v77.csv
+data/derived/leakage_audit_evidence_v10_writer_summary_v77.csv
 review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/
 review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package.zip
 data/derived/source_import_values_v11.csv
@@ -301,6 +304,7 @@ docs/leakage_partial_candidate_sufficiency_review_intake_v73.md
 docs/leakage_partial_candidate_sufficiency_preaudit_v74.md
 docs/leakage_partial_candidate_sufficiency_response_draft_v75.md
 docs/full_leakage_evidence_ingestion_gate_v76.md
+docs/leakage_audit_evidence_v10_writer_v77.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -402,13 +406,15 @@ authorized writer writes 450 rows into
 reports `SOURCE_IMPORT_REAL_VALUES_READY_FOR_LEAKAGE`.
 
 The v09 source-import/leakage audit now reports
-`SOURCE_IMPORT_READY_LEAKAGE_PENDING`: source-side values are present, but no
-leakage-evidence artifact has passed review and zero rows are activated. The
-v13 scoring activation gate remains blocked with zero activated rows. The v24
-scoring dependency closure now has seven ready source-side dependencies and six
-blocked downstream dependencies. The v25 scoring unblock priority ledger
-identifies the first current frontier as `SCD24_LEAKAGE_AUDIT`, with
-`leakage_audit_evidence_v10.csv` as the next required artifact.
+`SOURCE_IMPORT_READY_LEAKAGE_EVIDENCE_REVIEW_PENDING`: source-side values and
+the v10 leakage-evidence input are present, but no leakage-pass review has
+passed and zero rows are activated. The v13 scoring activation gate remains
+blocked with zero activated rows. The v24 scoring dependency closure now has
+seven ready source-side dependencies and six blocked downstream dependencies.
+The v25 scoring unblock priority ledger identifies the first current frontier
+as `SCD24_LEAKAGE_AUDIT`, with
+`leakage_audit_pass_review_gate_after_v10_evidence` as the next required
+artifact.
 The legacy v26-v30 frontier-provenance work-order/writer path remains
 review-only and write-blocked; it does not override the separate active v55
 writer. The v31 audit records the active v55 provenance input as present, v32
@@ -459,8 +465,8 @@ writes all eighteen complete provenance rows into
 source-side gates, v22, v23, and v20 are ready. The v56 active raw SPARC-like
 input writer then writes 450 MassModels raw rows for the eighteen frozen
 galaxies into `data/input/source_import_raw_sparc_like_v15.csv`. The scoring
-unblock frontier moves to `leakage_audit_evidence_v10.csv`; endpoint scoring
-remains disabled. The v58 leakage-evidence template provides the 72-row
+unblock frontier moves to the leakage-pass review gate after v10 evidence;
+endpoint scoring remains disabled. The v58 leakage-evidence template provides the 72-row
 review shape for that frontier but creates zero leakage-pass rows. The v59
 leakage review package bundles that template, contract, frontier summaries,
 and a fillable response template; it is not active leakage evidence and still
@@ -522,3 +528,7 @@ source/observed candidates with the accepted v73 morphology/benchmark
 sufficiency rows. It marks 72 component rows and all 18 galaxies as ready for a
 later v10 target evidence writer, while still creating zero target evidence
 rows, zero leakage pass, zero activation rows, and zero scores.
+The v77 leakage-audit evidence writer then writes
+`data/input/leakage_audit_evidence_v10.csv` with 72 review-pending evidence
+rows. It still authorizes zero leakage-pass rows, zero activation rows, and
+zero endpoint scores; the next blocker is the leakage-pass review gate.

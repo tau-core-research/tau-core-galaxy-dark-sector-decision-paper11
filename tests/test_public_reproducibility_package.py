@@ -55,6 +55,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_partial_candidate_sufficiency_preaudit_v74.md",
         "docs/leakage_partial_candidate_sufficiency_response_draft_v75.md",
         "docs/full_leakage_evidence_ingestion_gate_v76.md",
+        "docs/leakage_audit_evidence_v10_writer_v77.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -123,6 +124,7 @@ def test_required_files_exist() -> None:
         "data/derived/leakage_evidence_contract_v10.csv",
         "data/derived/source_import_contract_summary_v10.csv",
         "data/input/leakage_audit_evidence_v10_TEMPLATE.csv",
+        "data/input/leakage_audit_evidence_v10.csv",
         "data/derived/leakage_audit_evidence_template_summary_v58.csv",
         "review_packages/leakage_audit_v58_review_package/README.md",
         "review_packages/leakage_audit_v58_review_package/DO_NOT_COPY_WITHOUT_COMPLETED_REVIEW.md",
@@ -228,6 +230,8 @@ def test_required_files_exist() -> None:
         "data/derived/full_leakage_evidence_ingestion_gate_v76.csv",
         "data/derived/full_leakage_evidence_ingestion_coverage_v76.csv",
         "data/derived/full_leakage_evidence_ingestion_summary_v76.csv",
+        "data/derived/leakage_audit_evidence_v10_writer_coverage_v77.csv",
+        "data/derived/leakage_audit_evidence_v10_writer_summary_v77.csv",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/README.md",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/DO_NOT_INGEST_WITHOUT_INDEPENDENT_REVIEW.md",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/REVIEW_MANIFEST.csv",
@@ -392,6 +396,7 @@ def test_required_files_exist() -> None:
         "scripts/build_leakage_partial_candidate_sufficiency_preaudit.py",
         "scripts/build_leakage_partial_candidate_sufficiency_response_draft.py",
         "scripts/run_full_leakage_evidence_ingestion_gate.py",
+        "scripts/run_leakage_audit_evidence_v10_writer.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -687,7 +692,7 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
     audit = list(csv.DictReader((ROOT / "data/derived/source_import_and_leakage_audit_v09.csv").open()))
     assert len(audit) == 18
     assert all(row["source_import_status"] == "REAL_VALUES_PRESENT_VALIDATION_PENDING_LEAKAGE" for row in audit)
-    assert all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in audit)
+    assert all(row["leakage_audit_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in audit)
     assert all(row["activation_decision"] == "DO_NOT_ACTIVATE" for row in audit)
     assert all(row["endpoint_scoring_allowed"] == "false" for row in audit)
 
@@ -703,7 +708,7 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
 
     findings = list(csv.DictReader((ROOT / "data/derived/leakage_audit_findings_v09.csv").open()))
     assert len(findings) == 18
-    assert all(row["leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in findings)
+    assert all(row["leakage_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in findings)
 
     summary = list(csv.DictReader((ROOT / "data/derived/source_import_leakage_summary_v09.csv").open()))
     assert summary == [
@@ -714,8 +719,8 @@ def test_v09_source_import_leakage_audit_blocks_activation() -> None:
             "leakage_pass_rows": "0",
             "activated_rows": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SOURCE_IMPORT_READY_LEAKAGE_PENDING",
-            "next_required_artifact": "leakage_audit_evidence_v10.csv",
+            "overall_status": "SOURCE_IMPORT_READY_LEAKAGE_EVIDENCE_REVIEW_PENDING",
+            "next_required_artifact": "leakage_audit_pass_review_gate_after_v10_evidence",
             "claim_boundary": "source_import_leakage_audit_only_no_dark_sector_verdict",
         }
     ]
@@ -1617,6 +1622,47 @@ def test_v76_full_leakage_evidence_ingestion_gate_is_ready_but_non_scoring() -> 
     ]
 
 
+def test_v77_leakage_audit_evidence_writer_creates_review_pending_input_only() -> None:
+    rows = list(csv.DictReader((ROOT / "data/input/leakage_audit_evidence_v10.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/leakage_audit_evidence_v10_writer_coverage_v77.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/leakage_audit_evidence_v10_writer_summary_v77.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {
+        "LEC10_SOURCE_ROUTE",
+        "LEC10_OBSERVED_INPUTS",
+        "LEC10_MORPH_LABELS",
+        "LEC10_BENCHMARK_INPUTS",
+    }
+    assert all(row["review_decision"] == "READY_FOR_LEAKAGE_REVIEW_NOT_PASS" for row in rows)
+    assert all(row["evidence_status"] == "TARGET_EVIDENCE_ROW_WRITTEN_REVIEW_PENDING" for row in rows)
+    assert all(row["reviewer_leakage_pass_authorized"] == "false" for row in rows)
+    assert all(row["may_activate_row_after_ingestion"] == "false" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert len(coverage) == 18
+    assert all(row["target_evidence_rows_written"] == "4" for row in coverage)
+    assert all(row["leakage_review_ready"] == "true" for row in coverage)
+    assert all(row["leakage_pass_authorized"] == "false" for row in coverage)
+    assert all(row["activation_rows_authorized"] == "0" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+    assert summary == [
+        {
+            "summary_id": "LEAKAGE_AUDIT_EVIDENCE_V10_WRITER_V77",
+            "target_evidence_file": "data/input/leakage_audit_evidence_v10.csv",
+            "input_artifact": "data/derived/full_leakage_evidence_ingestion_gate_v76.csv",
+            "target_evidence_rows_written": "72",
+            "galaxies_covered": "18",
+            "galaxies_ready_for_leakage_review": "18",
+            "leakage_pass_rows_authorized": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING",
+            "next_required_artifact": "leakage_audit_pass_review_gate_after_v10_evidence",
+            "claim_boundary": "leakage_audit_evidence_v10_writer_only_review_pending_no_pass_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
     source_values = list(csv.DictReader((ROOT / "data/derived/source_import_values_v11.csv").open()))
     assert len(source_values) == 18
@@ -2121,7 +2167,7 @@ def test_v24_scoring_dependency_closure_blocks_all_score_dependencies() -> None:
             "blocked_dependencies": "6",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_DEPENDENCY_CLOSURE_BLOCKED",
-            "next_required_artifact": "leakage_audit_evidence_v10.csv",
+            "next_required_artifact": "leakage_audit_pass_review_gate_after_v10_evidence",
             "claim_boundary": "scoring_dependency_closure_only_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -2145,7 +2191,7 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
     frontier = [row for row in rows if row["frontier_now"] == "true"]
     assert len(frontier) == 1
     assert frontier[0]["dependency_id"] == "SCD24_LEAKAGE_AUDIT"
-    assert frontier[0]["next_required_artifact"] == "leakage_audit_evidence_v10.csv"
+    assert frontier[0]["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence"
 
     summary = list(csv.DictReader((ROOT / "data/derived/scoring_unblock_priority_summary_v25.csv").open()))
     assert summary == [
@@ -2155,7 +2201,7 @@ def test_v25_scoring_unblock_priority_identifies_first_frontier() -> None:
             "blocked_priority_rows": "6",
             "frontier_now_rows": "1",
             "first_frontier_dependency": "SCD24_LEAKAGE_AUDIT",
-            "first_frontier_artifact": "leakage_audit_evidence_v10.csv",
+            "first_frontier_artifact": "leakage_audit_pass_review_gate_after_v10_evidence",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "SCORING_UNBLOCK_FRONTIER_IDENTIFIED",
             "claim_boundary": "scoring_unblock_priority_only_no_scores_no_dark_sector_verdict",
@@ -2180,22 +2226,22 @@ def test_v72_scoring_frontier_status_targets_completed_v71_response_not_scores()
     assert rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_READY_FOR_LATER_LEAKAGE_EVIDENCE_GATE"
     assert "36 partial rows are preaudit review-ready" in rows[0]["ready_detail"]
     assert rows[0]["next_required_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response"
-    assert rows[1]["current_status"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
-    assert rows[2]["current_status"] == "WAITING_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE"
+    assert rows[1]["current_status"] == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
+    assert rows[2]["current_status"] == "WAITING_ON_LEAKAGE_PASS_REVIEW"
     assert summary == [
         {
             "summary_id": "SCORING_FRONTIER_STATUS_V72",
             "frontier_rows": "3",
             "blocked_frontier_rows": "3",
             "first_frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
-            "first_frontier_artifact": "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
+            "first_frontier_artifact": "leakage_audit_pass_review_gate_after_v10_evidence",
             "required_components_for_full_scoring_leakage_pass": "4",
             "partial_candidate_rows_requiring_review": "0",
             "target_evidence_rows_created": "0",
             "leakage_pass_authorized": "0",
             "activation_rows_authorized": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
+            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_PASS_REVIEW",
             "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
@@ -2528,7 +2574,7 @@ def test_v36_post_writer_real_values_gate_recheck_blocks_activation() -> None:
 def test_v37_post_writer_leakage_audit_recheck_blocks_activation() -> None:
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_leakage_audit_recheck_v37.csv").open()))
     assert len(rows) == 18
-    assert all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_PENDING_REVIEW_SOURCE_PRESENT" for row in rows)
+    assert all(row["v09_leakage_status"] == "LEAKAGE_AUDIT_EVIDENCE_PRESENT_REVIEW_PENDING" for row in rows)
     assert all(row["rows_passing_value_gate_after_recheck"] == "1" for row in rows)
     assert all("post_writer_real_values_gate_not_passed" not in row["leakage_recheck_blockers"] for row in rows)
     assert all("v09_leakage_audit_not_passed" in row["leakage_recheck_blockers"] for row in rows)
@@ -2648,7 +2694,7 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
     assert sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1
     frontier = [row for row in rows if row["frontier_now_after_recheck"] == "true"][0]
     assert frontier["dependency_id"] == "SCD24_LEAKAGE_AUDIT"
-    assert frontier["next_required_artifact"] == "leakage_audit_evidence_v10.csv"
+    assert frontier["next_required_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence"
     assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
 
     summary = list(csv.DictReader((ROOT / "data/derived/post_writer_scoring_unblock_priority_recheck_summary_v41.csv").open()))
@@ -2659,7 +2705,7 @@ def test_v41_post_writer_scoring_unblock_priority_recheck_confirms_frontier() ->
             "blocked_priority_rows_after_recheck": "13",
             "frontier_now_rows_after_recheck": "1",
             "first_frontier_dependency_after_recheck": "SCD24_LEAKAGE_AUDIT",
-            "first_frontier_artifact_after_recheck": "leakage_audit_evidence_v10.csv",
+            "first_frontier_artifact_after_recheck": "leakage_audit_pass_review_gate_after_v10_evidence",
             "endpoint_scoring_allowed_anywhere": "false",
             "overall_status": "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED",
             "claim_boundary": "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
@@ -2671,7 +2717,7 @@ def test_v42_post_writer_frontier_evidence_acceptance_recheck_blocks_scoring() -
     rows = list(csv.DictReader((ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv").open()))
     assert len(rows) == 18
     assert all(row["v41_frontier_dependency"] == "SCD24_LEAKAGE_AUDIT" for row in rows)
-    assert all(row["v41_frontier_artifact"] == "leakage_audit_evidence_v10.csv" for row in rows)
+    assert all(row["v41_frontier_artifact"] == "leakage_audit_pass_review_gate_after_v10_evidence" for row in rows)
     assert all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows)
     assert all(row["v26_evidence_input_present"] == "true" for row in rows)
     assert all(row["v26_accepted_for_promotion_review"] == "true" for row in rows)
