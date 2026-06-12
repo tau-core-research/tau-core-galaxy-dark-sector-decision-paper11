@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -19,13 +24,16 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def contract_rows() -> list[dict[str, object]]:
+    body_contract_path = DERIVED / "m0_no_dark_formula_body_contract_summary_v07.csv"
+    body_contract = read_csv(body_contract_path)[0] if body_contract_path.exists() else {}
+    body_next = str(body_contract["next_required_artifact"]) if body_contract else "m0_no_dark_formula_body_v07"
     rows = [
         {
             "component_id": "M0ND06_SOURCE_INPUTS",
             "component_class": "source_input_contract",
             "required_entry": "activated source-side morphology/readout labels plus shared baryonic inputs",
             "completion_status": "CONTRACT_DECLARED_FORMULA_BODY_PENDING",
-            "next_required_artifact": "m0_no_dark_formula_body_v07",
+            "next_required_artifact": body_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;posthoc_formula_switch",
         },
         {
@@ -33,7 +41,7 @@ def contract_rows() -> list[dict[str, object]]:
             "component_class": "formula_body_contract",
             "required_entry": "explicit source-to-rotation readout map producing v_pred_km_s on the frozen radial grid",
             "completion_status": "FORMULA_BODY_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_formula_body_v07",
+            "next_required_artifact": body_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {
@@ -65,7 +73,7 @@ def contract_rows() -> list[dict[str, object]]:
             "component_class": "prediction_output_contract",
             "required_entry": "row-level v_pred_km_s output schema compatible with family_prediction_table_contract_v80",
             "completion_status": "OUTPUT_SCHEMA_READY_FORMULA_BODY_PENDING",
-            "next_required_artifact": "m0_no_dark_formula_body_v07",
+            "next_required_artifact": body_next,
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner",
         },
     ]

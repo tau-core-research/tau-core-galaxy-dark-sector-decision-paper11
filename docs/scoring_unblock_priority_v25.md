@@ -38,7 +38,7 @@ SCD24_FAMILY_FORMULA_TABLES
 The first required artifact is:
 
 ```text
-m0_no_dark_formula_body_v07
+m0_no_dark_readout_equation_v08
 ```
 
 ## Claim Boundary

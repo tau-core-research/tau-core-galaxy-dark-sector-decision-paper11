@@ -33,7 +33,7 @@ The table contract exists, but zero formula-body rows and zero numeric
 prediction rows are written. The next concrete missing artifact is:
 
 ```text
-m0_no_dark_formula_body_v07
+m0_no_dark_readout_equation_v08
 ```
 
 ## Claim Boundary
@@ -41,5 +41,5 @@ m0_no_dark_formula_body_v07
 This contract does not define the no-dark Tau formula, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing M0
-formula-table artifact to the missing no-dark formula body and its frozen
-policies.
+formula-table artifact through the v07 body contract to the first missing
+no-dark readout equation and its frozen policies.
