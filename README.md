@@ -125,6 +125,9 @@ data/derived/leakage_partial_candidate_sufficiency_review_intake_summary_v73.csv
 data/derived/leakage_partial_candidate_sufficiency_preaudit_v74.csv
 data/derived/leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv
 data/derived/leakage_partial_candidate_sufficiency_response_draft_summary_v75.csv
+data/derived/full_leakage_evidence_ingestion_gate_v76.csv
+data/derived/full_leakage_evidence_ingestion_coverage_v76.csv
+data/derived/full_leakage_evidence_ingestion_summary_v76.csv
 review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/
 review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package.zip
 data/derived/source_import_values_v11.csv
@@ -297,6 +300,7 @@ docs/leakage_partial_candidate_sufficiency_review_package_v71.md
 docs/leakage_partial_candidate_sufficiency_review_intake_v73.md
 docs/leakage_partial_candidate_sufficiency_preaudit_v74.md
 docs/leakage_partial_candidate_sufficiency_response_draft_v75.md
+docs/full_leakage_evidence_ingestion_gate_v76.md
 docs/source_import_values_v11.md
 docs/source_import_real_values_gate_v12.md
 docs/scoring_activation_gate_v13.md
@@ -513,3 +517,8 @@ The v75 response-draft package turns the v74 preaudit into a proposed v71
 sufficiency response for independent review. It proposes 36 accept rows, but it
 is explicitly not a completed response and cannot be ingested or scored without
 separate review.
+The v76 full leakage-evidence ingestion gate combines the accepted v70
+source/observed candidates with the accepted v73 morphology/benchmark
+sufficiency rows. It marks 72 component rows and all 18 galaxies as ready for a
+later v10 target evidence writer, while still creating zero target evidence
+rows, zero leakage pass, zero activation rows, and zero scores.

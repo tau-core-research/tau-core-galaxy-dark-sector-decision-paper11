@@ -1327,6 +1327,61 @@ def validate_leakage_partial_candidate_sufficiency_response_draft_v75() -> None:
     )
 
 
+def validate_full_leakage_evidence_ingestion_gate_v76() -> None:
+    rows = read_csv(ROOT / "data/derived/full_leakage_evidence_ingestion_gate_v76.csv")
+    coverage = read_csv(ROOT / "data/derived/full_leakage_evidence_ingestion_coverage_v76.csv")
+    summary = read_csv(ROOT / "data/derived/full_leakage_evidence_ingestion_summary_v76.csv")
+    require(len(rows) == 72, "v76 must cover 72 leakage component rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "v76 must cover eighteen galaxies")
+    require(
+        {row["evidence_id"] for row in rows}
+        == {"LEC10_SOURCE_ROUTE", "LEC10_OBSERVED_INPUTS", "LEC10_MORPH_LABELS", "LEC10_BENCHMARK_INPUTS"},
+        "v76 must cover all four leakage evidence components",
+    )
+    require(
+        all(row["full_ingestion_decision"] == "READY_FOR_LEAKAGE_EVIDENCE_ROW_WRITE_NOT_WRITTEN" for row in rows),
+        "v76 rows must be ready for later evidence write only",
+    )
+    require(
+        all(row["full_ingestion_component_status"] == "FULL_COMPONENT_READY_NOT_ACTIVE_EVIDENCE" for row in rows),
+        "v76 rows must not become active evidence",
+    )
+    require(all(row["target_evidence_row_written"] == "false" for row in rows), "v76 cannot write target evidence rows")
+    require(all(row["leakage_pass_authorized"] == "false" for row in rows), "v76 cannot authorize leakage pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in rows), "v76 cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v76 cannot allow scoring")
+    require(len(coverage) == 18, "v76 coverage must have eighteen galaxy rows")
+    require(all(row["ready_components"] == "4" for row in coverage), "v76 coverage must have four ready components")
+    require(all(row["missing_components"] == "" for row in coverage), "v76 coverage must have no missing components")
+    require(
+        all(row["full_leakage_evidence_ingestion_ready"] == "true" for row in coverage),
+        "v76 coverage must mark all galaxies ready",
+    )
+    require(all(row["target_evidence_rows_created"] == "0" for row in coverage), "v76 coverage cannot create evidence")
+    require(all(row["leakage_pass_authorized"] == "false" for row in coverage), "v76 coverage cannot authorize leakage pass")
+    require(all(row["activation_rows_authorized"] == "0" for row in coverage), "v76 coverage cannot authorize activation")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in coverage), "v76 coverage cannot allow scoring")
+    require(len(summary) == 1, "v76 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_GATE_V76", "v76 summary id mismatch")
+    require(row["gate_rows"] == "72", "v76 summary must record 72 rows")
+    require(row["galaxies_covered"] == "18", "v76 summary must record eighteen galaxies")
+    require(row["ready_component_rows"] == "72", "v76 summary must record 72 ready components")
+    require(row["galaxies_with_all_four_ready_components"] == "18", "v76 summary must record 18 complete galaxies")
+    require(row["target_evidence_rows_created"] == "0", "v76 summary cannot create evidence")
+    require(row["leakage_pass_rows_authorized"] == "0", "v76 summary cannot authorize leakage pass")
+    require(row["activation_rows_authorized"] == "0", "v76 summary cannot authorize activation")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v76 summary must forbid scoring")
+    require(
+        row["overall_status"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE",
+        "v76 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
+        "v76 next artifact mismatch",
+    )
+
+
 def validate_source_import_values_v11() -> None:
     source_rows = read_csv(ROOT / "data/derived/source_import_values_v11.csv")
     observed = read_csv(ROOT / "data/derived/observed_numeric_values_v11.csv")
@@ -1804,12 +1859,12 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 first frontier must expose v74 preaudit readiness",
     )
     require(
-        rows[1]["current_status"] == "READY_FOR_FULL_LEAKAGE_EVIDENCE_INGESTION_AFTER_ACCEPTED_V71_RESPONSE",
-        "v72 second frontier must move to leakage-evidence ingestion",
+        rows[1]["current_status"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE",
+        "v72 second frontier must reflect v76 full ingestion readiness",
     )
     require(
-        rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION",
-        "v72 third frontier must wait on full leakage ingestion",
+        rows[2]["current_status"] == "WAITING_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
+        "v72 third frontier must wait on v10 leakage evidence write",
     )
     require(len(summary) == 1, "v72 summary must have one row")
     row = summary[0]
@@ -1818,7 +1873,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response",
+        row["first_frontier_artifact"] == "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
@@ -1828,7 +1883,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
     require(
-        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_FULL_LEAKAGE_EVIDENCE_INGESTION_GATE",
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
         "v72 status mismatch",
     )
 
@@ -2990,6 +3045,7 @@ def main() -> None:
     validate_leakage_partial_candidate_sufficiency_review_intake_v73()
     validate_leakage_partial_candidate_sufficiency_preaudit_v74()
     validate_leakage_partial_candidate_sufficiency_response_draft_v75()
+    validate_full_leakage_evidence_ingestion_gate_v76()
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_activation_gate_v13()

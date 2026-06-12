@@ -54,6 +54,7 @@ def test_required_files_exist() -> None:
         "docs/leakage_partial_candidate_sufficiency_review_intake_v73.md",
         "docs/leakage_partial_candidate_sufficiency_preaudit_v74.md",
         "docs/leakage_partial_candidate_sufficiency_response_draft_v75.md",
+        "docs/full_leakage_evidence_ingestion_gate_v76.md",
         "docs/source_import_values_v11.md",
         "docs/source_import_real_values_gate_v12.md",
         "docs/scoring_activation_gate_v13.md",
@@ -224,6 +225,9 @@ def test_required_files_exist() -> None:
         "data/derived/leakage_partial_candidate_sufficiency_preaudit_v74.csv",
         "data/derived/leakage_partial_candidate_sufficiency_preaudit_summary_v74.csv",
         "data/derived/leakage_partial_candidate_sufficiency_response_draft_summary_v75.csv",
+        "data/derived/full_leakage_evidence_ingestion_gate_v76.csv",
+        "data/derived/full_leakage_evidence_ingestion_coverage_v76.csv",
+        "data/derived/full_leakage_evidence_ingestion_summary_v76.csv",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/README.md",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/DO_NOT_INGEST_WITHOUT_INDEPENDENT_REVIEW.md",
         "review_packages/leakage_partial_candidate_sufficiency_v75_response_draft_package/REVIEW_MANIFEST.csv",
@@ -387,6 +391,7 @@ def test_required_files_exist() -> None:
         "scripts/run_leakage_partial_candidate_sufficiency_review_intake.py",
         "scripts/build_leakage_partial_candidate_sufficiency_preaudit.py",
         "scripts/build_leakage_partial_candidate_sufficiency_response_draft.py",
+        "scripts/run_full_leakage_evidence_ingestion_gate.py",
         "scripts/build_source_import_values.py",
         "scripts/run_source_import_real_values_gate.py",
         "scripts/run_scoring_activation_gate.py",
@@ -1567,6 +1572,51 @@ def test_v75_partial_candidate_sufficiency_response_draft_is_not_completed_respo
     assert {f"leakage_partial_candidate_sufficiency_v75_response_draft_package/{rel}" for rel in required}.issubset(names)
 
 
+def test_v76_full_leakage_evidence_ingestion_gate_is_ready_but_non_scoring() -> None:
+    rows = list(csv.DictReader((ROOT / "data/derived/full_leakage_evidence_ingestion_gate_v76.csv").open()))
+    coverage = list(csv.DictReader((ROOT / "data/derived/full_leakage_evidence_ingestion_coverage_v76.csv").open()))
+    summary = list(csv.DictReader((ROOT / "data/derived/full_leakage_evidence_ingestion_summary_v76.csv").open()))
+    assert len(rows) == 72
+    assert len({row["galaxy_id"] for row in rows}) == 18
+    assert {row["evidence_id"] for row in rows} == {
+        "LEC10_SOURCE_ROUTE",
+        "LEC10_OBSERVED_INPUTS",
+        "LEC10_MORPH_LABELS",
+        "LEC10_BENCHMARK_INPUTS",
+    }
+    assert all(row["full_ingestion_decision"] == "READY_FOR_LEAKAGE_EVIDENCE_ROW_WRITE_NOT_WRITTEN" for row in rows)
+    assert all(row["full_ingestion_component_status"] == "FULL_COMPONENT_READY_NOT_ACTIVE_EVIDENCE" for row in rows)
+    assert all(row["target_evidence_row_written"] == "false" for row in rows)
+    assert all(row["leakage_pass_authorized"] == "false" for row in rows)
+    assert all(row["activation_rows_authorized"] == "0" for row in rows)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in rows)
+    assert len(coverage) == 18
+    assert all(row["ready_components"] == "4" for row in coverage)
+    assert all(row["missing_components"] == "" for row in coverage)
+    assert all(row["full_leakage_evidence_ingestion_ready"] == "true" for row in coverage)
+    assert all(row["target_evidence_rows_created"] == "0" for row in coverage)
+    assert all(row["leakage_pass_authorized"] == "false" for row in coverage)
+    assert all(row["activation_rows_authorized"] == "0" for row in coverage)
+    assert all(row["endpoint_scoring_allowed"] == "false" for row in coverage)
+    assert summary == [
+        {
+            "summary_id": "FULL_LEAKAGE_EVIDENCE_INGESTION_GATE_V76",
+            "input_artifacts": "data/derived/leakage_evidence_candidate_ingestion_gate_v70.csv;data/derived/leakage_partial_candidate_sufficiency_review_intake_v73.csv",
+            "gate_rows": "72",
+            "galaxies_covered": "18",
+            "ready_component_rows": "72",
+            "galaxies_with_all_four_ready_components": "18",
+            "target_evidence_rows_created": "0",
+            "leakage_pass_rows_authorized": "0",
+            "activation_rows_authorized": "0",
+            "endpoint_scoring_allowed_anywhere": "false",
+            "overall_status": "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE",
+            "next_required_artifact": "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
+            "claim_boundary": "full_leakage_evidence_ingestion_gate_only_no_evidence_write_no_scores_no_dark_sector_verdict",
+        }
+    ]
+
+
 def test_v11_source_import_values_are_declared_but_unfilled() -> None:
     source_values = list(csv.DictReader((ROOT / "data/derived/source_import_values_v11.csv").open()))
     assert len(source_values) == 18
@@ -2130,22 +2180,22 @@ def test_v72_scoring_frontier_status_targets_completed_v71_response_not_scores()
     assert rows[0]["current_status"] == "PARTIAL_SUFFICIENCY_REVIEW_READY_FOR_LATER_LEAKAGE_EVIDENCE_GATE"
     assert "36 partial rows are preaudit review-ready" in rows[0]["ready_detail"]
     assert rows[0]["next_required_artifact"] == "full_leakage_evidence_ingestion_gate_after_accepted_v71_response"
-    assert rows[1]["current_status"] == "READY_FOR_FULL_LEAKAGE_EVIDENCE_INGESTION_AFTER_ACCEPTED_V71_RESPONSE"
-    assert rows[2]["current_status"] == "WAITING_ON_FULL_LEAKAGE_EVIDENCE_INGESTION"
+    assert rows[1]["current_status"] == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
+    assert rows[2]["current_status"] == "WAITING_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE"
     assert summary == [
         {
             "summary_id": "SCORING_FRONTIER_STATUS_V72",
             "frontier_rows": "3",
             "blocked_frontier_rows": "3",
             "first_frontier_id": "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE",
-            "first_frontier_artifact": "full_leakage_evidence_ingestion_gate_after_accepted_v71_response",
+            "first_frontier_artifact": "leakage_audit_evidence_v10_writer_from_v76_full_ingestion_gate",
             "required_components_for_full_scoring_leakage_pass": "4",
             "partial_candidate_rows_requiring_review": "0",
             "target_evidence_rows_created": "0",
             "leakage_pass_authorized": "0",
             "activation_rows_authorized": "0",
             "endpoint_scoring_allowed_anywhere": "false",
-            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_FULL_LEAKAGE_EVIDENCE_INGESTION_GATE",
+            "overall_status": "SCORING_FRONTIER_BLOCKED_ON_LEAKAGE_AUDIT_EVIDENCE_V10_WRITE",
             "claim_boundary": "scoring_frontier_status_only_no_evidence_no_scores_no_dark_sector_verdict",
         }
     ]
