@@ -29,8 +29,27 @@ POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED
 ```
 
 All thirteen priority rows remain blocked after the conservative post-writer
-dependency recheck. The first frontier is now `SCD24_FAMILY_FORMULA_TABLES`,
-requiring `m0_no_dark_rule_parent_assumption_basis_v14`.
+dependency recheck. The first frontier is now `SCD24_PARAMETER_COUNTS`,
+requiring `shared_input_count_discount_policy_v10.csv` after the M1
+response-parameter inventory, countability classification, count-value ledger,
+adjustable-slot resolution, final-count candidate, and final-count freeze
+became present, and after the M1 per-galaxy response-privilege audit resolved
+all eighteen rows as zero protocol-local privileges. The M1 per-galaxy
+response-privilege freeze is now present too and freezes those rows at zero.
+The M2 benchmark-parameter inventory is now present too and records twelve
+profile/nuisance slots for later classification. The M2 benchmark-parameter
+countability classification is now present too and classifies those slots
+without writing count values. The M2 benchmark-parameter count-value ledger is
+now present too and resolves four guard rows to zero while leaving eight
+benchmark/nuisance rows conditional. The M2 benchmark-parameter
+adjustable-slot resolution is now present too and resolves those eight
+conditional rows to zero under the current scaffold. The recheck still writes
+no response values, parsimony, endpoint scores, or a dark-sector verdict. The
+M2 final-count candidate is now present too and records candidate
+`k_M2_global=0` only as a freeze input.
+The M2 final-count freeze is now present too and freezes protocol-local
+`k_M2_global=0`, so the frontier moves to the per-galaxy benchmark privilege
+audit.
 
 ## Claim Boundary
 

@@ -28,11 +28,12 @@ The expected status is:
 M0_NO_DARK_KERNEL_EXPRESSION_CONTRACT_READY_FROZEN_EXPRESSION_BLOCKED
 ```
 
-The kernel-expression contract exists, but zero frozen expressions and zero
-numeric prediction rows are written. The first concrete missing artifact is:
+The kernel-expression contract exists, and the non-payload interface slots are
+ready, but zero frozen expressions and zero numeric prediction rows are
+written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+m0_no_dark_source_side_expression_statement_v13
 ```
 
 ## Claim Boundary
@@ -40,5 +41,5 @@ m0_no_dark_rule_parent_assumption_basis_v14
 This contract does not define the M0 no-dark expression, does not compute
 predicted velocities, does not compare M0/M1/M2, and does not make a
 dark-sector verdict. It only narrows the scoring frontier from a missing kernel
-expression through the v11 frozen-expression contract to the first missing
-parent-assumption basis for the no-dark rule derivation.
+expression to the frozen-expression payload that would have to carry the actual
+source-side expression.

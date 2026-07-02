@@ -23,8 +23,8 @@ shared input policies are filled.
 This manifest prevents premature parsimony claims. It does not say which family
 is simpler or stronger.
 
-Next honest target:
+Current honest target after the v09 readiness-closure ledger:
 
 ```text
-NUMERIC_PARAMETER_COUNT_TABLE_V06
+M0_GLOBAL_PARAMETER_INVENTORY_V10
 ```

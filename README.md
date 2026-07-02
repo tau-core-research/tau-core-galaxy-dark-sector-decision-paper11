@@ -32,6 +32,10 @@ held-out endpoint tests, and controls that prevent residual leakage.
 - It does not claim a `Response_tau` formula.
 - It does not claim lensing, CMB, BAO, supernova, growth, or cosmological validation.
 - It does not claim a galaxy-rotation endpoint result.
+- It does not claim that the restricted local `U_read` scoring anchor proves
+  global `P_order`, physical time, physical readout, or a dark-sector decision.
+- It does not claim that Paper 10 DESI shape/readout support, or the Tau Core
+  local `K_time` rank-domain closure, activates Paper 11 endpoint scoring.
 
 ## Included Data
 
@@ -358,6 +362,7 @@ docs/source_import_provenance_promotion_gate_v23.md
 docs/scoring_dependency_closure_v24.md
 docs/scoring_unblock_priority_v25.md
 docs/scoring_frontier_status_v72.md
+docs/theory_side_scoring_anchor_v81.md
 docs/frontier_provenance_evidence_acceptance_v26.md
 docs/frontier_provenance_evidence_work_order_v27.md
 docs/frontier_work_order_completion_gate_v28.md
@@ -447,18 +452,328 @@ policy writes eighteen activated rows into
 `data/derived/activated_scoring_rows_v10.csv`, but still permits zero endpoint
 scores. The v13 scoring activation gate now reports
 `SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED`: row-level activation is
-clear, while four global scoring prerequisites remain blocked. The v24 scoring
-dependency closure now has nine ready dependencies and four blocked global
+clear, while three global scoring prerequisites remain blocked. The v24 scoring
+dependency closure now has ten ready dependencies and three blocked global
 dependencies. The v80 family-prediction table contract narrows the first
 family-table blocker through the v06 M0 no-dark contract, v07 body contract,
 v08 readout-equation contract, v09 kernel contract, and v10
 kernel-expression contract, then through the v11 frozen-expression contract to
-the v12 source-rule contract and v13 rule-derivation contract:
-`m0_no_dark_rule_parent_assumption_basis_v14`.
-The v25 scoring
-unblock priority ledger identifies the first current frontier as
-`SCD24_FAMILY_FORMULA_TABLES`, with `m0_no_dark_rule_parent_assumption_basis_v14` as the next
-required artifact.
+the v12 source-rule contract and v13 rule-derivation contract. The v14
+parent-assumption basis, rule-selection map, term-generation record, and v13
+statement gates through freeze provenance now close the current source-side
+statement route. The v11 payload contract now accepts that statement handoff,
+the v12 symbol-binding table, the v12 constant policy, the v12 dimensional
+trace, the v12 machine-form payload, and the v12 payload-leakage certificate.
+The v14 M0 no-dark frozen-expression body formulates the source-side expression
+body as a definition-level assembly envelope, still without velocity formula,
+numeric coefficients, prediction rows, scoring, or dark-sector verdict. The v07
+scale-policy guard now closes fixed-scale use without numeric scale values. The
+fallback-policy guard now also closes zero-response, missing-label,
+inadmissible-input, null/gauge, and failure-reporting routes without writing
+fallback prediction rows. The v08 family prediction table now contains 450 M0
+no-dark prediction rows, emitted without endpoint scores. The v81
+family-prediction frontier trace expands the broad
+`family_prediction_tables_v08.csv` blocker and identifies the current
+scoring-facing blocker as
+`shared_input_count_discount_policy_v10.csv`, after the M0 global
+parameter inventory became explicit in
+`m0_global_parameter_inventory_v10.csv` and its countability classification was
+closed in `m0_global_parameter_count_classification_v11.csv`, and after the
+partial count-value ledger was written in
+`m0_global_parameter_count_value_ledger_v12.csv`, and after
+`m0_global_adjustable_slot_resolution_v13.csv` resolved the four conditional
+M0 global slots as source-side or guard zero-count slots without writing final
+`k_M0`, and after `m0_global_final_count_candidate_v14.csv` combined the six
+zero-valued global rows into a freeze-input candidate with candidate
+`k_M0=0`, and after `m0_global_final_count_freeze_v15.csv` froze
+`k_M0_global=0` without writing per-galaxy counts, and after the
+`m0_per_galaxy_privilege_count_audit_v10.csv` audit resolved all eighteen M0
+rows as zero row-specific privileges, and after
+`m0_per_galaxy_privilege_count_freeze_v11.csv` froze those eighteen zero
+row-specific privilege counts without parsimony or scoring, and after
+`m1_response_parameter_inventory_v10.csv` exposed the six M1 response slots
+without classifying countability or writing response values, and after
+`m1_response_parameter_count_classification_v11.csv` classified the M1 response
+slots without writing count values or response values, and after
+`m1_response_parameter_count_value_ledger_v12.csv` resolved three pure M1 guard
+slots to zero while leaving carrier, amplitude, and scale conditional, after the
+`m0_no_dark_executable_prediction_kernel_v08` and
+`m0_no_dark_velocity_readout_formula_v08` gates were added, and after the
+`m0_no_dark_source_to_rotation_equation_body_v08` gate closed without writing a
+coupling, formula, or prediction rows. The
+`m0_no_dark_source_to_velocity_coupling_rule_v08` gate is now also present, but
+keeps the route blocked until a lawful velocity-unit lift is declared. The
+`m0_no_dark_velocity_unit_lift_rule_v08` gate is present too, but keeps the
+route blocked until a velocity-dimension anchor is declared. The
+`m0_no_dark_velocity_dimension_anchor_rule_v08` gate is present too and hands
+off to the source-law layer. The
+`m0_no_dark_velocity_anchor_source_law_v08` gate is present too, but keeps the
+route blocked until a pre-scoring anchor candidate basis is declared.
+The `m0_no_dark_velocity_anchor_candidate_basis_v08` gate is present too, but
+keeps the route blocked until a pre-scoring anchor selection rule is declared.
+The `m0_no_dark_velocity_anchor_selection_rule_v08` gate is present too, but
+keeps the route blocked until a pre-scoring anchor value freeze is declared.
+The `m0_no_dark_velocity_anchor_value_freeze_v08` gate is present too, but
+keeps the route blocked until a velocity-anchor unit normalization is declared.
+The `m0_no_dark_velocity_anchor_unit_normalization_v08` gate is present too,
+but keeps the route blocked until a component-combination rule is declared.
+The `m0_no_dark_velocity_anchor_component_combination_rule_v08` gate is
+present too, but keeps the route blocked until a pre-scoring component-weight
+policy is declared.
+The `m0_no_dark_velocity_anchor_component_weight_policy_v08` gate is present
+too, but keeps the route blocked until component-weight values are frozen.
+The `m0_no_dark_velocity_anchor_component_weight_value_freeze_v08` gate is
+present too, but keeps the route blocked until a combined-anchor rule is
+declared.
+The `m0_no_dark_velocity_anchor_combined_anchor_rule_v08` gate is present too,
+but keeps the route blocked until the exact symbolic combined-anchor expression
+is frozen.
+The `m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08` gate is
+present too and freezes
+`v_anchor_sq_km2_s2 = (s_gas*w_gas*v_gas_km_s^2 + s_disk*w_disk*v_disk_km_s^2 + s_bulge*w_bulge*v_bulge_km_s^2) / n_anchor`,
+but keeps the route blocked until combined-anchor values are frozen.
+The `m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08` gate is
+present too and freezes 450 identity baryonic-carrier anchor values across 18
+galaxies, but keeps the route blocked until the velocity readout formula body
+is frozen. The `m0_no_dark_velocity_readout_formula_body_freeze_v08` gate is
+now present too and freezes `v_body_km_s(R) := v_anchor_km_s(R)`, but writes no
+family prediction rows and keeps the route blocked until prediction row values
+are frozen. The `m0_no_dark_prediction_row_value_freeze_v08` gate is now
+present too and freezes 450 M0 no-dark row values across 18 galaxies, but
+still writes zero rows into the family prediction table.
+The `m0_no_dark_family_prediction_row_emission_v08` gate is now present too and
+emits 450 M0 no-dark family-prediction rows into
+`family_prediction_tables_v08.csv`. These are prediction rows only, not endpoint
+scores. The v25 scoring unblock priority ledger identifies the first current
+frontier as `SCD24_PARAMETER_COUNTS`, with
+`m0_global_parameter_count_classification_v11.csv` as the next required
+artifact. The
+`m0_label_rule_table_v06` gate is present too and freezes the M0 morphology
+label-rule vocabulary, fallback labels, exception policy, row scope, and
+freeze audit without writing row-level label values or validating labels.
+The `m1_tau_response_formula_table_v06` gate is present too and closes the M1
+response-slot table as a contract/scaffold, but it claims no `Response_tau`
+formula, writes no response values, writes no M1 prediction rows, and keeps
+scoring blocked until `m1_admissibility_table_v06`. The
+`m1_admissibility_table_v06` gate is now present too and closes the M1
+response-admissibility rule as a source-frozen, non-circular, no-posthoc-rescue
+guard. It writes no response values and no M1 prediction rows. The current
+frontier therefore moves to `m2_benchmark_profile_table_v06`. The
+`m2_benchmark_profile_table_v06` gate is now present too and freezes the M2
+benchmark-profile policy, halo-parameter slot policy, prior policy,
+nuisance-policy handoff, profile-switch guard, and prediction handoff without
+numeric profile values, M2 prediction rows, endpoint scores, or standard
+dark-sector validation. The current frontier moves to
+`m2_nuisance_policy_table_v06`. The `m2_nuisance_policy_table_v06` gate is now
+present too and freezes stellar mass-to-light, gas scaling, uncertainty,
+nuisance prior, shared baryonic fairness, and prediction-handoff policies
+without numeric nuisance values, M2 prediction rows, endpoint scores, or
+standard dark-sector validation. The current frontier moves to
+`shared_scoring_input_table_v06`. The `shared_scoring_input_table_v06` gate is
+now present too and freezes the shared data-loader, radial-grid, radial-mask,
+uncertainty-handling, baryonic-component, and parameter-count handoff policies
+without numeric input values, family prediction rows, endpoint scores, or
+dark-sector verdict. The current frontier moves to
+`numeric_parameter_count_table_v06`. The `numeric_parameter_count_table_v06`
+gate is now present too and closes the count-rule contract without final
+numeric count values, parsimony scores, endpoint scores, or a dark-sector
+verdict. The current frontier moves to `numeric_parameter_count_table_v08.csv`.
+The `numeric_parameter_count_table_v08.csv` artifact is now present too and
+checks seven count-readiness rows, but writes no final numeric count values,
+per-galaxy privilege counts, parsimony scores, endpoint scores, or dark-sector
+verdict. All seven readiness rows remain blocked, so the current frontier moves
+to `numeric_count_readiness_closure_v09.csv`. The
+`numeric_count_readiness_closure_v09.csv` artifact is now present too and
+decomposes all seven count-readiness blockers without writing numeric counts or
+parsimony scores. The M0 global parameter inventory is now present as
+`m0_global_parameter_inventory_v10.csv`, and it exposes six global M0 slots
+without count values or numeric values. The current frontier therefore moves to
+`m0_global_parameter_count_classification_v11.csv`. The v11 classification is
+now present too and classifies all six M0 global slots without writing numeric
+count values, coefficient values, per-galaxy privilege counts, parsimony scores,
+endpoint scores, or a dark-sector verdict. The current frontier therefore
+moves to `m0_global_parameter_count_value_ledger_v12.csv`. The v12 ledger is
+now present too and resolves two zero slot values while keeping four conditional
+slot values pending. It writes no final M0 global parameter count, no parsimony
+score, and no endpoint score. The current frontier therefore moves to
+`m0_global_adjustable_slot_resolution_v13.csv`. The v13 adjustable-slot
+resolution is now present too and resolves the four conditional slots to zero
+using source-basis, symbol-binding, shared-input, readout-contract, and
+fallback-policy evidence. It still writes no final `k_M0`, no parsimony score,
+and no endpoint score. The current frontier therefore moves to
+`m0_global_final_count_candidate_v14.csv`. The v14 final-count candidate is now
+present too and records candidate `k_M0=0` only as a freeze input, with no
+frozen count, no parsimony score, and no endpoint score. The current frontier
+therefore moves to `m0_global_final_count_freeze_v15.csv`. The v15 final-count
+freeze is now present too and freezes `k_M0_global=0` while still writing no
+per-galaxy counts, no parsimony score, and no endpoint score. The current
+frontier therefore moves to
+`m0_per_galaxy_privilege_count_audit_v10.csv`.
+The v10 per-galaxy privilege-count audit is now present too and resolves all
+eighteen M0 rows as zero row-specific privileges, while still writing no frozen
+per-galaxy count, no parsimony score, and no endpoint score. The current
+frontier therefore moves to `m0_per_galaxy_privilege_count_freeze_v11.csv`.
+The v11 per-galaxy privilege-count freeze is now present too and freezes all
+eighteen audited M0 rows at zero row-specific privileges, while still writing no
+parsimony score and no endpoint score. The current frontier therefore moves to
+`m1_response_parameter_inventory_v10.csv`. The M1 response-parameter inventory
+is now present too and exposes the six M1 response slots without countability
+classification, response values, parsimony, or scoring. The current frontier
+therefore moves to `m1_response_parameter_count_classification_v11.csv`. The M1
+response-parameter countability classification is now present too and classifies
+those six slots without count values, response values, parsimony, or scoring.
+The current frontier therefore moves to
+`m1_response_parameter_count_value_ledger_v12.csv`. The M1 response-parameter
+count-value ledger is now present too: activation, handoff, and zero-response
+guards are resolved to zero, while carrier, amplitude, and scale remain
+conditional response slots. The current frontier therefore moves to
+`m1_response_parameter_adjustable_slot_resolution_v13.csv`. The M1 adjustable
+slot resolution is now present too and resolves the carrier, amplitude, and
+scale slots to zero under the current no-response/no-values scaffold, without
+proving physical M1 absence. The current frontier therefore moves to
+`m1_response_parameter_final_count_candidate_v14.csv`. The M1 final-count
+candidate is now present too and records candidate `k_M1_global=0` as a freeze
+input only, without freezing the count, writing `Response_tau`, writing response
+values, parsimony, or scores. The current frontier therefore moves to
+`m1_response_parameter_final_count_freeze_v15.csv`. The M1 final-count freeze
+is now present too and freezes protocol-local `k_M1_global=0`, without writing
+`Response_tau`, response values, per-galaxy response privilege counts,
+parsimony, or scores. The current frontier therefore moves to
+`m1_per_galaxy_response_privilege_count_audit_v10.csv`. The M1 per-galaxy
+response-privilege audit is now present too and resolves all eighteen rows as
+zero row-specific M1 response privileges, without freezing the per-galaxy
+count, writing `Response_tau`, response values, parsimony, or scores. The
+current frontier therefore moves to
+`m1_per_galaxy_response_privilege_count_freeze_v11.csv`. The M1 per-galaxy
+response-privilege freeze is now present too and freezes all eighteen audited
+rows at zero protocol-local response privileges, without writing
+`Response_tau`, response values, parsimony, or scores. The current frontier
+therefore moves to `m2_benchmark_parameter_inventory_v10.csv`.
+The M2 benchmark-parameter inventory v10 is now present too and records twelve
+profile/nuisance slots for later countability classification, without writing
+benchmark values, prediction rows, parsimony, scores, or a dark-sector verdict.
+The current frontier therefore moves to
+`m2_benchmark_parameter_count_classification_v11.csv`. The M2
+benchmark-parameter countability classification v11 is now present too and
+classifies all twelve M2 profile/nuisance slots without writing count values,
+benchmark values, prediction rows, parsimony, scores, or a dark-sector verdict.
+The current frontier therefore moves to
+`m2_benchmark_parameter_count_value_ledger_v12.csv`. The M2 benchmark-parameter
+count-value ledger v12 is now present too and resolves four protocol/guard rows
+to zero while leaving eight benchmark/nuisance rows conditional, without
+writing final M2 count, benchmark values, prediction rows, parsimony, scores,
+or a dark-sector verdict. The current frontier therefore moves to
+`m2_benchmark_parameter_adjustable_slot_resolution_v13.csv`. That adjustable
+slot resolution is now present too and resolves the eight conditional
+benchmark/nuisance rows to zero under the current no-values/no-predictions
+scaffold, moving the frontier to
+`m2_benchmark_parameter_final_count_candidate_v14.csv`. That final-count
+candidate is now present too and records candidate `k_M2_global=0` only as a
+freeze input, moving the frontier to
+`m2_benchmark_parameter_final_count_freeze_v15.csv`. That freeze is now present
+too and freezes protocol-local `k_M2_global=0`, moving the frontier to
+`shared_input_count_discount_policy_v10.csv`.
+The v81 theory-side scoring anchor records the restricted local `U_read`
+closure-defect partial-order diagnostic now available from the Tau Core theory
+hub. It strengthens Paper 11 only as a proof-backed local scoring primitive:
+source-frozen, non-circular, observer-interface guarded, null/gauge compatible,
+coarse-graining conservative, and explicit about incomparability. It does not
+activate endpoint scoring, fill family prediction tables, construct
+`Response_tau`, prove physical time/readout, or decide whether the dark-sector
+response layer is necessary.
+
+The v82 upstream-results impact ledger records the latest Paper 10 and Tau
+Core theory consequences for scoring design. Paper 10 currently warns against
+a plain level/amplitude route: the DESI/chronometer constant-level route is
+ordering-fragile under controls, while the DESI shape/readout route has
+source-side support but remains narrow, row-sensitive, and not validation. The
+Tau Core theory hub also now records a local `K_time` carrier-to-rank-domain
+closure pattern, which supports rank-domain discipline as an audit pattern but
+does not prove `Theta_time`, physical readout, physical time, or any galaxy
+endpoint result. The Paper 11 consequence is design-level only: future scoring
+must keep level/amplitude, shape/readout, row-sensitivity, and control
+resistance separate. The first concrete blocker from that update,
+`m0_no_dark_coefficient_policy_v07`, is filled as a no-values/no-scoring policy
+guard, and `m0_no_dark_scale_policy_v07` is now also filled as a no-values,
+no-predictions fixed-scale guard. The `m0_no_dark_fallback_policy_v07` slot is
+now also filled as a no-predictions fallback guard. The
+`m0_no_dark_prediction_row_writer_v08` gate is present and blocked from numeric
+row emission. The `m0_no_dark_executable_prediction_kernel_v08` gate is also
+present and formula-free. The `m0_no_dark_velocity_readout_formula_v08` gate is
+present and equation-free. The `m0_no_dark_source_to_rotation_equation_body_v08`
+gate is present but blocks equation writing until a lawful coupling is declared;
+the source-to-velocity coupling-rule gate is also present but blocks coupling
+writing until a lawful unit lift is declared; the velocity-unit lift gate is
+present but blocks lift writing until a dimension anchor is declared; the
+velocity-dimension anchor gate is present but blocks anchor writing until an
+anchor source law is declared; the anchor-source-law gate is present but blocks
+candidate selection until a pre-scoring basis is declared; the candidate-basis
+gate is present but blocks anchor choice until a selection rule is declared;
+the selection-rule gate is present but blocks anchor use until a value freeze
+is declared; the value-freeze gate is present but blocks formula use until unit
+normalization is declared; the unit-normalization gate is present but blocks
+formula use until a component-combination rule is declared; the
+component-combination rule is present but blocks formula use until a
+pre-scoring component-weight policy is declared; the component-weight policy
+is present but blocks formula use until component-weight values are frozen; the
+component-weight value freeze is present but blocks formula use until a
+combined-anchor rule is declared; the combined-anchor rule is present but
+blocks formula use until the exact symbolic expression is frozen; the
+combined-anchor expression freeze is present but blocks formula use until
+combined-anchor values are frozen; the combined-anchor value freeze is present
+and the velocity readout formula body is now frozen as
+`v_body_km_s(R) := v_anchor_km_s(R)`, 450 M0 no-dark prediction row values are
+frozen, those values are now emitted as M0 family-prediction rows, and the M0
+label-rule table is now frozen. The M1 response-formula and admissibility
+tables are now frozen as no-formula/no-values/no-predictions contracts. The
+M2 benchmark-profile table is now frozen as a no-values/no-predictions
+benchmark policy contract. The M2 nuisance-policy table is now frozen as a
+no-values/no-predictions nuisance contract. The shared scoring-input table is
+now frozen as a no-values/no-predictions shared-input contract. The numeric
+parameter-count v06 table is now frozen as a no-final-count/no-parsimony
+contract. The numeric parameter-count v08 table is now present as a
+no-final-count/no-parsimony readiness gate. The numeric count-readiness v09
+closure ledger is also present. The M0 global parameter inventory v10 is now
+present too, and the M0 global parameter countability classification v11 is
+present too. The M0 global count-value ledger v12 is also present as a
+partial-value/no-final-count ledger, and the M0 global adjustable-slot
+resolution v13 is present as a no-final-count slot-resolution ledger. The M0
+global final-count candidate v14 is also present as a no-freeze/no-parsimony
+candidate ledger, and the M0 global final-count freeze v15 is present as a
+global-count-only freeze ledger. The M0 per-galaxy privilege-count audit v10 and
+freeze v11 are present too, freezing all eighteen row-specific M0 privilege
+counts at zero without parsimony or scoring. The M1 response-parameter
+inventory v10 is present too, exposing the six M1 response slots without
+countability classification or response values. The M1 response-parameter
+countability classification v11 is present too, classifying those slots without
+count values or response values. The M1 response-parameter count-value ledger
+v12 is present too, with three zero guard rows and three conditional response
+slot rows. The next concrete blocker is
+`shared_input_count_discount_policy_v10.csv`, after the M1
+adjustable-slot resolution resolved the current carrier, amplitude, and scale
+slots as inactive or placeholder response slots and the v14 final-count
+candidate recorded candidate `k_M1_global=0`, and after v15 froze that
+protocol-local global count, and after the v10 per-galaxy audit resolved all
+eighteen M1 rows as zero row-specific response privileges, and after the v11
+per-galaxy response-privilege freeze froze those eighteen rows at zero, and
+after the M2 benchmark-parameter inventory recorded twelve profile/nuisance
+slots for later classification, and after the M2 benchmark-parameter
+countability classification classified those twelve slots without writing count
+values, and after the M2 count-value ledger, adjustable-slot resolution,
+final-count candidate, final-count freeze, per-galaxy benchmark-privilege
+audit, and per-galaxy benchmark-privilege freeze resolved the current M2 count
+privilege route without benchmark values, response values, parsimony, scores,
+or a dark-sector verdict.
+
+An external quantum-optical readout-time reference is now included for
+methodological context: Angulo et al., "Experimental Observation of Negative
+Weak Values for the Time Atoms Spend in the Excited State as a Photon Is
+Transmitted", Physical Review Letters (2026), DOI `10.1103/gjfq-k9dv`; see
+also arXiv `2409.03680`. Its role is limited to the readout-discipline point
+that time-like observables can be protocol/interface dependent in quantum
+systems. It is not used as Tau Core validation, a physical-time proof, a galaxy
+readout formula, or a scoring input.
+
 The legacy v26-v30 frontier-provenance work-order/writer path remains
 review-only and write-blocked; it does not override the separate active v55
 writer. The v31 audit records the active v55 provenance input as present, v32
@@ -470,8 +785,8 @@ writer. The v36 recheck sees the real-value gate as ready, v37 confirms the
 leakage pass after recheck, and v38 confirms row activation while keeping
 endpoint scoring blocked by global prerequisites. The v39-v40 rechecks keep
 all endpoint-scoring paths blocked because preflight readiness is still zero,
-and v41 confirms the current frontier as `SCD24_FAMILY_FORMULA_TABLES` /
-`m0_no_dark_rule_parent_assumption_basis_v14`. The v42-v43 frontier-evidence rechecks remain
+and v41 confirms the current frontier as `SCD24_PARAMETER_COUNTS` /
+`shared_input_count_discount_policy_v10.csv`. The v42-v43 frontier-evidence rechecks remain
 blocked/bypassed with respect to scoring because the active frontier is no
 longer provenance evidence. The v44 frontier
 provenance evidence intake contract defines nine review rules and eighteen
@@ -584,6 +899,46 @@ still authorizes zero endpoint scores. The v80 family-prediction table
 contract then narrows the blocker through the v06 M0 no-dark formula contract,
 v07 body contract, v08 readout-equation contract, v09 kernel contract, and v10
 kernel-expression contract, then through the v11 frozen-expression contract to
-the v12 source-rule contract and v13 rule-derivation contract. The first
-missing source-side derivation prerequisite is:
-`m0_no_dark_rule_parent_assumption_basis_v14`.
+the v12 source-rule contract and v13 rule-derivation contract. The v14
+parent-assumption basis, rule-selection map, term-generation record, v13
+statement gates through freeze provenance, and the v12 symbol-binding table are
+ready, the v12 constant policy is ready, the v12 dimensional trace is ready,
+the v12 machine-form payload is ready, and the v12 payload-leakage certificate
+is ready. The v14 M0 no-dark frozen-expression body is now formulated as a
+definition-level assembly envelope. The v81 family-prediction frontier trace
+keeps the broad scoring frontier at `family_prediction_tables_v08.csv`; that
+table now contains 450 M0 no-dark prediction rows, still with no endpoint
+scores or family comparison, and the M0 label-rule table is now frozen without
+row-level label values. The M1 response-slot and admissibility tables are now
+present as contracts/scaffolds, without a `Response_tau` formula, response
+values, M1 prediction rows, endpoint scores, or family comparison. The M2
+benchmark-profile table is also present as a benchmark policy contract,
+without numeric profile values, M2 prediction rows, endpoint scores, or
+standard dark-sector validation. The M2 nuisance-policy table is also present
+as a nuisance policy contract, without numeric nuisance values, M2 prediction
+rows, endpoint scores, or standard dark-sector validation. The shared
+scoring-input table is also present as a shared policy contract, without
+numeric input values, family prediction rows, endpoint scores, or family
+comparison. The numeric parameter-count v06 contract is now present without
+final count values or parsimony scores, and the numeric parameter-count v08
+gate is present but blocked by count-readiness closure. The v09 closure ledger
+is present too, the v10 M0 global inventory is present without counts, and the
+v11 countability classification is present without final numeric count values.
+The v12 count-value ledger, v13 adjustable-slot resolution, v14 final-count
+candidate, and v15 global-count freeze are present too, but per-galaxy counts
+are not frozen until the v11 per-galaxy privilege-count freeze. That freeze is
+now present and freezes all eighteen M0 row-specific privilege counts at zero.
+The M1 response-parameter inventory v10 is present too and writes no response
+values or scores. The M1 response-parameter countability classification v11 is
+present too and writes no count values, response values, or scores. The M1
+response-parameter count-value ledger v12 is present too and writes no final M1
+count, response values, or scores. The next concrete blocker is
+`shared_input_count_discount_policy_v10.csv`, after the v13
+adjustable-slot resolution closed the conditional M1 carrier, amplitude, and
+scale rows as zero-count protocol slots and the v14 final-count candidate
+recorded candidate `k_M1_global=0`, and after v15 froze that global count under
+the current scaffold, and after the v10 per-galaxy audit resolved all eighteen
+rows as zero M1 response privileges, and after the v11 per-galaxy
+response-privilege freeze froze those eighteen rows at zero, and after the M2
+benchmark-parameter count route and M2 per-galaxy benchmark-privilege route
+closed without benchmark values, parsimony, scores, or a dark-sector verdict.

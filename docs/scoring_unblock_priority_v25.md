@@ -32,14 +32,31 @@ SCORING_UNBLOCK_FRONTIER_IDENTIFIED
 The first frontier dependency is:
 
 ```text
-SCD24_FAMILY_FORMULA_TABLES
+SCD24_PARAMETER_COUNTS
 ```
 
 The first required artifact is:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+shared_input_count_discount_policy_v10.csv
 ```
+
+The M1 response-parameter inventory, countability classification, and
+count-value ledger are now present, and the adjustable-slot resolution has
+resolved the conditional carrier, amplitude, and scale rows as zero-count
+protocol slots under the current scaffold. The final-count candidate is also
+present and records candidate `k_M1_global=0` as a freeze input only. The
+final-count freeze is now present too and freezes protocol-local
+`k_M1_global=0`. The M1 per-galaxy response-privilege audit is now present and
+resolves all eighteen rows as zero protocol-local privileges. The M1
+per-galaxy response-privilege freeze is now present too and freezes those rows
+at zero. The M2 benchmark-parameter inventory is now present too and records
+twelve profile/nuisance slots for later classification. The M2
+benchmark-parameter countability classification is now present too and
+classifies those slots without writing count values. The remaining count-side
+question is the M2 benchmark-parameter adjustable-slot resolution, after the
+v12 ledger resolved four guard rows to zero and left eight benchmark/nuisance
+rows conditional, without writing response values or endpoint scores.
 
 ## Claim Boundary
 

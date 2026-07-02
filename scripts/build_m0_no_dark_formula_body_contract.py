@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DERIVED = ROOT / "data/derived"
+INTERFACE_SUMMARY = DERIVED / "m0_no_dark_formula_body_interface_summary_v08.csv"
+READOUT_EQUATION_SUMMARY = DERIVED / "m0_no_dark_readout_equation_contract_summary_v08.csv"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -23,6 +25,30 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
             writer.writerow(row)
 
 
+def interface_ready() -> bool:
+    if not INTERFACE_SUMMARY.exists():
+        return False
+    rows = read_csv(INTERFACE_SUMMARY)
+    return (
+        len(rows) == 1
+        and rows[0]["overall_status"] == "M0_NO_DARK_FORMULA_BODY_INTERFACE_READY"
+        and rows[0]["endpoint_scoring_allowed_anywhere"] == "false"
+    )
+
+
+def readout_equation_ready() -> bool:
+    if not READOUT_EQUATION_SUMMARY.exists():
+        return False
+    rows = read_csv(READOUT_EQUATION_SUMMARY)
+    return (
+        len(rows) == 1
+        and rows[0]["overall_status"] == "M0_NO_DARK_READOUT_EQUATION_READY_FOR_FORMULA_BODY"
+        and rows[0]["equations_written"] == "0"
+        and rows[0]["numeric_predictions_written"] == "0"
+        and rows[0]["endpoint_scoring_allowed_anywhere"] == "false"
+    )
+
+
 def contract_rows() -> list[dict[str, object]]:
     equation_contract_path = DERIVED / "m0_no_dark_readout_equation_contract_summary_v08.csv"
     equation_contract = read_csv(equation_contract_path)[0] if equation_contract_path.exists() else {}
@@ -36,56 +62,58 @@ def contract_rows() -> list[dict[str, object]]:
             "body_slot_id": "M0NDB07_READOUT_EQUATION",
             "body_slot_class": "readout_equation",
             "required_specification": "single source-to-rotation equation mapping frozen Tau/source inputs to v_pred_km_s",
-            "completion_status": "READOUT_EQUATION_REQUIRED_NOT_FILLED",
-            "next_required_artifact": equation_next,
+            "completion_status": "READY" if readout_equation_ready() else "READOUT_EQUATION_REQUIRED_NOT_FILLED",
+            "next_required_artifact": (
+                "m0_no_dark_readout_equation_contract_v08" if readout_equation_ready() else equation_next
+            ),
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner;best_fit_curve",
         },
         {
             "body_slot_id": "M0NDB07_SOURCE_ARGUMENTS",
             "body_slot_class": "source_argument_declaration",
             "required_specification": "complete list of allowed source-side morphology/readout arguments",
-            "completion_status": "SOURCE_ARGUMENTS_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_source_argument_table_v08",
+            "completion_status": "READY" if interface_ready() else "SOURCE_ARGUMENTS_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;posthoc_label_switch;family_winner",
         },
         {
             "body_slot_id": "M0NDB07_BARYONIC_HANDOFF",
             "body_slot_class": "shared_baryonic_handoff",
             "required_specification": "explicit handoff rule for shared baryonic velocity components used by M0",
-            "completion_status": "BARYONIC_HANDOFF_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_baryonic_handoff_v08",
+            "completion_status": "READY" if interface_ready() else "BARYONIC_HANDOFF_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;posthoc_mass_model;family_winner",
         },
         {
             "body_slot_id": "M0NDB07_SCALE_LAW",
             "body_slot_class": "scale_law",
             "required_specification": "radial scale and normalization law declared before any endpoint residual inspection",
-            "completion_status": "SCALE_LAW_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_scale_law_v08",
+            "completion_status": "READY" if interface_ready() else "SCALE_LAW_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;heldout_score;posthoc_scale_selection",
         },
         {
             "body_slot_id": "M0NDB07_COEFFICIENT_DOMAIN",
             "body_slot_class": "coefficient_domain",
             "required_specification": "allowed constants, fixed/free status, units, and parameter-count impact",
-            "completion_status": "COEFFICIENT_DOMAIN_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_coefficient_domain_v08",
+            "completion_status": "READY" if interface_ready() else "COEFFICIENT_DOMAIN_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;family_winner;posthoc_parameter_discount",
         },
         {
             "body_slot_id": "M0NDB07_FALLBACK_BRANCHES",
             "body_slot_class": "fallback_branching",
             "required_specification": "zero-response, missing-label, and invalid-input branch rules",
-            "completion_status": "FALLBACK_BRANCHES_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_fallback_branches_v08",
+            "completion_status": "READY" if interface_ready() else "FALLBACK_BRANCHES_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;best_fit_curve;posthoc_exception",
         },
         {
             "body_slot_id": "M0NDB07_OUTPUT_UNIT_CHECK",
             "body_slot_class": "output_unit_contract",
             "required_specification": "dimensional path proving the readout output is velocity in km/s on the frozen radial grid",
-            "completion_status": "OUTPUT_UNIT_CHECK_REQUIRED_NOT_FILLED",
-            "next_required_artifact": "m0_no_dark_output_unit_check_v08",
+            "completion_status": "READY" if interface_ready() else "OUTPUT_UNIT_CHECK_REQUIRED_NOT_FILLED",
+            "next_required_artifact": "m0_no_dark_formula_body_interface_v08",
             "forbidden_inputs": "endpoint_residual;heldout_score;family_winner",
         },
     ]

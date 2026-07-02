@@ -1,7 +1,7 @@
 # M0 No-Dark Expression Rule Derivation Contract v13
 
 **Doc class:** no-dark M0 rule-derivation contract
-**Status:** derivation contract ready; parent assumption basis blocked; no scoring
+**Status:** derivation contract ready; parent assumption basis ready; rule-selection map ready; term-generation record ready; invariance/null checks blocked; no scoring
 
 Script:
 
@@ -25,14 +25,19 @@ source-rule derivation can be claimed.
 The expected status is:
 
 ```text
-M0_NO_DARK_EXPRESSION_RULE_DERIVATION_CONTRACT_READY_PARENT_BASIS_BLOCKED
+M0_NO_DARK_EXPRESSION_RULE_DERIVATION_CONTRACT_READY_INVARIANCE_AND_NULL_CHECKS_BLOCKED
 ```
 
-The rule-derivation contract exists, but zero derivation records and zero
-numeric prediction rows are written. The first concrete missing artifact is:
+The rule-derivation contract exists, and the parent-assumption basis slot is
+ready through `m0_no_dark_rule_parent_assumption_basis_v14`. The rule-selection
+map slot is ready through `m0_no_dark_rule_selection_map_v14`. The
+term-generation slot is ready through
+`m0_no_dark_rule_term_generation_record_v14`. Zero derivation records and zero
+numeric prediction rows are written. The first concrete missing artifact is
+now:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+m0_no_dark_rule_invariance_null_checks_v14
 ```
 
 ## Claim Boundary
@@ -40,5 +45,6 @@ m0_no_dark_rule_parent_assumption_basis_v14
 This contract does not derive the M0 no-dark rule, does not define a source
 rule or expression, does not compute predicted velocities, does not compare
 M0/M1/M2, and does not make a dark-sector verdict. It only narrows the scoring
-frontier from a missing rule derivation to the first missing parent-assumption
-basis.
+frontier from a missing rule derivation to the first missing invariance/null
+check record after the parent-assumption basis, rule-selection map, and
+term-generation record have been recorded.

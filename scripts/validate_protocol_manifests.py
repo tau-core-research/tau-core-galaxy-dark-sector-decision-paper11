@@ -306,26 +306,38 @@ def validate_scoring_preflight_v07() -> None:
     require(
         required_artifacts
         == {
-            "activated_scoring_rows_v08.csv",
-            "scoring_observed_inputs_v08.csv",
+            "activated_scoring_rows_v10.csv",
+            "data/input/source_import_real_values_v12.csv",
             "family_prediction_tables_v08.csv",
-            "numeric_parameter_count_table_v08.csv",
+            "numeric_parameter_count_table_final_values_v10.csv",
             "control_runner_outputs_v08.csv",
             "numeric_decision_thresholds_v08.csv",
         },
         f"v07 scoring requirements mismatch: {required_artifacts}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in requirements), "v07 requirements cannot allow scoring")
-    require(all(row["current_status"].startswith("BLOCKED") for row in requirements), "v07 requirements must remain blocked")
+    blocked_requirement_ids = {
+        row["requirement_id"]
+        for row in requirements
+        if row["current_status"].startswith("BLOCKED")
+    }
+    require(blocked_requirement_ids == set(), f"v07 must clear preflight blockers: {blocked_requirement_ids}")
     require(len(components) == 7, "v07 must expose seven scoring formula components")
     require(all(row["formula_policy_status"] == "READY_AS_POLICY_NOT_RUN" for row in components), "v07 formulas must be policy-only")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in components), "v07 components cannot allow scoring")
     require(len(summary) == 1, "v07 scoring summary must have one row")
     row = summary[0]
     require(row["readiness_dependency"] == "ENDPOINT_SCORING_BLOCKED", "v07 must depend on blocked readiness")
-    require(row["overall_status"] == "SCORING_NOT_READY", "v07 scoring must remain not ready")
+    require(
+        row["blocked_scoring_requirements"] == "0",
+        "v07 must report zero blocked scoring requirements",
+    )
+    require(
+        row["overall_status"] == "SCORING_PREFLIGHT_REQUIREMENTS_READY_RAW_M0_ADEQUACY_RUNNER_NEXT_VERDICT_BLOCKED",
+        "v07 scoring preflight status mismatch",
+    )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v07 summary must forbid endpoint scoring")
-    require(row["next_required_artifact"] == "source_import_and_leakage_audit_v09.csv", "v07 must point to v09 source import")
+    require(row["next_required_artifact"] == "endpoint_scoring_runner_v01", "v07 must point to endpoint scoring runner")
 
 
 def validate_scoring_input_scaffold_v08() -> None:
@@ -1546,21 +1558,31 @@ def validate_scoring_activation_gate_v13() -> None:
     require(all("leakage_audit_not_passed" not in row["blocking_requirements"] for row in gates), "v13 rows must clear leakage blocker")
     require(all("source_row_not_activated" not in row["blocking_requirements"] for row in gates), "v13 rows must clear source row activation")
     require(len(blockers) == 4, "v13 must list four global blockers")
-    require(all(row["current_status"] == "BLOCKED" for row in blockers), "v13 global blockers must remain blocked")
+    ready_blockers = {row["blocker_id"] for row in blockers if row["current_status"] == "READY"}
+    blocked_blockers = {row["blocker_id"] for row in blockers if row["current_status"] == "BLOCKED"}
+    require(
+        ready_blockers
+        == {"SAG13_FAMILY_FORMULA_TABLES", "SAG13_PARAMETER_COUNTS", "SAG13_CONTROL_RUNNERS", "SAG13_DECISION_THRESHOLDS"},
+        "v13 must ready family formula, parameter-count, control-runner, and threshold blockers",
+    )
+    require(
+        blocked_blockers == set(),
+        "v13 must clear global blockers before scoring preflight",
+    )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in blockers), "v13 blockers cannot allow scoring")
     require(len(summary) == 1, "v13 summary must have one row")
     row = summary[0]
     require(
-        row["overall_status"] == "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED",
-        "v13 row activation must be ready while global scoring remains blocked",
+        row["overall_status"] == "SCORING_ACTIVATION_READY_GLOBAL_PREREQUISITES_READY",
+        "v13 row activation must be ready with global prerequisites cleared",
     )
     require(row["candidate_rows"] == "18", "v13 summary must cover eighteen candidate rows")
     require(row["rows_activated_for_scoring"] == "18", "v13 must activate eighteen rows")
     require(row["row_level_blocked_rows"] == "0", "v13 must block zero rows at row level")
-    require(row["global_blockers"] == "4", "v13 must report four global blockers")
+    require(row["global_blockers"] == "0", "v13 must report zero global blockers")
     require(
-        row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
-        "v13 must point to first missing formula slot",
+        row["next_required_artifact"] == "scoring_preflight_v07.csv",
+        "v13 scoring activation must point to scoring preflight",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v13 summary must forbid scoring")
 
@@ -1588,6 +1610,220 @@ def validate_scoring_row_activation_policy_v79() -> None:
     require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "v79 next artifact mismatch")
 
 
+def validate_m0_no_dark_rule_parent_assumption_basis_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_parent_assumption_basis_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_parent_assumption_basis_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 parent basis must define six basis rows")
+    require(
+        {row["basis_id"] for row in rows}
+        == {
+            "M0NDPB14_SOURCE_FREEZE",
+            "M0NDPB14_NO_DARK_RESPONSE_EXCLUSION",
+            "M0NDPB14_MORPHOLOGY_READOUT",
+            "M0NDPB14_LOCAL_CLOSURE_DIAGNOSTIC",
+            "M0NDPB14_BARYONIC_INPUT_BOUNDARY",
+            "M0NDPB14_FAILURE_POLICY",
+        },
+        "M0 v14 parent basis ids mismatch",
+    )
+    require(all(row["basis_status"] == "READY" for row in rows), "M0 v14 basis rows must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 cannot allow scoring")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 cannot claim an expression")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_PARENT_ASSUMPTION_BASIS_V14", "M0 v14 summary id mismatch")
+    require(row["basis_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v14 artifact id mismatch")
+    require(row["basis_rows"] == "6", "M0 v14 must summarize six basis rows")
+    require(row["ready_basis_rows"] == "6", "M0 v14 must ready six basis rows")
+    require(row["blocked_basis_rows"] == "0", "M0 v14 must block zero basis rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_PARENT_ASSUMPTION_BASIS_READY", "M0 v14 status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_rule_selection_map_v14", "M0 v14 next artifact mismatch")
+
+
+def validate_m0_no_dark_rule_selection_map_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_selection_map_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_selection_map_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 selection map must define six selection rows")
+    require(
+        {row["selection_id"] for row in rows}
+        == {
+            "M0NDRSM14_SOURCE_FREEZE_TO_INPUT_DOMAIN",
+            "M0NDRSM14_NO_DARK_TO_RESPONSE_EXCLUSION",
+            "M0NDRSM14_MORPHOLOGY_TO_SOURCE_TERMS",
+            "M0NDRSM14_U_READ_TO_ADMISSIBILITY_ORDER",
+            "M0NDRSM14_BARYONIC_BOUNDARY_TO_BINDINGS",
+            "M0NDRSM14_FAILURE_POLICY_TO_BLOCK_ROUTE",
+        },
+        "M0 v14 selection ids mismatch",
+    )
+    require(all(row["selection_status"] == "READY" for row in rows), "M0 v14 selection rows must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 selection cannot allow scoring")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 selection cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 selection cannot claim an expression")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 selection cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 selection must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 selection summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_SELECTION_MAP_V14", "M0 v14 selection summary id mismatch")
+    require(row["selection_artifact"] == "m0_no_dark_rule_selection_map_v14", "M0 v14 selection artifact id mismatch")
+    require(row["parent_basis_status"] == "READY", "M0 v14 selection must inherit ready parent basis")
+    require(row["selection_rows"] == "6", "M0 v14 selection must summarize six rows")
+    require(row["ready_selection_rows"] == "6", "M0 v14 selection must ready six rows")
+    require(row["blocked_selection_rows"] == "0", "M0 v14 selection must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 selection summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_SELECTION_MAP_READY", "M0 v14 selection status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_rule_term_generation_record_v14", "M0 v14 selection next artifact mismatch")
+
+
+def validate_m0_no_dark_rule_term_generation_record_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_term_generation_record_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_term_generation_record_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 term generation must define six term rows")
+    require(
+        {row["term_record_id"] for row in rows}
+        == {
+            "M0NDTG14_INPUT_DOMAIN_TERM",
+            "M0NDTG14_NO_DARK_EXCLUSION_TERM",
+            "M0NDTG14_MORPHOLOGY_SOURCE_TERM_CLASS",
+            "M0NDTG14_U_READ_ADMISSIBILITY_MARKER",
+            "M0NDTG14_BARYONIC_BINDING_TERM_CLASS",
+            "M0NDTG14_FAILURE_ROUTE_TERM",
+        },
+        "M0 v14 term record ids mismatch",
+    )
+    require(all(row["term_generation_status"] == "READY" for row in rows), "M0 v14 term rows must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 terms cannot allow scoring")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 terms cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 terms cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v14 terms cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 terms cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 terms must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 term summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_TERM_GENERATION_RECORD_V14", "M0 v14 term summary id mismatch")
+    require(row["term_generation_artifact"] == "m0_no_dark_rule_term_generation_record_v14", "M0 v14 term artifact id mismatch")
+    require(row["selection_map_status"] == "READY", "M0 v14 term generation must inherit ready selection map")
+    require(row["term_rows"] == "6", "M0 v14 term generation must summarize six rows")
+    require(row["ready_term_rows"] == "6", "M0 v14 term generation must ready six rows")
+    require(row["blocked_term_rows"] == "0", "M0 v14 term generation must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 term summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_TERM_GENERATION_RECORD_READY", "M0 v14 term status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_rule_invariance_null_checks_v14", "M0 v14 term next artifact mismatch")
+
+
+def validate_m0_no_dark_rule_invariance_null_checks_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_invariance_null_checks_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_invariance_null_checks_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 invariance/null checks must define six rows")
+    require(
+        {row["check_id"] for row in rows}
+        == {
+            "M0NDINC14_INPUT_DOMAIN_NULL_CHECK",
+            "M0NDINC14_NO_DARK_EXCLUSION_CHECK",
+            "M0NDINC14_MORPHOLOGY_SOURCE_INVARIANCE_CHECK",
+            "M0NDINC14_U_READ_INCOMPARABILITY_CHECK",
+            "M0NDINC14_BARYONIC_BINDING_CHECK",
+            "M0NDINC14_FAILURE_ROUTE_CHECK",
+        },
+        "M0 v14 invariance/null check ids mismatch",
+    )
+    require(all(row["check_status"] == "READY" for row in rows), "M0 v14 invariance/null checks must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 checks cannot allow scoring")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 checks cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 checks cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v14 checks cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 checks cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 checks must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 invariance summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_INVARIANCE_NULL_CHECKS_V14", "M0 v14 invariance summary id mismatch")
+    require(row["check_artifact"] == "m0_no_dark_rule_invariance_null_checks_v14", "M0 v14 invariance artifact id mismatch")
+    require(row["term_generation_status"] == "READY", "M0 v14 invariance must inherit ready term generation")
+    require(row["check_rows"] == "6", "M0 v14 invariance must summarize six rows")
+    require(row["ready_check_rows"] == "6", "M0 v14 invariance must ready six rows")
+    require(row["blocked_check_rows"] == "0", "M0 v14 invariance must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 invariance summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_INVARIANCE_NULL_CHECKS_READY", "M0 v14 invariance status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_rule_dimensional_precheck_v14", "M0 v14 invariance next artifact mismatch")
+
+
+def validate_m0_no_dark_rule_dimensional_precheck_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_dimensional_precheck_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_dimensional_precheck_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 dimensional precheck must define six rows")
+    require(
+        {row["precheck_id"] for row in rows}
+        == {
+            "M0NDDP14_INPUT_DOMAIN_DIMENSION_ROUTE",
+            "M0NDDP14_NO_DARK_EXCLUSION_DIMENSION_ROUTE",
+            "M0NDDP14_MORPHOLOGY_SOURCE_DIMENSION_ROUTE",
+            "M0NDDP14_U_READ_DIMENSIONLESS_ORDER_ROUTE",
+            "M0NDDP14_BARYONIC_BINDING_DIMENSION_ROUTE",
+            "M0NDDP14_FAILURE_ROUTE_DIMENSION_SAFE_BLOCK",
+        },
+        "M0 v14 dimensional precheck ids mismatch",
+    )
+    require(all(row["dimensional_precheck_status"] == "READY" for row in rows), "M0 v14 dimensional precheck rows must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 dimensional precheck cannot allow scoring")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 dimensional precheck cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 dimensional precheck cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v14 dimensional precheck cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 dimensional precheck cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 dimensional precheck must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 dimensional precheck summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_DIMENSIONAL_PRECHECK_V14", "M0 v14 dimensional precheck summary id mismatch")
+    require(row["precheck_artifact"] == "m0_no_dark_rule_dimensional_precheck_v14", "M0 v14 dimensional precheck artifact id mismatch")
+    require(row["invariance_null_status"] == "READY", "M0 v14 dimensional precheck must inherit ready invariance/null checks")
+    require(row["precheck_rows"] == "6", "M0 v14 dimensional precheck must summarize six rows")
+    require(row["ready_precheck_rows"] == "6", "M0 v14 dimensional precheck must ready six rows")
+    require(row["blocked_precheck_rows"] == "0", "M0 v14 dimensional precheck must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 dimensional precheck summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_DIMENSIONAL_PRECHECK_READY", "M0 v14 dimensional precheck status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_rule_derivation_provenance_leakage_v14", "M0 v14 dimensional precheck next artifact mismatch")
+
+
+def validate_m0_no_dark_rule_derivation_provenance_leakage_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_rule_derivation_provenance_leakage_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_rule_derivation_provenance_leakage_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 derivation provenance/leakage audit must define six rows")
+    require(
+        {row["audit_id"] for row in rows}
+        == {
+            "M0NDPAL14_PARENT_BASIS_PROVENANCE",
+            "M0NDPAL14_SELECTION_MAP_PROVENANCE",
+            "M0NDPAL14_TERM_GENERATION_PROVENANCE",
+            "M0NDPAL14_INVARIANCE_NULL_PROVENANCE",
+            "M0NDPAL14_DIMENSIONAL_PRECHECK_PROVENANCE",
+            "M0NDPAL14_FRONTIER_HANDOFF",
+        },
+        "M0 v14 derivation provenance/leakage audit ids mismatch",
+    )
+    require(all(row["audit_status"] == "READY" for row in rows), "M0 v14 derivation provenance/leakage rows must be ready")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot allow scoring")
+    require(all(row["derivation_claim_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot claim derivation")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 derivation provenance/leakage cannot write predictions")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v14 derivation provenance/leakage must forbid residual leakage")
+    require(len(summary) == 1, "M0 v14 derivation provenance/leakage summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_RULE_DERIVATION_PROVENANCE_LEAKAGE_V14", "M0 v14 derivation provenance/leakage summary id mismatch")
+    require(row["audit_artifact"] == "m0_no_dark_rule_derivation_provenance_leakage_v14", "M0 v14 derivation provenance/leakage artifact id mismatch")
+    require(row["dimensional_precheck_status"] == "READY", "M0 v14 derivation provenance/leakage must inherit ready dimensional precheck")
+    require(row["audit_rows"] == "6", "M0 v14 derivation provenance/leakage must summarize six rows")
+    require(row["ready_audit_rows"] == "6", "M0 v14 derivation provenance/leakage must ready six rows")
+    require(row["blocked_audit_rows"] == "0", "M0 v14 derivation provenance/leakage must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 derivation provenance/leakage summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_RULE_DERIVATION_PROVENANCE_LEAKAGE_READY", "M0 v14 derivation provenance/leakage status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_source_basis_v13", "M0 v14 derivation provenance/leakage next artifact mismatch")
+
+
 def validate_m0_no_dark_expression_rule_derivation_contract_v13() -> None:
     rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_rule_derivation_contract_v13.csv")
     summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_rule_derivation_contract_summary_v13.csv")
@@ -1610,22 +1846,222 @@ def validate_m0_no_dark_expression_rule_derivation_contract_v13() -> None:
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v13 next parent-basis artifact mismatch")
+    require(rows[0]["completion_status"] == "READY", "M0 v13 parent-basis slot must be ready")
+    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v13 parent-basis artifact mismatch")
+    require(rows[1]["completion_status"] == "READY", "M0 v13 rule-selection slot must be ready")
+    require(rows[1]["next_required_artifact"] == "m0_no_dark_rule_selection_map_v14", "M0 v13 next rule-selection artifact mismatch")
+    require(rows[2]["completion_status"] == "READY", "M0 v13 term-generation slot must be ready")
+    require(rows[2]["next_required_artifact"] == "m0_no_dark_rule_term_generation_record_v14", "M0 v13 next term-generation artifact mismatch")
+    require(rows[3]["completion_status"] == "READY", "M0 v13 invariance slot must be ready")
+    require(rows[3]["next_required_artifact"] == "m0_no_dark_rule_invariance_null_checks_v14", "M0 v13 next invariance artifact mismatch")
+    require(rows[4]["completion_status"] == "READY", "M0 v13 dimensional slot must be ready")
+    require(rows[4]["next_required_artifact"] == "m0_no_dark_rule_dimensional_precheck_v14", "M0 v13 next dimensional artifact mismatch")
+    require(rows[5]["completion_status"] == "READY", "M0 v13 provenance/leakage slot must be ready")
+    require(rows[5]["next_required_artifact"] == "m0_no_dark_rule_derivation_provenance_leakage_v14", "M0 v13 next provenance/leakage artifact mismatch")
     require(len(summary) == 1, "M0 v13 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_RULE_DERIVATION_CONTRACT_V13", "M0 v13 summary id mismatch")
     require(row["rule_derivation_artifact"] == "m0_no_dark_expression_rule_derivation_v13", "M0 v13 artifact id mismatch")
     require(row["required_derivation_slots"] == "6", "M0 v13 must require six derivation slots")
-    require(row["ready_derivation_slots"] == "0", "M0 v13 must ready zero derivation slots")
-    require(row["blocked_derivation_slots"] == "6", "M0 v13 must block six derivation slots")
+    require(row["ready_derivation_slots"] == "6", "M0 v13 must ready six derivation slots")
+    require(row["blocked_derivation_slots"] == "0", "M0 v13 must block zero derivation slots")
     require(row["derivation_records_written"] == "0", "M0 v13 must write zero derivation records")
     require(row["numeric_predictions_written"] == "0", "M0 v13 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_EXPRESSION_RULE_DERIVATION_CONTRACT_READY_PARENT_BASIS_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_EXPRESSION_RULE_DERIVATION_READY_FOR_SOURCE_BASIS",
         "M0 v13 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v13 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_source_basis_v13", "M0 v13 next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_source_basis_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_source_basis_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_source_basis_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 source basis must define six rows")
+    require(
+        {row["basis_id"] for row in rows}
+        == {
+            "M0NDESB13_SOURCE_FREEZE_BASIS",
+            "M0NDESB13_NO_DARK_EXCLUSION_BASIS",
+            "M0NDESB13_MORPHOLOGY_READOUT_BASIS",
+            "M0NDESB13_U_READ_ADMISSIBILITY_BASIS",
+            "M0NDESB13_BARYONIC_BINDING_BASIS",
+            "M0NDESB13_FAILURE_ROUTE_BASIS",
+        },
+        "M0 v13 source basis ids mismatch",
+    )
+    require(all(row["basis_status"] == "READY" for row in rows), "M0 v13 source basis rows must be ready")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v13 source basis cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v13 source basis cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 source basis cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 source basis cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 source basis cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 source basis must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 source basis summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_SOURCE_BASIS_V13", "M0 v13 source basis summary id mismatch")
+    require(row["source_basis_artifact"] == "m0_no_dark_expression_source_basis_v13", "M0 v13 source basis artifact id mismatch")
+    require(row["derivation_contract_status"] == "READY", "M0 v13 source basis must inherit ready derivation contract")
+    require(row["basis_rows"] == "6", "M0 v13 source basis must summarize six rows")
+    require(row["ready_basis_rows"] == "6", "M0 v13 source basis must ready six rows")
+    require(row["blocked_basis_rows"] == "0", "M0 v13 source basis must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 source basis summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_SOURCE_BASIS_READY", "M0 v13 source basis status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_admissibility_rule_v13", "M0 v13 source basis next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_admissibility_rule_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_admissibility_rule_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_admissibility_rule_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 admissibility rule must define six rows")
+    require(
+        {row["admissibility_id"] for row in rows}
+        == {
+            "M0NDADM13_SOURCE_FREEZE_ADMISSIBILITY",
+            "M0NDADM13_NO_DARK_EXCLUSION_ADMISSIBILITY",
+            "M0NDADM13_MORPHOLOGY_READOUT_ADMISSIBILITY",
+            "M0NDADM13_U_READ_MARKER_ADMISSIBILITY",
+            "M0NDADM13_BARYONIC_BINDING_ADMISSIBILITY",
+            "M0NDADM13_FAILURE_ROUTE_ADMISSIBILITY",
+        },
+        "M0 v13 admissibility rule ids mismatch",
+    )
+    require(all(row["admissibility_status"] == "READY" for row in rows), "M0 v13 admissibility rows must be ready")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v13 admissibility cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v13 admissibility cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 admissibility cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 admissibility cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 admissibility cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 admissibility must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 admissibility summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_ADMISSIBILITY_RULE_V13", "M0 v13 admissibility summary id mismatch")
+    require(row["admissibility_artifact"] == "m0_no_dark_expression_admissibility_rule_v13", "M0 v13 admissibility artifact id mismatch")
+    require(row["source_basis_status"] == "READY", "M0 v13 admissibility must inherit ready source basis")
+    require(row["admissibility_rows"] == "6", "M0 v13 admissibility must summarize six rows")
+    require(row["ready_admissibility_rows"] == "6", "M0 v13 admissibility must ready six rows")
+    require(row["blocked_admissibility_rows"] == "0", "M0 v13 admissibility must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 admissibility summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_ADMISSIBILITY_RULE_READY", "M0 v13 admissibility status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_null_fallback_policy_v13", "M0 v13 admissibility next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_null_fallback_policy_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_null_fallback_policy_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_null_fallback_policy_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 null/fallback policy must define six rows")
+    require(
+        {row["policy_id"] for row in rows}
+        == {
+            "M0NDNFB13_SOURCE_FREEZE_NULL_POLICY",
+            "M0NDNFB13_NO_DARK_CONSTRAINT_POLICY",
+            "M0NDNFB13_MORPHOLOGY_LABEL_POLICY",
+            "M0NDNFB13_U_READ_INCOMPARABILITY_POLICY",
+            "M0NDNFB13_BARYONIC_BINDING_POLICY",
+            "M0NDNFB13_FAILURE_ROUTE_POLICY",
+        },
+        "M0 v13 null/fallback policy ids mismatch",
+    )
+    require(all(row["policy_status"] == "READY" for row in rows), "M0 v13 null/fallback policy rows must be ready")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v13 null/fallback cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v13 null/fallback cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 null/fallback cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 null/fallback cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 null/fallback cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 null/fallback must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 null/fallback summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_NULL_FALLBACK_POLICY_V13", "M0 v13 null/fallback summary id mismatch")
+    require(row["null_fallback_artifact"] == "m0_no_dark_expression_null_fallback_policy_v13", "M0 v13 null/fallback artifact id mismatch")
+    require(row["admissibility_status"] == "READY", "M0 v13 null/fallback must inherit ready admissibility")
+    require(row["policy_rows"] == "6", "M0 v13 null/fallback must summarize six rows")
+    require(row["ready_policy_rows"] == "6", "M0 v13 null/fallback must ready six rows")
+    require(row["blocked_policy_rows"] == "0", "M0 v13 null/fallback must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 null/fallback summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_NULL_FALLBACK_POLICY_READY", "M0 v13 null/fallback status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_output_class_v13", "M0 v13 null/fallback next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_output_class_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_output_class_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_output_class_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 output class must define six rows")
+    require(
+        {row["output_class_id"] for row in rows}
+        == {
+            "M0NDOC13_SOURCE_DOMAIN_OUTPUT_CLASS",
+            "M0NDOC13_NO_DARK_CONSTRAINT_OUTPUT_CLASS",
+            "M0NDOC13_MORPHOLOGY_FACTOR_OUTPUT_CLASS",
+            "M0NDOC13_U_READ_MARKER_OUTPUT_CLASS",
+            "M0NDOC13_BARYONIC_BINDING_OUTPUT_CLASS",
+            "M0NDOC13_FAILURE_ROUTE_OUTPUT_CLASS",
+        },
+        "M0 v13 output class ids mismatch",
+    )
+    require(all(row["output_class_status"] == "READY" for row in rows), "M0 v13 output class rows must be ready")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v13 output class cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v13 output class cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 output class cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 output class cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 output class cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 output class must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 output class summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_OUTPUT_CLASS_V13", "M0 v13 output class summary id mismatch")
+    require(row["output_class_artifact"] == "m0_no_dark_expression_output_class_v13", "M0 v13 output class artifact id mismatch")
+    require(row["null_fallback_status"] == "READY", "M0 v13 output class must inherit ready null/fallback")
+    require(row["output_class_rows"] == "6", "M0 v13 output class must summarize six rows")
+    require(row["ready_output_class_rows"] == "6", "M0 v13 output class must ready six rows")
+    require(row["blocked_output_class_rows"] == "0", "M0 v13 output class must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 output class summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_OUTPUT_CLASS_READY", "M0 v13 output class status mismatch")
+    require(
+        row["next_required_artifact"] == "m0_no_dark_expression_source_rule_leakage_audit_v13",
+        "M0 v13 output class next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_expression_source_rule_leakage_audit_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_source_rule_leakage_audit_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_source_rule_leakage_audit_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 source-rule leakage audit must define six rows")
+    require(
+        {row["audit_id"] for row in rows}
+        == {
+            "M0NDSRLA13_SOURCE_DOMAIN_LEAKAGE_AUDIT",
+            "M0NDSRLA13_NO_DARK_CONSTRAINT_LEAKAGE_AUDIT",
+            "M0NDSRLA13_MORPHOLOGY_FACTOR_LEAKAGE_AUDIT",
+            "M0NDSRLA13_U_READ_MARKER_LEAKAGE_AUDIT",
+            "M0NDSRLA13_BARYONIC_BINDING_LEAKAGE_AUDIT",
+            "M0NDSRLA13_FAILURE_ROUTE_LEAKAGE_AUDIT",
+        },
+        "M0 v13 source-rule leakage audit ids mismatch",
+    )
+    require(all(row["audit_status"] == "READY" for row in rows), "M0 v13 source-rule leakage audit rows must be ready")
+    require(all(row["source_rule_claim_allowed"] == "false" for row in rows), "M0 v13 leakage audit cannot claim a source rule")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v13 leakage audit cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 leakage audit cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 leakage audit cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 leakage audit cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 leakage audit must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 source-rule leakage audit summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_SOURCE_RULE_LEAKAGE_AUDIT_V13", "M0 v13 leakage audit summary id mismatch")
+    require(
+        row["source_rule_leakage_audit_artifact"] == "m0_no_dark_expression_source_rule_leakage_audit_v13",
+        "M0 v13 leakage audit artifact id mismatch",
+    )
+    require(row["output_class_status"] == "READY", "M0 v13 leakage audit must inherit ready output class")
+    require(row["audit_rows"] == "6", "M0 v13 leakage audit must summarize six rows")
+    require(row["ready_audit_rows"] == "6", "M0 v13 leakage audit must ready six rows")
+    require(row["blocked_audit_rows"] == "0", "M0 v13 leakage audit must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 leakage audit summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_SOURCE_RULE_LEAKAGE_AUDIT_READY", "M0 v13 leakage audit status mismatch")
+    require(
+        row["next_required_artifact"] == "m0_no_dark_expression_symbolic_form_v12",
+        "M0 v13 leakage audit next artifact mismatch",
+    )
 
 
 def validate_m0_no_dark_expression_source_rule_contract_v12() -> None:
@@ -1649,22 +2085,229 @@ def validate_m0_no_dark_expression_source_rule_contract_v12() -> None:
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v12 next derivation artifact mismatch")
+    require(rows[0]["completion_status"] == "READY", "M0 v12 derivation slot must be ready")
+    require(rows[0]["next_required_artifact"] == "m0_no_dark_expression_source_basis_v13", "M0 v12 next derivation artifact mismatch")
+    require(rows[1]["completion_status"] == "READY", "M0 v12 source-basis slot must be ready")
+    require(rows[1]["next_required_artifact"] == "m0_no_dark_expression_source_basis_v13", "M0 v12 source-basis artifact mismatch")
+    require(rows[2]["completion_status"] == "READY", "M0 v12 admissibility slot must be ready")
+    require(rows[2]["next_required_artifact"] == "m0_no_dark_expression_admissibility_rule_v13", "M0 v12 admissibility artifact mismatch")
+    require(rows[3]["completion_status"] == "READY", "M0 v12 null/fallback slot must be ready")
+    require(rows[3]["next_required_artifact"] == "m0_no_dark_expression_null_fallback_policy_v13", "M0 v12 null/fallback artifact mismatch")
+    require(rows[4]["completion_status"] == "READY", "M0 v12 output class slot must be ready")
+    require(rows[4]["next_required_artifact"] == "m0_no_dark_expression_output_class_v13", "M0 v12 output class artifact mismatch")
+    require(rows[5]["completion_status"] == "READY", "M0 v12 leakage-audit slot must be ready")
+    require(
+        rows[5]["next_required_artifact"] == "m0_no_dark_expression_source_rule_leakage_audit_v13",
+        "M0 v12 leakage-audit artifact mismatch",
+    )
     require(len(summary) == 1, "M0 v12 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_SOURCE_RULE_CONTRACT_V12", "M0 v12 summary id mismatch")
     require(row["source_rule_artifact"] == "m0_no_dark_expression_source_rule_v12", "M0 v12 artifact id mismatch")
     require(row["required_source_rule_slots"] == "6", "M0 v12 must require six source-rule slots")
-    require(row["ready_source_rule_slots"] == "0", "M0 v12 must ready zero source-rule slots")
-    require(row["blocked_source_rule_slots"] == "6", "M0 v12 must block six source-rule slots")
+    require(row["ready_source_rule_slots"] == "6", "M0 v12 must ready six source-rule slots")
+    require(row["blocked_source_rule_slots"] == "0", "M0 v12 must block zero source-rule slots")
     require(row["source_rules_written"] == "0", "M0 v12 must write zero source rules")
     require(row["numeric_predictions_written"] == "0", "M0 v12 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_EXPRESSION_SOURCE_RULE_CONTRACT_READY_DERIVATION_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_EXPRESSION_SOURCE_RULE_READY_FOR_SYMBOLIC_FORM",
         "M0 v12 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v12 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_symbolic_form_v12", "M0 v12 next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_symbolic_form_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_symbolic_form_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_symbolic_form_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 symbolic form must define six shell components")
+    require(
+        {row["symbolic_component_id"] for row in rows}
+        == {
+            "M0NDSF12_SOURCE_STATE_PLACEHOLDER",
+            "M0NDSF12_NO_DARK_CONSTRAINT_PLACEHOLDER",
+            "M0NDSF12_BARYONIC_INPUT_PLACEHOLDER",
+            "M0NDSF12_READOUT_OPERATOR_PLACEHOLDER",
+            "M0NDSF12_FAILURE_ROUTE_PLACEHOLDER",
+            "M0NDSF12_FORM_ASSEMBLY_SHELL",
+        },
+        "M0 v12 symbolic form component ids mismatch",
+    )
+    require(all(row["symbolic_component_status"] == "READY" for row in rows), "M0 v12 symbolic form rows must be ready")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v12 symbolic form cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 symbolic form cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 symbolic form cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 symbolic form cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 symbolic form must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 symbolic form summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_SYMBOLIC_FORM_V12", "M0 v12 symbolic form summary id mismatch")
+    require(row["symbolic_form_artifact"] == "m0_no_dark_expression_symbolic_form_v12", "M0 v12 symbolic form artifact id mismatch")
+    require(row["source_rule_contract_status"] == "READY", "M0 v12 symbolic form must inherit ready source-rule contract")
+    require(row["symbolic_components"] == "6", "M0 v12 symbolic form must summarize six components")
+    require(row["ready_symbolic_components"] == "6", "M0 v12 symbolic form must ready six components")
+    require(row["blocked_symbolic_components"] == "0", "M0 v12 symbolic form must block zero components")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 symbolic form summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_SYMBOLIC_FORM_READY", "M0 v12 symbolic form status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_input_domain_v12", "M0 v12 symbolic form next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_input_domain_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_input_domain_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_input_domain_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 input domain must define six rows")
+    require(
+        {row["input_domain_id"] for row in rows}
+        == {
+            "M0NDID12_SOURCE_STATE_DOMAIN",
+            "M0NDID12_NO_DARK_CONSTRAINT_DOMAIN",
+            "M0NDID12_BARYONIC_INPUT_DOMAIN",
+            "M0NDID12_READOUT_OPERATOR_DOMAIN",
+            "M0NDID12_FAILURE_ROUTE_DOMAIN",
+            "M0NDID12_FORM_ASSEMBLY_DOMAIN",
+        },
+        "M0 v12 input-domain ids mismatch",
+    )
+    require(all(row["input_domain_status"] == "READY" for row in rows), "M0 v12 input-domain rows must be ready")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v12 input domain cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 input domain cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 input domain cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 input domain cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 input domain must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 input-domain summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_INPUT_DOMAIN_V12", "M0 v12 input-domain summary id mismatch")
+    require(row["input_domain_artifact"] == "m0_no_dark_expression_input_domain_v12", "M0 v12 input-domain artifact id mismatch")
+    require(row["symbolic_form_status"] == "READY", "M0 v12 input domain must inherit ready symbolic form")
+    require(row["input_domain_rows"] == "6", "M0 v12 input domain must summarize six rows")
+    require(row["ready_input_domain_rows"] == "6", "M0 v12 input domain must ready six rows")
+    require(row["blocked_input_domain_rows"] == "0", "M0 v12 input domain must block zero rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 input domain summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_INPUT_DOMAIN_READY", "M0 v12 input-domain status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_expression_coefficient_freeze_v12", "M0 v12 input-domain next artifact mismatch")
+
+
+def validate_m0_no_dark_expression_coefficient_freeze_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_coefficient_freeze_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_coefficient_freeze_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 coefficient freeze must define six policy rows")
+    require(
+        {row["coefficient_policy_id"] for row in rows}
+        == {
+            "M0NDCF12_SOURCE_STATE_COEFFICIENT_POLICY",
+            "M0NDCF12_NO_DARK_CONSTRAINT_COEFFICIENT_POLICY",
+            "M0NDCF12_BARYONIC_INPUT_COEFFICIENT_POLICY",
+            "M0NDCF12_READOUT_OPERATOR_COEFFICIENT_POLICY",
+            "M0NDCF12_FAILURE_ROUTE_COEFFICIENT_POLICY",
+            "M0NDCF12_ASSEMBLY_COEFFICIENT_POLICY",
+        },
+        "M0 v12 coefficient-freeze ids mismatch",
+    )
+    require(all(row["coefficient_policy_status"] == "READY" for row in rows), "M0 v12 coefficient-freeze rows must be ready")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v12 coefficient freeze cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 coefficient freeze cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 coefficient freeze cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 coefficient freeze cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 coefficient freeze must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 coefficient-freeze summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_COEFFICIENT_FREEZE_V12", "M0 v12 coefficient-freeze summary id mismatch")
+    require(
+        row["coefficient_freeze_artifact"] == "m0_no_dark_expression_coefficient_freeze_v12",
+        "M0 v12 coefficient-freeze artifact id mismatch",
+    )
+    require(row["input_domain_status"] == "READY", "M0 v12 coefficient freeze must inherit ready input domain")
+    require(row["coefficient_policy_rows"] == "6", "M0 v12 coefficient freeze must summarize six rows")
+    require(row["ready_coefficient_policy_rows"] == "6", "M0 v12 coefficient freeze must ready six rows")
+    require(row["blocked_coefficient_policy_rows"] == "0", "M0 v12 coefficient freeze must block zero rows")
+    require(row["numeric_coefficient_values_written"] == "0", "M0 v12 coefficient freeze cannot write coefficient values")
+    require(row["numeric_parameter_counts_written"] == "0", "M0 v12 coefficient freeze cannot write final parameter counts")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 coefficient freeze summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_COEFFICIENT_FREEZE_READY", "M0 v12 coefficient-freeze status mismatch")
+    require(
+        row["next_required_artifact"] == "m0_no_dark_expression_dimensional_audit_v12",
+        "M0 v12 coefficient-freeze next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_expression_dimensional_audit_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_dimensional_audit_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_dimensional_audit_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 dimensional audit must define six rows")
+    require(
+        {row["dimensional_audit_id"] for row in rows}
+        == {
+            "M0NDDA12_SOURCE_STATE_UNIT_AUDIT",
+            "M0NDDA12_NO_DARK_CONSTRAINT_UNIT_AUDIT",
+            "M0NDDA12_BARYONIC_INPUT_UNIT_AUDIT",
+            "M0NDDA12_READOUT_OPERATOR_UNIT_AUDIT",
+            "M0NDDA12_FAILURE_ROUTE_UNIT_AUDIT",
+            "M0NDDA12_ASSEMBLY_UNIT_AUDIT",
+        },
+        "M0 v12 dimensional-audit ids mismatch",
+    )
+    require(all(row["dimensional_audit_status"] == "READY" for row in rows), "M0 v12 dimensional-audit rows must be ready")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v12 dimensional audit cannot claim an expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 dimensional audit cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 dimensional audit cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 dimensional audit cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 dimensional audit must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 dimensional-audit summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_DIMENSIONAL_AUDIT_V12", "M0 v12 dimensional-audit summary id mismatch")
+    require(
+        row["dimensional_audit_artifact"] == "m0_no_dark_expression_dimensional_audit_v12",
+        "M0 v12 dimensional-audit artifact id mismatch",
+    )
+    require(row["coefficient_freeze_status"] == "READY", "M0 v12 dimensional audit must inherit ready coefficient freeze")
+    require(row["dimensional_audit_rows"] == "6", "M0 v12 dimensional audit must summarize six rows")
+    require(row["ready_dimensional_audit_rows"] == "6", "M0 v12 dimensional audit must ready six rows")
+    require(row["blocked_dimensional_audit_rows"] == "0", "M0 v12 dimensional audit must block zero rows")
+    require(row["velocity_formula_written"] == "false", "M0 v12 dimensional audit cannot write a velocity formula")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 dimensional audit summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_DIMENSIONAL_AUDIT_READY", "M0 v12 dimensional-audit status mismatch")
+    require(
+        row["next_required_artifact"] == "m0_no_dark_expression_machine_form_v12",
+        "M0 v12 dimensional-audit next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_expression_machine_form_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_expression_machine_form_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_expression_machine_form_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 machine form must define six rows")
+    require(
+        {row["machine_form_id"] for row in rows}
+        == {
+            "M0NDMF12_SOURCE_STATE_SERIALIZATION",
+            "M0NDMF12_NO_DARK_CONSTRAINT_SERIALIZATION",
+            "M0NDMF12_BARYONIC_INPUT_SERIALIZATION",
+            "M0NDMF12_READOUT_OPERATOR_SERIALIZATION",
+            "M0NDMF12_FAILURE_ROUTE_SERIALIZATION",
+            "M0NDMF12_ASSEMBLY_SERIALIZATION",
+        },
+        "M0 v12 machine-form ids mismatch",
+    )
+    require(all(row["machine_form_status"] == "READY" for row in rows), "M0 v12 machine-form rows must be ready")
+    require(all(row["frozen_expression_claim_allowed"] == "false" for row in rows), "M0 v12 machine form cannot claim a frozen expression")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 machine form cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 machine form cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 machine form cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 machine form must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 machine-form summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXPRESSION_MACHINE_FORM_V12", "M0 v12 machine-form summary id mismatch")
+    require(row["machine_form_artifact"] == "m0_no_dark_expression_machine_form_v12", "M0 v12 machine-form artifact id mismatch")
+    require(row["dimensional_audit_status"] == "READY", "M0 v12 machine form must inherit ready dimensional audit")
+    require(row["machine_form_rows"] == "6", "M0 v12 machine form must summarize six rows")
+    require(row["ready_machine_form_rows"] == "6", "M0 v12 machine form must ready six rows")
+    require(row["blocked_machine_form_rows"] == "0", "M0 v12 machine form must block zero rows")
+    require(row["serialized_prediction_callable_written"] == "false", "M0 v12 machine form cannot write a prediction callable")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 machine-form summary cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 machine-form summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 machine-form summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_EXPRESSION_MACHINE_FORM_READY", "M0 v12 machine-form status mismatch")
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 v12 machine-form next artifact mismatch")
 
 
 def validate_m0_no_dark_frozen_expression_contract_v11() -> None:
@@ -1688,22 +2331,33 @@ def validate_m0_no_dark_frozen_expression_contract_v11() -> None:
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v11 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v11 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v11 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v11 next source-rule artifact mismatch")
+    require(rows[0]["completion_status"] == "READY", "M0 v11 source-rule slot must be ready")
+    require(rows[0]["next_required_artifact"] == "m0_no_dark_expression_symbolic_form_v12", "M0 v11 next source-rule artifact mismatch")
+    require(rows[1]["completion_status"] == "READY", "M0 v11 symbolic-form slot must be ready")
+    require(rows[1]["next_required_artifact"] == "m0_no_dark_expression_symbolic_form_v12", "M0 v11 symbolic-form artifact mismatch")
+    require(rows[2]["completion_status"] == "READY", "M0 v11 input-domain slot must be ready")
+    require(rows[2]["next_required_artifact"] == "m0_no_dark_expression_input_domain_v12", "M0 v11 input-domain artifact mismatch")
+    require(rows[3]["completion_status"] == "READY", "M0 v11 coefficient-freeze slot must be ready")
+    require(rows[3]["next_required_artifact"] == "m0_no_dark_expression_coefficient_freeze_v12", "M0 v11 coefficient-freeze artifact mismatch")
+    require(rows[4]["completion_status"] == "READY", "M0 v11 dimensional-audit slot must be ready")
+    require(rows[4]["next_required_artifact"] == "m0_no_dark_expression_dimensional_audit_v12", "M0 v11 dimensional-audit artifact mismatch")
+    require(rows[5]["completion_status"] == "READY", "M0 v11 machine-form slot must be ready")
+    require(rows[5]["next_required_artifact"] == "m0_no_dark_expression_machine_form_v12", "M0 v11 machine-form artifact mismatch")
     require(len(summary) == 1, "M0 v11 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_FROZEN_EXPRESSION_CONTRACT_V11", "M0 v11 summary id mismatch")
     require(row["frozen_expression_artifact"] == "m0_no_dark_frozen_expression_v11", "M0 v11 artifact id mismatch")
     require(row["required_freeze_slots"] == "6", "M0 v11 must require six freeze slots")
-    require(row["ready_freeze_slots"] == "0", "M0 v11 must ready zero freeze slots")
-    require(row["blocked_freeze_slots"] == "6", "M0 v11 must block six freeze slots")
+    require(row["ready_freeze_slots"] == "6", "M0 v11 must ready six freeze slots")
+    require(row["blocked_freeze_slots"] == "0", "M0 v11 must block zero freeze slots")
     require(row["frozen_expressions_written"] == "0", "M0 v11 must write zero frozen expressions")
     require(row["numeric_predictions_written"] == "0", "M0 v11 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v11 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_FROZEN_EXPRESSION_CONTRACT_READY_SOURCE_RULE_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_FROZEN_EXPRESSION_READY_FOR_PREDICTION_WRITER",
         "M0 v11 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v11 next artifact mismatch")
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 v11 next artifact mismatch")
 
 
 def validate_m0_no_dark_kernel_expression_contract_v10() -> None:
@@ -1721,27 +2375,758 @@ def validate_m0_no_dark_kernel_expression_contract_v10() -> None:
         },
         "M0 v10 expression slot ids mismatch",
     )
-    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v10 cannot allow expression claims")
+    require(rows[0]["expression_claim_allowed"] == "true", "M0 v10 must allow the frozen expression-body claim")
+    require(
+        all(row["expression_claim_allowed"] == "false" for row in rows[1:]),
+        "M0 v10 non-body slots cannot allow expression claims",
+    )
     require(all(row["kernel_claim_allowed"] == "false" for row in rows), "M0 v10 cannot allow kernel claims")
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v10 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v10 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v10 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v10 next frozen expression artifact mismatch")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_frozen_expression_body_v14",
+        "M0 v10 next frozen expression artifact mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v10 expression slots must be ready")
     require(len(summary) == 1, "M0 v10 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_KERNEL_EXPRESSION_CONTRACT_V10", "M0 v10 summary id mismatch")
     require(row["kernel_expression_artifact"] == "m0_no_dark_kernel_expression_v10", "M0 v10 artifact id mismatch")
     require(row["required_expression_slots"] == "5", "M0 v10 must require five expression slots")
-    require(row["ready_expression_slots"] == "0", "M0 v10 must ready zero expression slots")
-    require(row["blocked_expression_slots"] == "5", "M0 v10 must block five expression slots")
-    require(row["frozen_expressions_written"] == "0", "M0 v10 must write zero frozen expressions")
+    require(row["ready_expression_slots"] == "5", "M0 v10 must ready five expression slots")
+    require(row["blocked_expression_slots"] == "0", "M0 v10 must block zero expression slots")
+    require(row["frozen_expressions_written"] == "1", "M0 v10 must register one frozen expression body")
     require(row["numeric_predictions_written"] == "0", "M0 v10 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v10 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_KERNEL_EXPRESSION_CONTRACT_READY_FROZEN_EXPRESSION_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_KERNEL_EXPRESSION_READY_FOR_KERNEL_FREEZE",
         "M0 v10 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v10 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_equation_kernel_v09", "M0 v10 next artifact mismatch")
+
+
+def validate_m0_no_dark_kernel_expression_interface_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_kernel_expression_interface_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_kernel_expression_interface_summary_v10.csv")
+    require(len(rows) == 4, "M0 v10 kernel-expression interface must define four rows")
+    require(
+        {row["expression_slot_id"] for row in rows}
+        == {
+            "M0NDKE10_VARIABLE_BINDINGS",
+            "M0NDKE10_CONSTANTS",
+            "M0NDKE10_DIMENSIONAL_PATH",
+            "M0NDKE10_SERIALIZED_FORM",
+        },
+        "M0 v10 kernel-expression interface slot ids mismatch",
+    )
+    require(all(row["interface_status"] == "READY" for row in rows), "M0 v10 kernel-expression interface rows must be ready")
+    require(all(row["expression_claim_allowed"] == "false" for row in rows), "M0 v10 kernel-expression interface cannot allow expression claims")
+    require(all(row["kernel_claim_allowed"] == "false" for row in rows), "M0 v10 kernel-expression interface cannot allow kernel claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v10 kernel-expression interface cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v10 kernel-expression interface cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v10 kernel-expression interface must forbid residual leakage")
+    require(len(summary) == 1, "M0 v10 kernel-expression interface summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_KERNEL_EXPRESSION_INTERFACE_V10", "M0 v10 kernel-expression interface summary id mismatch")
+    require(row["interface_artifact"] == "m0_no_dark_kernel_expression_interface_v10", "M0 v10 kernel-expression interface artifact mismatch")
+    require(row["equation_kernel_interface_status"] == "READY", "M0 v10 kernel-expression interface must inherit ready equation-kernel interface")
+    require(row["frozen_expression_contract_status"] == "READY_CONTRACT_ONLY_NO_PAYLOAD", "M0 v10 kernel-expression interface must distinguish contract from payload")
+    require(row["interface_rows"] == "4", "M0 v10 kernel-expression interface must summarize four rows")
+    require(row["ready_interface_rows"] == "4", "M0 v10 kernel-expression interface must ready four rows")
+    require(row["blocked_interface_rows"] == "0", "M0 v10 kernel-expression interface must block zero interface rows")
+    require(row["frozen_expression_payload_written"] == "false", "M0 v10 kernel-expression interface cannot write payload")
+    require(row["expression_claim_allowed"] == "false", "M0 v10 kernel-expression interface cannot allow expression claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v10 kernel-expression interface must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v10 kernel-expression interface summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_KERNEL_EXPRESSION_INTERFACE_READY",
+        "M0 v10 kernel-expression interface status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_frozen_expression_payload_v11", "M0 v10 kernel-expression interface next artifact mismatch")
+
+
+def validate_m0_no_dark_frozen_expression_payload_contract_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_payload_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_payload_summary_v11.csv")
+    require(len(rows) == 6, "M0 v11 frozen-expression payload contract must define six slots")
+    require(
+        {row["payload_slot_id"] for row in rows}
+        == {
+            "M0NDFEP11_EXPRESSION_STATEMENT",
+            "M0NDFEP11_SYMBOL_BINDING_TABLE",
+            "M0NDFEP11_CONSTANT_POLICY",
+            "M0NDFEP11_DIMENSIONAL_TRACE",
+            "M0NDFEP11_MACHINE_PAYLOAD",
+            "M0NDFEP11_LEAKAGE_CERTIFICATE",
+        },
+        "M0 v11 frozen-expression payload slot ids mismatch",
+    )
+    require(all(row["payload_claim_allowed"] == "false" for row in rows), "M0 v11 payload cannot allow payload claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v11 payload cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v11 payload cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v11 payload cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v11 payload must forbid residual leakage")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_frozen_expression_payload_v11",
+        "M0 v11 payload next expression statement artifact mismatch",
+    )
+    require(rows[0]["completion_status"] == "READY", "M0 v11 payload must accept ready frozen expression statement")
+    require(rows[1]["completion_status"] == "READY", "M0 v11 payload must accept ready symbol-binding table")
+    require(
+        rows[1]["next_required_artifact"] == "m0_no_dark_payload_symbol_binding_table_v12",
+        "M0 v11 payload next symbol-binding artifact mismatch",
+    )
+    require(
+        rows[2]["next_required_artifact"] == "m0_no_dark_payload_constant_policy_v12",
+        "M0 v11 payload next constant-policy artifact mismatch",
+    )
+    require(rows[2]["completion_status"] == "READY", "M0 v11 payload must accept ready constant policy")
+    require(
+        rows[3]["next_required_artifact"] == "m0_no_dark_payload_dimensional_trace_v12",
+        "M0 v11 payload next dimensional-trace artifact mismatch",
+    )
+    require(rows[3]["completion_status"] == "READY", "M0 v11 payload must accept ready dimensional trace")
+    require(
+        rows[4]["next_required_artifact"] == "m0_no_dark_payload_machine_form_v12",
+        "M0 v11 payload next machine payload artifact mismatch",
+    )
+    require(rows[4]["completion_status"] == "READY", "M0 v11 payload must accept ready machine payload")
+    require(
+        rows[5]["next_required_artifact"] == "m0_no_dark_payload_leakage_certificate_v12",
+        "M0 v11 payload next leakage certificate artifact mismatch",
+    )
+    require(rows[5]["completion_status"] == "READY", "M0 v11 payload must accept ready payload leakage certificate")
+    require(len(summary) == 1, "M0 v11 payload summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FROZEN_EXPRESSION_PAYLOAD_CONTRACT_V11", "M0 v11 payload summary id mismatch")
+    require(row["payload_artifact"] == "m0_no_dark_frozen_expression_payload_v11", "M0 v11 payload artifact mismatch")
+    require(row["kernel_expression_interface_status"] == "READY", "M0 v11 payload must inherit ready kernel-expression interface")
+    require(row["required_payload_slots"] == "6", "M0 v11 payload must require six slots")
+    require(row["ready_payload_slots"] == "6", "M0 v11 payload must ready all six payload slots")
+    require(row["blocked_payload_slots"] == "0", "M0 v11 payload must block zero payload slots")
+    require(row["frozen_expression_payload_written"] == "true", "M0 v11 payload must record ready statement handoff")
+    require(row["formula_claim_allowed"] == "false", "M0 v11 payload cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v11 payload must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v11 payload summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_FROZEN_EXPRESSION_PAYLOAD_CONTRACT_READY_FOR_KERNEL_EXPRESSION",
+        "M0 v11 payload status mismatch",
+    )
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 v11 payload next artifact mismatch")
+
+
+def validate_m0_no_dark_payload_symbol_binding_table_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_payload_symbol_binding_table_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_payload_symbol_binding_table_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 payload symbol-binding table must define six bindings")
+    require(
+        {row["binding_id"] for row in rows}
+        == {
+            "M0NDPSBT12_SOURCE_STATE_SYMBOL",
+            "M0NDPSBT12_BARYONIC_INPUT_SYMBOL",
+            "M0NDPSBT12_RADIUS_GRID_SYMBOL",
+            "M0NDPSBT12_READOUT_OPERATOR_SYMBOL",
+            "M0NDPSBT12_GUARD_SYMBOL",
+            "M0NDPSBT12_ASSEMBLY_SYMBOL",
+        },
+        "M0 v12 payload symbol-binding ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v12 payload symbol bindings must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_payload_constant_policy_v12" for row in rows),
+        "M0 v12 payload symbol bindings must hand off to constant policy",
+    )
+    require(all(row["binding_claim_allowed"] == "false" for row in rows), "M0 v12 binding table cannot allow binding claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 binding table cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 binding table cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 binding table cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 binding table must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 binding summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PAYLOAD_SYMBOL_BINDING_TABLE_V12", "M0 v12 binding summary id mismatch")
+    require(row["symbol_binding_artifact"] == "m0_no_dark_payload_symbol_binding_table_v12", "M0 v12 binding artifact mismatch")
+    require(row["payload_contract_status"] == "READY", "M0 v12 binding must inherit ready payload contract")
+    require(row["binding_rows"] == "6", "M0 v12 binding must summarize six rows")
+    require(row["ready_binding_rows"] == "6", "M0 v12 binding must ready six rows")
+    require(row["blocked_binding_rows"] == "0", "M0 v12 binding must block zero rows")
+    require(row["symbol_binding_table_written"] == "true", "M0 v12 binding table must be written")
+    require(row["formula_body_written"] == "false", "M0 v12 binding cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 binding cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 binding must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 binding summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PAYLOAD_SYMBOL_BINDING_TABLE_READY_FOR_CONSTANT_POLICY",
+        "M0 v12 binding status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_payload_constant_policy_v12", "M0 v12 binding next artifact mismatch")
+
+
+def validate_m0_no_dark_payload_constant_policy_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_payload_constant_policy_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_payload_constant_policy_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 payload constant policy must define six policy rows")
+    require(
+        {row["policy_id"] for row in rows}
+        == {
+            "M0NDPCP12_FIXED_SOURCE_CONSTANTS",
+            "M0NDPCP12_FREE_PARAMETER_DECLARATION",
+            "M0NDPCP12_SCALE_POLICY",
+            "M0NDPCP12_BRANCH_SWITCH_POLICY",
+            "M0NDPCP12_NULL_FALLBACK_CONSTANT_POLICY",
+            "M0NDPCP12_HANDOFF_TO_DIMENSIONAL_TRACE",
+        },
+        "M0 v12 payload constant-policy ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v12 payload constant policies must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_payload_dimensional_trace_v12" for row in rows),
+        "M0 v12 payload constant policy must hand off to dimensional trace",
+    )
+    require(all(row["policy_claim_allowed"] == "false" for row in rows), "M0 v12 constant policy cannot allow policy claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 constant policy cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 constant policy cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 constant policy cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 constant policy must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 constant policy summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PAYLOAD_CONSTANT_POLICY_V12", "M0 v12 constant policy summary id mismatch")
+    require(row["constant_policy_artifact"] == "m0_no_dark_payload_constant_policy_v12", "M0 v12 constant policy artifact mismatch")
+    require(row["symbol_binding_status"] == "READY", "M0 v12 constant policy must inherit ready symbol binding")
+    require(row["policy_rows"] == "6", "M0 v12 constant policy must summarize six rows")
+    require(row["ready_policy_rows"] == "6", "M0 v12 constant policy must ready six rows")
+    require(row["blocked_policy_rows"] == "0", "M0 v12 constant policy must block zero rows")
+    require(row["constant_policy_written"] == "true", "M0 v12 constant policy must be written")
+    require(row["formula_body_written"] == "false", "M0 v12 constant policy cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 constant policy cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 constant policy must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 constant policy summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PAYLOAD_CONSTANT_POLICY_READY_FOR_DIMENSIONAL_TRACE",
+        "M0 v12 constant policy status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_payload_dimensional_trace_v12", "M0 v12 constant policy next artifact mismatch")
+
+
+def validate_m0_no_dark_payload_dimensional_trace_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_payload_dimensional_trace_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_payload_dimensional_trace_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 payload dimensional trace must define six trace rows")
+    require(
+        {row["trace_id"] for row in rows}
+        == {
+            "M0NDPDT12_INPUT_DIMENSION_CLASSES",
+            "M0NDPDT12_OPERATOR_DIMENSION_EFFECTS",
+            "M0NDPDT12_CONSTANT_UNIT_COMPATIBILITY",
+            "M0NDPDT12_OUTPUT_UNIT_TARGET",
+            "M0NDPDT12_NULL_FALLBACK_DIMENSION_POLICY",
+            "M0NDPDT12_HANDOFF_TO_MACHINE_PAYLOAD",
+        },
+        "M0 v12 payload dimensional-trace ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v12 payload dimensional traces must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_payload_machine_form_v12" for row in rows),
+        "M0 v12 payload dimensional trace must hand off to machine payload",
+    )
+    require(all(row["trace_claim_allowed"] == "false" for row in rows), "M0 v12 dimensional trace cannot allow trace claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 dimensional trace cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 dimensional trace cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 dimensional trace cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 dimensional trace must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 dimensional trace summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PAYLOAD_DIMENSIONAL_TRACE_V12", "M0 v12 dimensional trace summary id mismatch")
+    require(row["dimensional_trace_artifact"] == "m0_no_dark_payload_dimensional_trace_v12", "M0 v12 dimensional trace artifact mismatch")
+    require(row["constant_policy_status"] == "READY", "M0 v12 dimensional trace must inherit ready constant policy")
+    require(row["trace_rows"] == "6", "M0 v12 dimensional trace must summarize six rows")
+    require(row["ready_trace_rows"] == "6", "M0 v12 dimensional trace must ready six rows")
+    require(row["blocked_trace_rows"] == "0", "M0 v12 dimensional trace must block zero rows")
+    require(row["dimensional_trace_written"] == "true", "M0 v12 dimensional trace must be written")
+    require(row["formula_body_written"] == "false", "M0 v12 dimensional trace cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 dimensional trace cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 dimensional trace must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 dimensional trace summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PAYLOAD_DIMENSIONAL_TRACE_READY_FOR_MACHINE_PAYLOAD",
+        "M0 v12 dimensional trace status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_payload_machine_form_v12", "M0 v12 dimensional trace next artifact mismatch")
+
+
+def validate_m0_no_dark_payload_machine_form_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_payload_machine_form_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_payload_machine_form_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 payload machine form must define six payload rows")
+    require(
+        {row["machine_payload_id"] for row in rows}
+        == {
+            "M0NDPMF12_SOURCE_STATE_PAYLOAD",
+            "M0NDPMF12_BARYONIC_RADIAL_PAYLOAD",
+            "M0NDPMF12_OPERATOR_GUARD_PAYLOAD",
+            "M0NDPMF12_CONSTANT_POLICY_PAYLOAD",
+            "M0NDPMF12_DIMENSION_TRACE_PAYLOAD",
+            "M0NDPMF12_HANDOFF_TO_LEAKAGE_CERTIFICATE",
+        },
+        "M0 v12 payload machine-form ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v12 payload machine-form rows must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_payload_leakage_certificate_v12" for row in rows),
+        "M0 v12 payload machine form must hand off to leakage certificate",
+    )
+    require(all(row["machine_payload_claim_allowed"] == "false" for row in rows), "M0 v12 machine form cannot allow payload claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 machine form cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 machine form cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 machine form cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 machine form must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 machine form summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PAYLOAD_MACHINE_FORM_V12", "M0 v12 machine form summary id mismatch")
+    require(row["machine_payload_artifact"] == "m0_no_dark_payload_machine_form_v12", "M0 v12 machine form artifact mismatch")
+    require(row["dimensional_trace_status"] == "READY", "M0 v12 machine form must inherit ready dimensional trace")
+    require(row["machine_payload_rows"] == "6", "M0 v12 machine form must summarize six rows")
+    require(row["ready_machine_payload_rows"] == "6", "M0 v12 machine form must ready six rows")
+    require(row["blocked_machine_payload_rows"] == "0", "M0 v12 machine form must block zero rows")
+    require(row["machine_payload_written"] == "true", "M0 v12 machine form must be written")
+    require(row["prediction_callable_written"] == "false", "M0 v12 machine form cannot write a prediction callable")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 machine form cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 machine form must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 machine form summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PAYLOAD_MACHINE_FORM_READY_FOR_LEAKAGE_CERTIFICATE",
+        "M0 v12 machine form status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_payload_leakage_certificate_v12", "M0 v12 machine form next artifact mismatch")
+
+
+def validate_m0_no_dark_payload_leakage_certificate_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_payload_leakage_certificate_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_payload_leakage_certificate_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 payload leakage certificate must define six certificate rows")
+    require(
+        {row["certificate_id"] for row in rows}
+        == {
+            "M0NDPLC12_FORBIDDEN_INPUT_MANIFEST",
+            "M0NDPLC12_FREEZE_ORDER_CERTIFICATE",
+            "M0NDPLC12_SERIALIZATION_HASH_POLICY",
+            "M0NDPLC12_SOURCE_PROVENANCE_GUARDS",
+            "M0NDPLC12_NULL_FALLBACK_STOP_CERTIFICATE",
+            "M0NDPLC12_HANDOFF_TO_FORMULA_TABLES",
+        },
+        "M0 v12 payload leakage-certificate ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v12 payload leakage certificate rows must be ready")
+    require(
+        all(row["next_required_artifact"] == "family_prediction_tables_v08.csv" for row in rows),
+        "M0 v12 payload leakage certificate must hand off to family prediction tables",
+    )
+    require(all(row["certificate_claim_allowed"] == "false" for row in rows), "M0 v12 leakage certificate cannot allow certificate claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 leakage certificate cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 leakage certificate cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 leakage certificate cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 leakage certificate must forbid residual leakage")
+    require(len(summary) == 1, "M0 v12 leakage certificate summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PAYLOAD_LEAKAGE_CERTIFICATE_V12", "M0 v12 leakage certificate summary id mismatch")
+    require(row["payload_leakage_certificate_artifact"] == "m0_no_dark_payload_leakage_certificate_v12", "M0 v12 leakage certificate artifact mismatch")
+    require(row["machine_payload_status"] == "READY", "M0 v12 leakage certificate must inherit ready machine payload")
+    require(row["certificate_rows"] == "6", "M0 v12 leakage certificate must summarize six rows")
+    require(row["ready_certificate_rows"] == "6", "M0 v12 leakage certificate must ready six rows")
+    require(row["blocked_certificate_rows"] == "0", "M0 v12 leakage certificate must block zero rows")
+    require(row["payload_leakage_certificate_written"] == "true", "M0 v12 leakage certificate must be written")
+    require(row["prediction_callable_written"] == "false", "M0 v12 leakage certificate cannot write a prediction callable")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 leakage certificate cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 leakage certificate must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 leakage certificate summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PAYLOAD_LEAKAGE_CERTIFICATE_READY_FOR_FORMULA_TABLES",
+        "M0 v12 leakage certificate status mismatch",
+    )
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 v12 leakage certificate next artifact mismatch")
+
+
+def validate_m0_no_dark_frozen_expression_body_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_body_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_body_summary_v14.csv")
+    require(len(rows) == 6, "M0 v14 frozen expression body must define six rows")
+    require(
+        {row["body_component"] for row in rows}
+        == {
+            "scope_and_family_binding",
+            "argument_vector",
+            "assembly_body",
+            "no_dark_exclusion",
+            "output_class",
+            "freeze_guard",
+        },
+        "M0 v14 body components mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v14 body rows must be ready")
+    require(
+        all(row["expression_body_claim_allowed"] == "true" for row in rows),
+        "M0 v14 must allow expression-body claim only",
+    )
+    require(
+        all(row["velocity_formula_claim_allowed"] == "false" for row in rows),
+        "M0 v14 must not allow velocity formula claim",
+    )
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v14 cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v14 cannot allow scoring")
+    require(
+        all(row["dark_sector_verdict_allowed"] == "false" for row in rows),
+        "M0 v14 cannot decide dark-sector verdict",
+    )
+    require(rows[2]["body_component"] == "assembly_body", "M0 v14 assembly row order mismatch")
+    require("Assemble_M0" in rows[2]["frozen_expression_body_statement"], "M0 v14 assembly body missing")
+    require(len(summary) == 1, "M0 v14 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FROZEN_EXPRESSION_BODY_V14", "M0 v14 summary id mismatch")
+    require(row["body_artifact"] == "m0_no_dark_frozen_expression_body_v14", "M0 v14 artifact id mismatch")
+    require(row["payload_status"] == "READY", "M0 v14 payload status mismatch")
+    require(row["body_rows"] == "6", "M0 v14 body row count mismatch")
+    require(row["ready_body_rows"] == "6", "M0 v14 ready row count mismatch")
+    require(row["blocked_body_rows"] == "0", "M0 v14 blocked row count mismatch")
+    require(row["expression_body_written"] == "true", "M0 v14 expression body must be written")
+    require(row["velocity_formula_written"] == "false", "M0 v14 must not write velocity formula")
+    require(row["numeric_predictions_written"] == "0", "M0 v14 must write zero numeric predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 summary cannot allow scoring")
+    require(row["dark_sector_verdict_allowed"] == "false", "M0 v14 summary cannot decide dark-sector verdict")
+    require(
+        row["overall_status"] == "M0_NO_DARK_FROZEN_EXPRESSION_BODY_READY_FOR_KERNEL_EXPRESSION_REVIEW",
+        "M0 v14 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_kernel_expression_contract_v10",
+        "M0 v14 next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_frozen_expression_statement_contract_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_statement_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_frozen_expression_statement_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 frozen-expression statement contract must define six slots")
+    require(
+        {row["statement_slot_id"] for row in rows}
+        == {
+            "M0NDFES12_SOURCE_SIDE_STATEMENT",
+            "M0NDFES12_TERM_LIST",
+            "M0NDFES12_ARGUMENT_SIGNATURE",
+            "M0NDFES12_CONSTRAINT_GUARDS",
+            "M0NDFES12_PRE_DIMENSIONAL_PROOF",
+            "M0NDFES12_FREEZE_PROVENANCE",
+        },
+        "M0 v12 frozen-expression statement slot ids mismatch",
+    )
+    require(all(row["statement_claim_allowed"] == "false" for row in rows), "M0 v12 statement cannot allow statement claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v12 statement cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v12 statement cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 statement cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v12 statement must forbid residual leakage")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_source_side_expression_statement_v13",
+        "M0 v12 statement next source-side statement artifact mismatch",
+    )
+    require(rows[0]["completion_status"] == "READY", "M0 v12 statement must accept v13 source-side statement envelope")
+    require(len(summary) == 1, "M0 v12 statement summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FROZEN_EXPRESSION_STATEMENT_CONTRACT_V12", "M0 v12 statement summary id mismatch")
+    require(row["statement_artifact"] == "m0_no_dark_frozen_expression_statement_v12", "M0 v12 statement artifact mismatch")
+    require(row["kernel_expression_interface_status"] == "READY", "M0 v12 statement must inherit ready kernel-expression interface")
+    require(row["required_statement_slots"] == "6", "M0 v12 statement must require six slots")
+    require(row["ready_statement_slots"] == "6", "M0 v12 statement must ready all statement slots")
+    require(row["blocked_statement_slots"] == "0", "M0 v12 statement must block zero statement slots")
+    require(row["source_side_expression_statement_written"] == "true", "M0 v12 statement must record the source-side statement envelope")
+    require(row["formula_claim_allowed"] == "false", "M0 v12 statement cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v12 statement must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 statement summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_FROZEN_EXPRESSION_STATEMENT_CONTRACT_READY_FOR_PAYLOAD",
+        "M0 v12 statement status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_frozen_expression_payload_v11", "M0 v12 statement next artifact mismatch")
+
+
+def validate_m0_no_dark_source_side_expression_statement_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_source_side_expression_statement_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_source_side_expression_statement_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 source-side expression statement must define six components")
+    require(
+        {row["statement_component_id"] for row in rows}
+        == {
+            "M0NDSS13_STATEMENT_ENVELOPE",
+            "M0NDSS13_SOURCE_SIDE_SCOPE",
+            "M0NDSS13_NO_DARK_FAMILY_BINDING",
+            "M0NDSS13_OUTPUT_INTENT",
+            "M0NDSS13_FREEZE_GUARD",
+            "M0NDSS13_NEXT_SLOT_HANDOFF",
+        },
+        "M0 v13 source-side statement component ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 source-side statement components must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_statement_term_list_v13" for row in rows),
+        "M0 v13 source-side statement must hand off to term list",
+    )
+    require(all(row["statement_claim_allowed"] == "false" for row in rows), "M0 v13 statement cannot allow statement claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 statement cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 statement cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 statement cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 statement must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 source-side statement summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_SOURCE_SIDE_EXPRESSION_STATEMENT_V13", "M0 v13 source-side statement summary id mismatch")
+    require(row["statement_artifact"] == "m0_no_dark_source_side_expression_statement_v13", "M0 v13 source-side statement artifact mismatch")
+    require(row["frozen_expression_statement_contract_status"] == "READY", "M0 v13 source-side statement must inherit ready v12 contract")
+    require(row["statement_components"] == "6", "M0 v13 source-side statement must summarize six components")
+    require(row["ready_statement_components"] == "6", "M0 v13 source-side statement must ready six components")
+    require(row["blocked_statement_components"] == "0", "M0 v13 source-side statement must block zero envelope components")
+    require(row["source_side_statement_record_written"] == "true", "M0 v13 source-side statement record must be written")
+    require(row["statement_body_written"] == "false", "M0 v13 source-side statement cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 source-side statement cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 source-side statement must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 source-side statement summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_SOURCE_SIDE_EXPRESSION_STATEMENT_READY_FOR_TERM_LIST",
+        "M0 v13 source-side statement status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_statement_term_list_v13", "M0 v13 source-side statement next artifact mismatch")
+
+
+def validate_m0_no_dark_statement_term_list_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_statement_term_list_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_statement_term_list_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 statement term list must define six term classes")
+    require(
+        {row["term_entry_id"] for row in rows}
+        == {
+            "M0NDSTL13_SOURCE_STATE_TERM",
+            "M0NDSTL13_BARYONIC_INPUT_TERM",
+            "M0NDSTL13_READOUT_OPERATOR_TERM",
+            "M0NDSTL13_NO_DARK_CONSTRAINT_TERM",
+            "M0NDSTL13_NULL_FALLBACK_TERM",
+            "M0NDSTL13_ASSEMBLY_OPERATOR_TERM",
+        },
+        "M0 v13 statement term-list ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 term-list entries must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_statement_argument_signature_v13" for row in rows),
+        "M0 v13 term list must hand off to argument signature",
+    )
+    require(all(row["term_claim_allowed"] == "false" for row in rows), "M0 v13 term list cannot allow term claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 term list cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 term list cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 term list cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 term list must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 term-list summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_STATEMENT_TERM_LIST_V13", "M0 v13 term-list summary id mismatch")
+    require(row["term_list_artifact"] == "m0_no_dark_statement_term_list_v13", "M0 v13 term-list artifact mismatch")
+    require(row["source_side_statement_status"] == "READY", "M0 v13 term list must inherit ready source-side statement")
+    require(row["term_entries"] == "6", "M0 v13 term list must summarize six entries")
+    require(row["ready_term_entries"] == "6", "M0 v13 term list must ready six entries")
+    require(row["blocked_term_entries"] == "0", "M0 v13 term list must block zero term entries")
+    require(row["term_list_written"] == "true", "M0 v13 term-list record must be written")
+    require(row["formula_body_written"] == "false", "M0 v13 term list cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 term list cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 term list must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 term-list summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_STATEMENT_TERM_LIST_READY_FOR_ARGUMENT_SIGNATURE",
+        "M0 v13 term-list status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_statement_argument_signature_v13", "M0 v13 term-list next artifact mismatch")
+
+
+def validate_m0_no_dark_statement_argument_signature_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_statement_argument_signature_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_statement_argument_signature_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 statement argument signature must define six slots")
+    require(
+        {row["argument_slot_id"] for row in rows}
+        == {
+            "M0NDSAS13_SOURCE_STATE_ARGUMENT",
+            "M0NDSAS13_BARYONIC_INPUT_ARGUMENT",
+            "M0NDSAS13_RADIUS_GRID_ARGUMENT",
+            "M0NDSAS13_READOUT_OPERATOR_ARGUMENT",
+            "M0NDSAS13_GUARD_ARGUMENT",
+            "M0NDSAS13_ASSEMBLY_ARGUMENT",
+        },
+        "M0 v13 statement argument-signature ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 argument slots must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_statement_constraint_guards_v13" for row in rows),
+        "M0 v13 argument signature must hand off to constraint guards",
+    )
+    require(all(row["argument_claim_allowed"] == "false" for row in rows), "M0 v13 argument signature cannot allow argument claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 argument signature cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 argument signature cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 argument signature cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 argument signature must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 argument-signature summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_STATEMENT_ARGUMENT_SIGNATURE_V13", "M0 v13 argument-signature summary id mismatch")
+    require(row["argument_signature_artifact"] == "m0_no_dark_statement_argument_signature_v13", "M0 v13 argument-signature artifact mismatch")
+    require(row["term_list_status"] == "READY", "M0 v13 argument signature must inherit ready term list")
+    require(row["argument_slots"] == "6", "M0 v13 argument signature must summarize six slots")
+    require(row["ready_argument_slots"] == "6", "M0 v13 argument signature must ready six slots")
+    require(row["blocked_argument_slots"] == "0", "M0 v13 argument signature must block zero argument slots")
+    require(row["argument_signature_written"] == "true", "M0 v13 argument signature record must be written")
+    require(row["formula_body_written"] == "false", "M0 v13 argument signature cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 argument signature cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 argument signature must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 argument-signature summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_STATEMENT_ARGUMENT_SIGNATURE_READY_FOR_CONSTRAINT_GUARDS",
+        "M0 v13 argument-signature status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_statement_constraint_guards_v13",
+        "M0 v13 argument-signature next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_statement_constraint_guards_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_statement_constraint_guards_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_statement_constraint_guards_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 statement constraint guards must define six guards")
+    require(
+        {row["guard_id"] for row in rows}
+        == {
+            "M0NDSCG13_DOMAIN_GUARD",
+            "M0NDSCG13_NULL_GUARD",
+            "M0NDSCG13_GAUGE_GUARD",
+            "M0NDSCG13_NO_DARK_GUARD",
+            "M0NDSCG13_FALLBACK_GUARD",
+            "M0NDSCG13_LEAKAGE_FREEZE_GUARD",
+        },
+        "M0 v13 statement constraint-guard ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 guard rows must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_statement_pre_dimensional_proof_v13" for row in rows),
+        "M0 v13 guard rows must hand off to pre-dimensional proof",
+    )
+    require(all(row["guard_claim_allowed"] == "false" for row in rows), "M0 v13 guards cannot allow guard claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 guards cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 guards cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 guards cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 guards must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 constraint-guard summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_STATEMENT_CONSTRAINT_GUARDS_V13", "M0 v13 guard summary id mismatch")
+    require(row["constraint_guards_artifact"] == "m0_no_dark_statement_constraint_guards_v13", "M0 v13 guard artifact mismatch")
+    require(row["argument_signature_status"] == "READY", "M0 v13 guards must inherit ready argument signature")
+    require(row["guard_rows"] == "6", "M0 v13 guards must summarize six rows")
+    require(row["ready_guard_rows"] == "6", "M0 v13 guards must ready six rows")
+    require(row["blocked_guard_rows"] == "0", "M0 v13 guards must block zero guard rows")
+    require(row["constraint_guards_written"] == "true", "M0 v13 guard record must be written")
+    require(row["formula_body_written"] == "false", "M0 v13 guards cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 guards cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 guards must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 guard summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_STATEMENT_CONSTRAINT_GUARDS_READY_FOR_PRE_DIMENSIONAL_PROOF",
+        "M0 v13 guard status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_statement_pre_dimensional_proof_v13", "M0 v13 guard next artifact mismatch")
+
+
+def validate_m0_no_dark_statement_pre_dimensional_proof_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_statement_pre_dimensional_proof_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_statement_pre_dimensional_proof_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 statement pre-dimensional proof must define six proof rows")
+    require(
+        {row["proof_step_id"] for row in rows}
+        == {
+            "M0NDSPDP13_OUTPUT_CLASS_ROUTE",
+            "M0NDSPDP13_ARGUMENT_DIMENSION_PLACEHOLDERS",
+            "M0NDSPDP13_OPERATOR_DIMENSION_RULE",
+            "M0NDSPDP13_GUARD_DIMENSION_POLICY",
+            "M0NDSPDP13_NO_POSTHOC_UNIT_RESCALING",
+            "M0NDSPDP13_HANDOFF_TO_FREEZE_PROVENANCE",
+        },
+        "M0 v13 statement pre-dimensional proof ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 pre-dimensional proof rows must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_statement_freeze_provenance_v13" for row in rows),
+        "M0 v13 pre-dimensional proof rows must hand off to freeze provenance",
+    )
+    require(all(row["proof_claim_allowed"] == "false" for row in rows), "M0 v13 proof route cannot allow proof claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 proof route cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 proof route cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 proof route cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 proof route must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 pre-dimensional proof summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_STATEMENT_PRE_DIMENSIONAL_PROOF_V13", "M0 v13 proof summary id mismatch")
+    require(
+        row["pre_dimensional_proof_artifact"] == "m0_no_dark_statement_pre_dimensional_proof_v13",
+        "M0 v13 proof artifact mismatch",
+    )
+    require(row["constraint_guards_status"] == "READY", "M0 v13 proof must inherit ready constraint guards")
+    require(row["proof_rows"] == "6", "M0 v13 proof must summarize six rows")
+    require(row["ready_proof_rows"] == "6", "M0 v13 proof must ready six rows")
+    require(row["blocked_proof_rows"] == "0", "M0 v13 proof must block zero proof rows")
+    require(row["pre_dimensional_proof_written"] == "true", "M0 v13 proof record must be written")
+    require(row["formula_body_written"] == "false", "M0 v13 proof cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 proof cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 proof must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 proof summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_STATEMENT_PRE_DIMENSIONAL_PROOF_READY_FOR_FREEZE_PROVENANCE",
+        "M0 v13 proof status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_statement_freeze_provenance_v13", "M0 v13 proof next artifact mismatch")
+
+
+def validate_m0_no_dark_statement_freeze_provenance_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_statement_freeze_provenance_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_statement_freeze_provenance_summary_v13.csv")
+    require(len(rows) == 6, "M0 v13 statement freeze provenance must define six freeze rows")
+    require(
+        {row["freeze_record_id"] for row in rows}
+        == {
+            "M0NDSFP13_UPSTREAM_ROUTE_HASH",
+            "M0NDSFP13_FORBIDDEN_INPUT_CUTOFF",
+            "M0NDSFP13_SOURCE_SIDE_ONLY_SCOPE",
+            "M0NDSFP13_REPRODUCIBLE_BUILD_HOOK",
+            "M0NDSFP13_DOWNSTREAM_PAYLOAD_HANDOFF",
+            "M0NDSFP13_DARK_SECTOR_NEUTRALITY",
+        },
+        "M0 v13 statement freeze-provenance ids mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v13 freeze rows must be ready")
+    require(
+        all(row["next_required_artifact"] == "m0_no_dark_frozen_expression_payload_v11" for row in rows),
+        "M0 v13 freeze rows must hand off to payload",
+    )
+    require(all(row["freeze_claim_allowed"] == "false" for row in rows), "M0 v13 freeze cannot allow freeze claims")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v13 freeze cannot allow formula claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v13 freeze cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 freeze cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v13 freeze must forbid residual leakage")
+    require(len(summary) == 1, "M0 v13 freeze summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_STATEMENT_FREEZE_PROVENANCE_V13", "M0 v13 freeze summary id mismatch")
+    require(row["freeze_provenance_artifact"] == "m0_no_dark_statement_freeze_provenance_v13", "M0 v13 freeze artifact mismatch")
+    require(row["pre_dimensional_proof_status"] == "READY", "M0 v13 freeze must inherit ready pre-dimensional proof")
+    require(row["freeze_rows"] == "6", "M0 v13 freeze must summarize six rows")
+    require(row["ready_freeze_rows"] == "6", "M0 v13 freeze must ready six rows")
+    require(row["blocked_freeze_rows"] == "0", "M0 v13 freeze must block zero rows")
+    require(row["freeze_provenance_written"] == "true", "M0 v13 freeze record must be written")
+    require(row["formula_body_written"] == "false", "M0 v13 freeze cannot write formula body")
+    require(row["formula_claim_allowed"] == "false", "M0 v13 freeze cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v13 freeze must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 freeze summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_STATEMENT_FREEZE_PROVENANCE_READY_FOR_PAYLOAD",
+        "M0 v13 freeze status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_frozen_expression_payload_v11", "M0 v13 freeze next artifact mismatch")
 
 
 def validate_m0_no_dark_equation_kernel_contract_v09() -> None:
@@ -1765,22 +3150,66 @@ def validate_m0_no_dark_equation_kernel_contract_v09() -> None:
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v09 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v09 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v09 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v09 next expression artifact mismatch")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_kernel_expression_contract_v10",
+        "M0 v09 next expression artifact mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v09 kernel slots must be ready")
     require(len(summary) == 1, "M0 v09 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_EQUATION_KERNEL_CONTRACT_V09", "M0 v09 summary id mismatch")
     require(row["equation_kernel_artifact"] == "m0_no_dark_equation_kernel_v09", "M0 v09 artifact id mismatch")
     require(row["required_kernel_slots"] == "6", "M0 v09 must require six kernel slots")
-    require(row["ready_kernel_slots"] == "0", "M0 v09 must ready zero kernel slots")
-    require(row["blocked_kernel_slots"] == "6", "M0 v09 must block six kernel slots")
-    require(row["kernel_expressions_written"] == "0", "M0 v09 must write zero kernel expressions")
+    require(row["ready_kernel_slots"] == "6", "M0 v09 must ready six kernel slots")
+    require(row["blocked_kernel_slots"] == "0", "M0 v09 must block zero expression slots")
+    require(row["kernel_expressions_written"] == "1", "M0 v09 must register one kernel expression")
     require(row["numeric_predictions_written"] == "0", "M0 v09 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v09 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_EQUATION_KERNEL_CONTRACT_READY_EXPRESSION_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_EQUATION_KERNEL_READY_FOR_READOUT_EQUATION",
         "M0 v09 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v09 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_readout_equation_v08", "M0 v09 next artifact mismatch")
+
+
+def validate_m0_no_dark_equation_kernel_interface_v09() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_equation_kernel_interface_v09.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_equation_kernel_interface_summary_v09.csv")
+    require(len(rows) == 5, "M0 v09 kernel interface must define five rows")
+    require(
+        {row["kernel_slot_id"] for row in rows}
+        == {
+            "M0NDEK09_INPUT_BINDING",
+            "M0NDEK09_OUTPUT_MAP",
+            "M0NDEK09_PARAMETER_AUDIT",
+            "M0NDEK09_FAILURE_POLICY",
+            "M0NDEK09_REPRODUCIBLE_HOOK",
+        },
+        "M0 v09 kernel interface slot ids mismatch",
+    )
+    require(all(row["interface_status"] == "READY" for row in rows), "M0 v09 kernel interface rows must be ready")
+    require(all(row["kernel_claim_allowed"] == "false" for row in rows), "M0 v09 kernel interface cannot allow kernel claims")
+    require(all(row["equation_claim_allowed"] == "false" for row in rows), "M0 v09 kernel interface cannot allow equation claims")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v09 kernel interface cannot allow predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v09 kernel interface cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v09 kernel interface must forbid residual leakage")
+    require(len(summary) == 1, "M0 v09 kernel interface summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EQUATION_KERNEL_INTERFACE_V09", "M0 v09 kernel interface summary id mismatch")
+    require(row["interface_artifact"] == "m0_no_dark_equation_kernel_interface_v09", "M0 v09 kernel interface artifact mismatch")
+    require(row["readout_equation_interface_status"] == "READY", "M0 v09 kernel interface must inherit ready readout interface")
+    require(row["interface_rows"] == "5", "M0 v09 kernel interface must summarize five rows")
+    require(row["ready_interface_rows"] == "5", "M0 v09 kernel interface must ready five rows")
+    require(row["blocked_interface_rows"] == "0", "M0 v09 kernel interface must block zero rows")
+    require(row["kernel_expression_written"] == "false", "M0 v09 kernel interface cannot write a kernel expression")
+    require(row["kernel_claim_allowed"] == "false", "M0 v09 kernel interface cannot allow kernel claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v09 kernel interface must write zero predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v09 kernel interface summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_EQUATION_KERNEL_INTERFACE_READY",
+        "M0 v09 kernel interface status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_no_dark_kernel_expression_v10", "M0 v09 kernel interface next artifact mismatch")
 
 
 def validate_m0_no_dark_readout_equation_contract_v08() -> None:
@@ -1803,22 +3232,99 @@ def validate_m0_no_dark_readout_equation_contract_v08() -> None:
     require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v08 cannot allow numeric predictions")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v08 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v08 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v08 next kernel artifact mismatch")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_equation_kernel_contract_v09",
+        "M0 v08 next kernel artifact mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v08 equation slots must be ready")
     require(len(summary) == 1, "M0 v08 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_READOUT_EQUATION_CONTRACT_V08", "M0 v08 summary id mismatch")
     require(row["readout_equation_artifact"] == "m0_no_dark_readout_equation_v08", "M0 v08 artifact id mismatch")
     require(row["required_equation_slots"] == "6", "M0 v08 must require six equation slots")
-    require(row["ready_equation_slots"] == "0", "M0 v08 must ready zero equation slots")
-    require(row["blocked_equation_slots"] == "6", "M0 v08 must block six equation slots")
+    require(row["ready_equation_slots"] == "6", "M0 v08 must ready six equation slots")
+    require(row["blocked_equation_slots"] == "0", "M0 v08 must block zero kernel slots")
     require(row["equations_written"] == "0", "M0 v08 must write zero equations")
     require(row["numeric_predictions_written"] == "0", "M0 v08 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v08 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_READOUT_EQUATION_CONTRACT_READY_KERNEL_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_READOUT_EQUATION_READY_FOR_FORMULA_BODY",
         "M0 v08 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v08 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_formula_body_v07", "M0 v08 next artifact mismatch")
+
+
+def validate_m0_no_dark_readout_equation_interface_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_readout_equation_interface_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_readout_equation_interface_summary_v08.csv")
+    require(len(rows) == 5, "M0 v08 readout-equation interface must define five rows")
+    require(
+        {row["equation_slot_id"] for row in rows}
+        == {
+            "M0NDRE08_ARGUMENT_SIGNATURE",
+            "M0NDRE08_UNITS",
+            "M0NDRE08_PARAMETERS",
+            "M0NDRE08_DOMAIN",
+            "M0NDRE08_SERIALIZATION",
+        },
+        "M0 v08 readout-equation interface slot ids mismatch",
+    )
+    require(all(row["interface_status"] == "READY" for row in rows), "M0 v08 readout-equation interface rows must be ready")
+    require(all(row["equation_claim_allowed"] == "false" for row in rows), "M0 v08 readout-equation interface cannot claim equation")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v08 readout-equation interface cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v08 readout-equation interface cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v08 readout-equation interface must forbid residual leakage")
+    require(len(summary) == 1, "M0 v08 readout-equation interface summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_READOUT_EQUATION_INTERFACE_V08", "M0 v08 readout-equation interface summary id mismatch")
+    require(row["interface_artifact"] == "m0_no_dark_readout_equation_interface_v08", "M0 v08 readout-equation interface artifact mismatch")
+    require(row["formula_body_interface_status"] == "READY", "M0 v08 readout-equation interface must inherit formula-body interface")
+    require(row["interface_rows"] == "5", "M0 v08 readout-equation interface must summarize five rows")
+    require(row["ready_interface_rows"] == "5", "M0 v08 readout-equation interface must ready five rows")
+    require(row["blocked_interface_rows"] == "0", "M0 v08 readout-equation interface must block zero interface rows")
+    require(row["kernel_written"] == "false", "M0 v08 readout-equation interface cannot write kernel")
+    require(row["equation_claim_allowed"] == "false", "M0 v08 readout-equation interface summary cannot allow equation claim")
+    require(row["numeric_predictions_written"] == "0", "M0 v08 readout-equation interface summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v08 readout-equation interface summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_READOUT_EQUATION_INTERFACE_READY", "M0 v08 readout-equation interface status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_equation_kernel_v09", "M0 v08 readout-equation interface next artifact mismatch")
+
+
+def validate_m0_no_dark_formula_body_interface_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_formula_body_interface_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_formula_body_interface_summary_v08.csv")
+    require(len(rows) == 6, "M0 v08 formula-body interface must define six rows")
+    require(
+        {row["body_slot_id"] for row in rows}
+        == {
+            "M0NDB07_SOURCE_ARGUMENTS",
+            "M0NDB07_BARYONIC_HANDOFF",
+            "M0NDB07_SCALE_LAW",
+            "M0NDB07_COEFFICIENT_DOMAIN",
+            "M0NDB07_FALLBACK_BRANCHES",
+            "M0NDB07_OUTPUT_UNIT_CHECK",
+        },
+        "M0 v08 formula-body interface slot ids mismatch",
+    )
+    require(all(row["interface_status"] == "READY" for row in rows), "M0 v08 interface rows must be ready")
+    require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v08 interface cannot claim a formula")
+    require(all(row["numeric_prediction_allowed"] == "false" for row in rows), "M0 v08 interface cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v08 interface cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v08 interface must forbid residual leakage")
+    require(len(summary) == 1, "M0 v08 formula-body interface summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FORMULA_BODY_INTERFACE_V08", "M0 v08 interface summary id mismatch")
+    require(row["interface_artifact"] == "m0_no_dark_formula_body_interface_v08", "M0 v08 interface artifact mismatch")
+    require(row["machine_form_status"] == "READY", "M0 v08 interface must inherit ready machine form")
+    require(row["interface_rows"] == "6", "M0 v08 interface must summarize six rows")
+    require(row["ready_interface_rows"] == "6", "M0 v08 interface must ready six rows")
+    require(row["blocked_interface_rows"] == "0", "M0 v08 interface must block zero interface rows")
+    require(row["readout_equation_written"] == "false", "M0 v08 interface cannot write readout equation")
+    require(row["formula_claim_allowed"] == "false", "M0 v08 interface summary cannot allow formula claims")
+    require(row["numeric_predictions_written"] == "0", "M0 v08 interface summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v08 interface summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_FORMULA_BODY_INTERFACE_READY", "M0 v08 interface status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_readout_equation_v08", "M0 v08 interface next artifact mismatch")
 
 
 def validate_m0_no_dark_formula_body_contract_v07() -> None:
@@ -1841,22 +3347,98 @@ def validate_m0_no_dark_formula_body_contract_v07() -> None:
     require(all(row["formula_claim_allowed"] == "false" for row in rows), "M0 v07 cannot allow formula claims")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v07 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v07 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v07 next equation artifact mismatch")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_readout_equation_contract_v08",
+        "M0 v07 next equation artifact mismatch",
+    )
+    require(all(row["completion_status"] == "READY" for row in rows), "M0 v07 body slots must be ready")
     require(len(summary) == 1, "M0 v07 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_FORMULA_BODY_CONTRACT_V07", "M0 v07 summary id mismatch")
     require(row["formula_body_artifact"] == "m0_no_dark_formula_body_v07", "M0 v07 artifact id mismatch")
     require(row["required_body_slots"] == "7", "M0 v07 must require seven body slots")
-    require(row["ready_body_slots"] == "0", "M0 v07 must ready zero body slots")
-    require(row["blocked_body_slots"] == "7", "M0 v07 must block seven body slots")
+    require(row["ready_body_slots"] == "7", "M0 v07 must ready seven body slots")
+    require(row["blocked_body_slots"] == "0", "M0 v07 must block zero equation slots")
     require(row["formula_equations_written"] == "0", "M0 v07 must write zero equations")
     require(row["numeric_predictions_written"] == "0", "M0 v07 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v07 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_FORMULA_BODY_CONTRACT_READY_EQUATION_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_FORMULA_BODY_READY_FOR_TABLE_FREEZE",
         "M0 v07 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v07 next artifact mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_formula_table_v06", "M0 v07 next artifact mismatch")
+
+
+def validate_m0_no_dark_scale_policy_v07() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_scale_policy_v07.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_scale_policy_summary_v07.csv")
+    require(len(rows) == 6, "M0 scale policy must define six rows")
+    require(
+        {row["scale_policy_id"] for row in rows}
+        == {
+            "M0NDSP07_RADIAL_DOMAIN",
+            "M0NDSP07_NORMALIZATION_SCALE",
+            "M0NDSP07_TRANSITION_SCALE",
+            "M0NDSP07_SCALE_INVARIANCE_LIMITS",
+            "M0NDSP07_ROW_SHARED_POLICY",
+            "M0NDSP07_FALLBACK_HANDOFF",
+        },
+        "M0 scale policy ids mismatch",
+    )
+    require(all(row["policy_status"] == "READY" for row in rows), "M0 scale policy rows must be ready")
+    require(all(row["numeric_scale_values_written"] == "0" for row in rows), "M0 scale policy cannot write values")
+    require(all(row["prediction_rows_written"] == "0" for row in rows), "M0 scale policy cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 scale policy cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 scale policy must forbid residual leakage")
+    require(all("posthoc_scale_selection" in row["forbidden_inputs"] for row in rows), "M0 scale policy must forbid posthoc scales")
+    require(len(summary) == 1, "M0 scale policy summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_SCALE_POLICY_V07", "M0 scale policy summary id mismatch")
+    require(row["source_artifact"] == "m0_no_dark_coefficient_policy_v07", "M0 scale policy source artifact mismatch")
+    require(row["policy_rows"] == "6", "M0 scale policy must summarize six rows")
+    require(row["ready_policy_rows"] == "6", "M0 scale policy must ready six rows")
+    require(row["blocked_policy_rows"] == "0", "M0 scale policy must block zero rows")
+    require(row["numeric_scale_values_written"] == "0", "M0 scale policy summary cannot write values")
+    require(row["prediction_rows_written"] == "0", "M0 scale policy summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 scale policy summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_SCALE_POLICY_READY", "M0 scale policy status mismatch")
+    require(row["next_required_artifact"] == "m0_no_dark_fallback_policy_v07", "M0 scale policy next artifact mismatch")
+
+
+def validate_m0_no_dark_fallback_policy_v07() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_fallback_policy_v07.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_fallback_policy_summary_v07.csv")
+    require(len(rows) == 6, "M0 fallback policy must define six rows")
+    require(
+        {row["fallback_policy_id"] for row in rows}
+        == {
+            "M0NDFP07_ZERO_RESPONSE_ROUTE",
+            "M0NDFP07_MISSING_LABEL_ROUTE",
+            "M0NDFP07_INADMISSIBLE_INPUT_ROUTE",
+            "M0NDFP07_NULL_GAUGE_ROUTE",
+            "M0NDFP07_FAILURE_REPORTING_ROUTE",
+            "M0NDFP07_PREDICTION_TABLE_HANDOFF",
+        },
+        "M0 fallback policy ids mismatch",
+    )
+    require(all(row["policy_status"] == "READY" for row in rows), "M0 fallback policy rows must be ready")
+    require(all(row["fallback_prediction_rows_written"] == "0" for row in rows), "M0 fallback policy cannot write fallback predictions")
+    require(all(row["numeric_predictions_written"] == "0" for row in rows), "M0 fallback policy cannot write numeric predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 fallback policy cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 fallback policy must forbid residual leakage")
+    require(all("posthoc_exception" in row["forbidden_inputs"] for row in rows), "M0 fallback policy must forbid posthoc exceptions")
+    require(len(summary) == 1, "M0 fallback policy summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FALLBACK_POLICY_V07", "M0 fallback policy summary id mismatch")
+    require(row["source_artifact"] == "m0_no_dark_scale_policy_v07", "M0 fallback policy source artifact mismatch")
+    require(row["policy_rows"] == "6", "M0 fallback policy must summarize six rows")
+    require(row["ready_policy_rows"] == "6", "M0 fallback policy must ready six rows")
+    require(row["blocked_policy_rows"] == "0", "M0 fallback policy must block zero rows")
+    require(row["fallback_prediction_rows_written"] == "0", "M0 fallback policy summary cannot write fallback predictions")
+    require(row["numeric_predictions_written"] == "0", "M0 fallback policy summary cannot write numeric predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 fallback policy summary cannot allow scoring")
+    require(row["overall_status"] == "M0_NO_DARK_FALLBACK_POLICY_READY", "M0 fallback policy status mismatch")
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 fallback policy next artifact mismatch")
 
 
 def validate_m0_no_dark_formula_table_contract_v06() -> None:
@@ -1877,22 +3459,31 @@ def validate_m0_no_dark_formula_table_contract_v06() -> None:
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v06 cannot allow scoring")
     require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 v06 must forbid residual leakage")
-    require(rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v06 next body artifact mismatch")
+    require(
+        rows[0]["next_required_artifact"] == "m0_no_dark_formula_body_contract_v07",
+        "M0 v06 next body artifact mismatch",
+    )
+    require(rows[0]["completion_status"] == "READY", "M0 v06 source inputs must be ready")
+    require(rows[1]["completion_status"] == "READY", "M0 v06 readout map must be ready")
+    require(rows[2]["completion_status"] == "READY", "M0 v06 coefficient policy must be ready")
+    require(rows[3]["completion_status"] == "READY", "M0 v06 scale policy must be ready")
+    require(rows[4]["completion_status"] == "READY", "M0 v06 fallback policy must be ready")
+    require(rows[5]["completion_status"] == "READY", "M0 v06 output schema must be ready")
     require(len(summary) == 1, "M0 v06 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "M0_NO_DARK_FORMULA_TABLE_CONTRACT_V06", "M0 v06 summary id mismatch")
     require(row["formula_artifact"] == "m0_no_dark_formula_table_v06", "M0 v06 artifact id mismatch")
     require(row["required_components"] == "6", "M0 v06 must require six components")
-    require(row["ready_components"] == "0", "M0 v06 must ready zero components")
-    require(row["blocked_components"] == "6", "M0 v06 must block six components")
+    require(row["ready_components"] == "6", "M0 v06 must ready all six components after fallback policy")
+    require(row["blocked_components"] == "0", "M0 v06 must block zero policy slots")
     require(row["formula_body_rows_written"] == "0", "M0 v06 must write zero formula-body rows")
     require(row["numeric_predictions_written"] == "0", "M0 v06 must write zero predictions")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v06 summary cannot allow scoring")
     require(
-        row["overall_status"] == "M0_NO_DARK_FORMULA_TABLE_CONTRACT_READY_BODY_BLOCKED",
+        row["overall_status"] == "M0_NO_DARK_FORMULA_TABLE_READY_FOR_PREDICTION_ROWS",
         "M0 v06 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "M0 v06 next artifact mismatch")
+    require(row["next_required_artifact"] == "family_prediction_tables_v08.csv", "M0 v06 next artifact mismatch")
 
 
 def validate_family_prediction_table_contract_v80() -> None:
@@ -1903,29 +3494,3671 @@ def validate_family_prediction_table_contract_v80() -> None:
     require({"scoring_row_id", "family_id", "v_pred_km_s"}.issubset(fields), "v80 schema missing required fields")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in schema), "v80 schema cannot allow scoring")
     require(len(slots) == 8, "v80 must cover eight formula slots")
-    require(
-        slots[0]["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_BODY_MISSING",
-        "v80 first M0 slot must be blocked on formula body",
-    )
-    require(
-        all(row["prediction_slot_status"] == "PREDICTION_SLOT_BLOCKED_FORMULA_TABLE_MISSING" for row in slots[1:]),
-        "v80 non-M0 slots must remain blocked on formula tables",
-    )
+    require(slots[0]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 first M0 slot must be ready")
+    require(slots[1]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 second M0 slot must be ready")
+    require(slots[2]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 first M1 slot must be ready")
+    require(slots[3]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 second M1 slot must be ready")
+    require(slots[4]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 first M2 slot must be ready")
+    require(slots[5]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 second M2 slot must be ready")
+    require(slots[6]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 shared input slot must be ready")
+    require(slots[7]["prediction_slot_status"] == "PREDICTION_SLOT_READY", "v80 numeric count slot must be ready")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in slots), "v80 slots cannot allow scoring")
-    require(slots[0]["required_formula_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "v80 first formula artifact mismatch")
+    require(
+        slots[0]["required_formula_artifact"] == "family_prediction_tables_v08.csv",
+        "v80 first formula artifact mismatch",
+    )
+    require(
+        slots[1]["required_formula_artifact"] == "m0_label_rule_table_v06",
+        "v80 second formula artifact mismatch",
+    )
+    require(
+        slots[2]["required_formula_artifact"] == "m1_tau_response_formula_table_v06",
+        "v80 third formula artifact mismatch",
+    )
+    require(
+        slots[3]["required_formula_artifact"] == "m1_admissibility_table_v06",
+        "v80 fourth formula artifact mismatch",
+    )
+    require(
+        slots[4]["required_formula_artifact"] == "m2_benchmark_profile_table_v06",
+        "v80 fifth formula artifact mismatch",
+    )
+    require(
+        slots[5]["required_formula_artifact"] == "m2_nuisance_policy_table_v06",
+        "v80 sixth formula artifact mismatch",
+    )
+    require(
+        slots[6]["required_formula_artifact"] == "shared_scoring_input_table_v06",
+        "v80 seventh formula artifact mismatch",
+    )
+    require(
+        slots[7]["required_formula_artifact"] == "numeric_parameter_count_table_v06",
+        "v80 eighth formula artifact mismatch",
+    )
     require(len(summary) == 1, "v80 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "FAMILY_PREDICTION_TABLE_CONTRACT_V80", "v80 summary id mismatch")
     require(row["required_formula_slots"] == "8", "v80 must require eight formula slots")
-    require(row["ready_formula_slots"] == "0", "v80 must ready zero formula slots")
-    require(row["blocked_formula_slots"] == "8", "v80 must block eight formula slots")
-    require(row["numeric_prediction_rows_written"] == "0", "v80 must write zero numeric prediction rows")
+    require(row["ready_formula_slots"] == "8", "v80 must ready eight formula slots")
+    require(row["blocked_formula_slots"] == "0", "v80 must block zero formula slots")
+    require(row["numeric_prediction_rows_written"] == "450", "v80 must write 450 M0 prediction rows")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v80 summary must forbid scoring")
     require(
-        row["overall_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
+        row["overall_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_PARAMETER_COUNTS_BLOCKED",
         "v80 status mismatch",
     )
-    require(row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14", "v80 next artifact mismatch")
+    require(row["next_required_artifact"] == "numeric_parameter_count_table_v08.csv", "v80 next artifact mismatch")
+    require(
+        row["claim_boundary"] == "family_prediction_table_contract_only_no_scores_no_dark_sector_verdict",
+        "v80 claim boundary mismatch",
+    )
+
+
+def validate_family_prediction_tables_v08() -> None:
+    table_path = ROOT / "data/derived/family_prediction_tables_v08.csv"
+    rows = read_csv(table_path)
+    summary = read_csv(ROOT / "data/derived/family_prediction_tables_summary_v08.csv")
+    with table_path.open(newline="") as handle:
+        fieldnames = csv.DictReader(handle).fieldnames
+    require(len(rows) == 450, "v08 family prediction table must contain 450 M0 no-dark rows")
+    require({row["family_id"] for row in rows} == {"M0"}, "v08 family prediction table must contain only M0")
+    require(
+        {row["prediction_source_slot"] for row in rows} == {"M0:no_dark_readout_formula"},
+        "v08 family prediction source slot mismatch",
+    )
+    require(
+        {row["prediction_status"] for row in rows} == {"PREDICTION_ROW_EMITTED_NOT_SCORED"},
+        "v08 family prediction rows must remain unscored",
+    )
+    require(
+        fieldnames
+        == [
+            "scoring_row_id",
+            "galaxy_id",
+            "family_id",
+            "radial_index",
+            "radius_kpc",
+            "v_pred_km_s",
+            "prediction_source_slot",
+            "formula_table_status",
+            "prediction_status",
+        ],
+        "v08 family prediction table header mismatch",
+    )
+    require(len(summary) == 1, "v08 family prediction table summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FAMILY_PREDICTION_TABLES_V08", "v08 family prediction table summary id mismatch")
+    require(row["table_header_written"] == "true", "v08 family prediction table header must be written")
+    require(row["numeric_prediction_rows_written"] == "450", "v08 family prediction table must write 450 M0 rows")
+    require(row["families_with_numeric_predictions"] == "1", "v08 family prediction table must ready one numeric family")
+    require(row["m0_no_dark_formula_table_status"] == "M0_NO_DARK_ROWS_EMITTED", "v08 family prediction table must see M0 rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 family prediction table cannot allow scoring")
+    require(
+        row["overall_status"] == "FAMILY_PREDICTION_TABLES_M0_NO_DARK_ROWS_EMITTED_SCORING_BLOCKED",
+        "v08 family prediction table status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_label_rule_table_v06", "v08 family prediction table next artifact mismatch")
+    require(
+        row["claim_boundary"] == "family_prediction_tables_m0_no_dark_rows_only_no_scores_no_dark_sector_verdict",
+        "v08 family prediction table claim boundary mismatch",
+    )
+
+
+def validate_m0_no_dark_prediction_row_writer_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_prediction_row_writer_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_prediction_row_writer_summary_v08.csv")
+    require(len(rows) == 5, "M0 prediction-row writer must have five checks")
+    require(rows[0]["writer_decision"] == "READY_FOR_WRITER_REVIEW", "M0 writer handoff check mismatch")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 writer cannot write numeric prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 writer cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_executable_prediction_kernel_v08"},
+        "M0 writer next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 writer summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PREDICTION_ROW_WRITER_V08", "M0 writer summary id mismatch")
+    require(row["writer_artifact"] == "m0_no_dark_prediction_row_writer_v08", "M0 writer artifact mismatch")
+    require(row["writer_checks"] == "5", "M0 writer check count mismatch")
+    require(row["blocked_writer_checks"] == "4", "M0 writer blocked check count mismatch")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 writer summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 writer summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 writer summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PREDICTION_ROW_WRITER_PRESENT_BLOCKED_EXECUTABLE_KERNEL_MISSING",
+        "M0 writer status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_executable_prediction_kernel_v08",
+        "M0 writer next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_executable_prediction_kernel_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_executable_prediction_kernel_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_executable_prediction_kernel_summary_v08.csv")
+    require(len(rows) == 6, "M0 executable kernel gate must have six checks")
+    require(rows[0]["kernel_decision"] == "READY_FOR_EXECUTABLE_KERNEL_REVIEW", "M0 executable kernel handoff mismatch")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 executable kernel cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 executable kernel cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 executable kernel cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_readout_formula_v08"},
+        "M0 executable kernel next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 executable kernel summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_EXECUTABLE_PREDICTION_KERNEL_V08", "M0 executable kernel summary id mismatch")
+    require(row["kernel_artifact"] == "m0_no_dark_executable_prediction_kernel_v08", "M0 executable kernel artifact mismatch")
+    require(row["kernel_checks"] == "6", "M0 executable kernel check count mismatch")
+    require(row["blocked_kernel_checks"] == "5", "M0 executable kernel blocked check count mismatch")
+    require(row["velocity_formula_written"] == "false", "M0 executable kernel summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 executable kernel summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 executable kernel summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 executable kernel summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_EXECUTABLE_KERNEL_PRESENT_BLOCKED_VELOCITY_FORMULA_MISSING",
+        "M0 executable kernel status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_readout_formula_v08",
+        "M0 executable kernel next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_readout_formula_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_readout_formula_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_readout_formula_summary_v08.csv")
+    require(len(rows) == 5, "M0 velocity formula gate must have five checks")
+    require(rows[0]["formula_decision"] == "READY_FOR_VELOCITY_FORMULA_REVIEW", "M0 formula handoff mismatch")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 formula gate cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 formula gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 formula gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_source_to_rotation_equation_body_v08"},
+        "M0 formula gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 formula gate summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_VELOCITY_READOUT_FORMULA_V08", "M0 formula summary id mismatch")
+    require(row["formula_artifact"] == "m0_no_dark_velocity_readout_formula_v08", "M0 formula artifact mismatch")
+    require(row["formula_checks"] == "5", "M0 formula check count mismatch")
+    require(row["blocked_formula_checks"] == "2", "M0 formula blocked check count mismatch")
+    require(row["velocity_formula_written"] == "false", "M0 formula summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 formula summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 formula summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 formula summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_VELOCITY_FORMULA_PRESENT_BLOCKED_EQUATION_BODY_MISSING",
+        "M0 formula status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_source_to_rotation_equation_body_v08",
+        "M0 formula next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_source_to_rotation_equation_body_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_source_to_rotation_equation_body_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_source_to_rotation_equation_body_summary_v08.csv")
+    require(len(rows) == 6, "M0 source-to-rotation equation-body gate must have six checks")
+    require(rows[0]["equation_body_decision"] == "READY_FOR_EQUATION_BODY_REVIEW", "M0 equation-body handoff mismatch")
+    require(all(row["equation_body_written"] == "false" for row in rows), "M0 equation-body gate cannot write equation body")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 equation-body gate cannot write velocity formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 equation-body gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 equation-body gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_source_to_velocity_coupling_rule_v08"},
+        "M0 equation-body gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 equation-body summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_SOURCE_TO_ROTATION_EQUATION_BODY_V08", "M0 equation-body summary id mismatch")
+    require(row["equation_body_artifact"] == "m0_no_dark_source_to_rotation_equation_body_v08", "M0 equation-body artifact mismatch")
+    require(row["equation_body_checks"] == "6", "M0 equation-body check count mismatch")
+    require(row["blocked_equation_body_checks"] == "2", "M0 equation-body blocked check count mismatch")
+    require(row["equation_body_written"] == "false", "M0 equation-body summary cannot write equation body")
+    require(row["velocity_formula_written"] == "false", "M0 equation-body summary cannot write velocity formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 equation-body summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 equation-body summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 equation-body summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_EQUATION_BODY_PRESENT_BLOCKED_SOURCE_TO_VELOCITY_COUPLING_RULE_MISSING",
+        "M0 equation-body status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_source_to_velocity_coupling_rule_v08",
+        "M0 equation-body next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_source_to_velocity_coupling_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_source_to_velocity_coupling_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_source_to_velocity_coupling_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 source-to-velocity coupling-rule gate must have six checks")
+    require(rows[0]["coupling_rule_decision"] == "READY_FOR_COUPLING_RULE_REVIEW", "M0 coupling-rule handoff mismatch")
+    require(all(row["coupling_rule_written"] == "false" for row in rows), "M0 coupling-rule gate cannot write coupling")
+    require(all(row["velocity_unit_lift_written"] == "false" for row in rows), "M0 coupling-rule gate cannot write unit lift")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 coupling-rule gate cannot write velocity formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 coupling-rule gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 coupling-rule gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_unit_lift_rule_v08"},
+        "M0 coupling-rule gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 coupling-rule summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_SOURCE_TO_VELOCITY_COUPLING_RULE_V08", "M0 coupling-rule summary id mismatch")
+    require(row["coupling_rule_artifact"] == "m0_no_dark_source_to_velocity_coupling_rule_v08", "M0 coupling-rule artifact mismatch")
+    require(row["coupling_rule_checks"] == "6", "M0 coupling-rule check count mismatch")
+    require(row["blocked_coupling_rule_checks"] == "3", "M0 coupling-rule blocked check count mismatch")
+    require(row["coupling_rule_written"] == "false", "M0 coupling-rule summary cannot write coupling")
+    require(row["velocity_unit_lift_written"] == "false", "M0 coupling-rule summary cannot write unit lift")
+    require(row["velocity_formula_written"] == "false", "M0 coupling-rule summary cannot write velocity formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 coupling-rule summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 coupling-rule summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 coupling-rule summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_COUPLING_RULE_PRESENT_BLOCKED_VELOCITY_UNIT_LIFT_MISSING",
+        "M0 coupling-rule status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_unit_lift_rule_v08",
+        "M0 coupling-rule next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_unit_lift_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_unit_lift_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_unit_lift_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 velocity-unit lift gate must have six checks")
+    require(rows[0]["unit_lift_decision"] == "READY_FOR_UNIT_LIFT_REVIEW", "M0 unit-lift handoff mismatch")
+    require(all(row["velocity_unit_lift_written"] == "false" for row in rows), "M0 unit-lift gate cannot write unit lift")
+    require(all(row["dimension_anchor_written"] == "false" for row in rows), "M0 unit-lift gate cannot write dimension anchor")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 unit-lift gate cannot write velocity formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 unit-lift gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 unit-lift gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_dimension_anchor_rule_v08"},
+        "M0 unit-lift gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 unit-lift summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_VELOCITY_UNIT_LIFT_RULE_V08", "M0 unit-lift summary id mismatch")
+    require(row["unit_lift_artifact"] == "m0_no_dark_velocity_unit_lift_rule_v08", "M0 unit-lift artifact mismatch")
+    require(row["unit_lift_checks"] == "6", "M0 unit-lift check count mismatch")
+    require(row["blocked_unit_lift_checks"] == "2", "M0 unit-lift blocked check count mismatch")
+    require(row["velocity_unit_lift_written"] == "false", "M0 unit-lift summary cannot write unit lift")
+    require(row["dimension_anchor_written"] == "false", "M0 unit-lift summary cannot write dimension anchor")
+    require(row["velocity_formula_written"] == "false", "M0 unit-lift summary cannot write velocity formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 unit-lift summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 unit-lift summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 unit-lift summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_VELOCITY_UNIT_LIFT_PRESENT_BLOCKED_DIMENSION_ANCHOR_MISSING",
+        "M0 unit-lift status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_dimension_anchor_rule_v08",
+        "M0 unit-lift next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_dimension_anchor_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_dimension_anchor_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_dimension_anchor_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 velocity-dimension anchor gate must have six checks")
+    require(
+        rows[0]["dimension_anchor_decision"] == "READY_FOR_DIMENSION_ANCHOR_REVIEW",
+        "M0 dimension-anchor handoff mismatch",
+    )
+    require(
+        all(row["dimension_anchor_written"] == "false" for row in rows),
+        "M0 dimension-anchor gate cannot write dimension anchor",
+    )
+    require(
+        all(row["anchor_source_law_written"] == "false" for row in rows),
+        "M0 dimension-anchor gate cannot write anchor source law",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 dimension-anchor gate cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 dimension-anchor gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 dimension-anchor gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_source_law_v08"},
+        "M0 dimension-anchor gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 dimension-anchor summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_VELOCITY_DIMENSION_ANCHOR_RULE_V08", "M0 dimension-anchor summary id mismatch")
+    require(
+        row["dimension_anchor_artifact"] == "m0_no_dark_velocity_dimension_anchor_rule_v08",
+        "M0 dimension-anchor artifact mismatch",
+    )
+    require(row["dimension_anchor_checks"] == "6", "M0 dimension-anchor check count mismatch")
+    require(row["blocked_dimension_anchor_checks"] == "2", "M0 dimension-anchor blocked count mismatch")
+    require(row["dimension_anchor_written"] == "false", "M0 dimension-anchor summary cannot write anchor")
+    require(row["anchor_source_law_written"] == "false", "M0 dimension-anchor summary cannot write anchor law")
+    require(row["velocity_formula_written"] == "false", "M0 dimension-anchor summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 dimension-anchor summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 dimension-anchor summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 dimension-anchor summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_DIMENSION_ANCHOR_PRESENT_BLOCKED_ANCHOR_SOURCE_LAW_MISSING",
+        "M0 dimension-anchor status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_source_law_v08",
+        "M0 dimension-anchor next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_source_law_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_source_law_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_source_law_summary_v08.csv")
+    require(len(rows) == 6, "M0 velocity-anchor source-law gate must have six checks")
+    require(
+        rows[0]["anchor_source_law_decision"] == "READY_FOR_ANCHOR_SOURCE_LAW_REVIEW",
+        "M0 anchor-source-law handoff mismatch",
+    )
+    require(
+        any(row["anchor_source_law_decision"] == "BLOCKED_ANCHOR_CANDIDATE_BASIS_MISSING" for row in rows),
+        "M0 anchor-source-law gate must block on candidate basis",
+    )
+    require(
+        all(row["anchor_source_law_written"] == "true" for row in rows),
+        "M0 anchor-source-law gate must write the source-law layer",
+    )
+    require(
+        all(row["anchor_candidate_basis_written"] == "false" for row in rows),
+        "M0 anchor-source-law gate cannot write candidate basis",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor-source-law gate cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor-source-law gate cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor-source-law gate cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_candidate_basis_v08"},
+        "M0 anchor-source-law gate next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor-source-law summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_SOURCE_LAW_V08", "M0 anchor-source-law summary id mismatch")
+    require(
+        row["anchor_source_law_artifact"] == "m0_no_dark_velocity_anchor_source_law_v08",
+        "M0 anchor-source-law artifact mismatch",
+    )
+    require(row["anchor_source_law_checks"] == "6", "M0 anchor-source-law check count mismatch")
+    require(row["blocked_anchor_source_law_checks"] == "1", "M0 anchor-source-law blocked count mismatch")
+    require(row["anchor_source_law_written"] == "true", "M0 anchor-source-law summary must write source law")
+    require(row["anchor_candidate_basis_written"] == "false", "M0 anchor-source-law summary cannot write candidate basis")
+    require(row["velocity_formula_written"] == "false", "M0 anchor-source-law summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor-source-law summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor-source-law summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor-source-law summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_SOURCE_LAW_PRESENT_BLOCKED_ANCHOR_CANDIDATE_BASIS_MISSING",
+        "M0 anchor-source-law status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_candidate_basis_v08",
+        "M0 anchor-source-law next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_candidate_basis_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_candidate_basis_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_candidate_basis_summary_v08.csv")
+    require(len(rows) == 6, "M0 velocity-anchor candidate-basis gate must have six checks")
+    require(
+        rows[0]["candidate_basis_decision"] == "READY_FOR_ANCHOR_CANDIDATE_BASIS_REVIEW",
+        "M0 anchor-candidate-basis handoff mismatch",
+    )
+    require(
+        sum(row["candidate_basis_decision"] == "ADMISSIBLE_CANDIDATE_CLASS_DECLARED" for row in rows) == 2,
+        "M0 anchor-candidate basis must declare two admissible classes",
+    )
+    require(
+        sum(row["candidate_basis_decision"] == "CONDITIONAL_CANDIDATE_CLASS_DECLARED" for row in rows) == 1,
+        "M0 anchor-candidate basis must declare one conditional class",
+    )
+    require(
+        any(row["candidate_basis_decision"] == "REJECTED_CANDIDATE_CLASS_DECLARED" for row in rows),
+        "M0 anchor-candidate basis must reject rotation-fit carriers",
+    )
+    require(
+        any(row["candidate_basis_decision"] == "BLOCKED_ANCHOR_SELECTION_RULE_MISSING" for row in rows),
+        "M0 anchor-candidate basis must block on selection rule",
+    )
+    require(all(row["candidate_basis_written"] == "true" for row in rows), "M0 anchor-candidate basis must be written")
+    require(
+        all(row["anchor_selection_rule_written"] == "false" for row in rows),
+        "M0 anchor-candidate basis cannot write selection rule",
+    )
+    require(all(row["anchor_value_written"] == "false" for row in rows), "M0 anchor-candidate basis cannot write values")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor-candidate basis cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor-candidate basis cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor-candidate basis cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_selection_rule_v08"},
+        "M0 anchor-candidate basis next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor-candidate basis summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_CANDIDATE_BASIS_V08",
+        "M0 anchor-candidate basis summary id mismatch",
+    )
+    require(
+        row["anchor_candidate_basis_artifact"] == "m0_no_dark_velocity_anchor_candidate_basis_v08",
+        "M0 anchor-candidate basis artifact mismatch",
+    )
+    require(row["candidate_basis_checks"] == "6", "M0 anchor-candidate basis check count mismatch")
+    require(row["admissible_candidate_classes"] == "3", "M0 anchor-candidate basis admissible count mismatch")
+    require(row["rejected_candidate_classes"] == "1", "M0 anchor-candidate basis rejected count mismatch")
+    require(row["blocked_candidate_basis_checks"] == "1", "M0 anchor-candidate basis blocked count mismatch")
+    require(row["candidate_basis_written"] == "true", "M0 anchor-candidate basis summary must write basis")
+    require(row["anchor_selection_rule_written"] == "false", "M0 anchor-candidate basis summary cannot write selection rule")
+    require(row["anchor_value_written"] == "false", "M0 anchor-candidate basis summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 anchor-candidate basis summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor-candidate basis summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor-candidate basis summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor-candidate basis summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_CANDIDATE_BASIS_PRESENT_BLOCKED_ANCHOR_SELECTION_RULE_MISSING",
+        "M0 anchor-candidate basis status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_selection_rule_v08",
+        "M0 anchor-candidate basis next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_selection_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_selection_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_selection_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 velocity-anchor selection-rule gate must have six checks")
+    require(
+        rows[0]["selection_rule_decision"] == "READY_FOR_ANCHOR_SELECTION_RULE_REVIEW",
+        "M0 anchor-selection-rule handoff mismatch",
+    )
+    require(
+        any(row["selection_rule_decision"] == "ANCHOR_SELECTION_PRIORITY_RULE_DECLARED" for row in rows),
+        "M0 anchor-selection rule must declare priority order",
+    )
+    require(
+        any(row["selection_rule_decision"] == "ANCHOR_SELECTION_FALLBACK_RULE_DECLARED" for row in rows),
+        "M0 anchor-selection rule must declare fallback rule",
+    )
+    require(
+        any(row["selection_rule_decision"] == "ANCHOR_SELECTION_REJECTION_RULE_DECLARED" for row in rows),
+        "M0 anchor-selection rule must preserve rejected carrier class",
+    )
+    require(
+        any(row["selection_rule_decision"] == "BLOCKED_ANCHOR_VALUE_FREEZE_MISSING" for row in rows),
+        "M0 anchor-selection rule must block on value freeze",
+    )
+    require(
+        all(row["anchor_selection_rule_written"] == "true" for row in rows),
+        "M0 anchor-selection rule must be written",
+    )
+    require(all(row["anchor_value_written"] == "false" for row in rows), "M0 anchor-selection rule cannot write values")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor-selection rule cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor-selection rule cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor-selection rule cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_value_freeze_v08"},
+        "M0 anchor-selection rule next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor-selection rule summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_SELECTION_RULE_V08",
+        "M0 anchor-selection rule summary id mismatch",
+    )
+    require(
+        row["anchor_selection_rule_artifact"] == "m0_no_dark_velocity_anchor_selection_rule_v08",
+        "M0 anchor-selection rule artifact mismatch",
+    )
+    require(row["selection_rule_checks"] == "6", "M0 anchor-selection rule check count mismatch")
+    require(row["declared_selection_rule_clauses"] == "4", "M0 anchor-selection rule declared clause count mismatch")
+    require(row["blocked_selection_rule_checks"] == "1", "M0 anchor-selection rule blocked count mismatch")
+    require(row["anchor_selection_rule_written"] == "true", "M0 anchor-selection rule summary must write rule")
+    require(row["anchor_value_written"] == "false", "M0 anchor-selection rule summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 anchor-selection rule summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor-selection rule summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor-selection rule summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor-selection rule summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_SELECTION_RULE_PRESENT_BLOCKED_ANCHOR_VALUE_FREEZE_MISSING",
+        "M0 anchor-selection rule status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_value_freeze_v08",
+        "M0 anchor-selection rule next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_value_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_value_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_value_freeze_summary_v08.csv")
+    require(len(rows) == 22, "M0 anchor-value freeze must include four gate rows plus eighteen galaxy rows")
+    require(
+        rows[0]["value_freeze_decision"] == "READY_FOR_ANCHOR_VALUE_FREEZE_REVIEW",
+        "M0 anchor-value freeze handoff mismatch",
+    )
+    require(
+        any(row["value_freeze_decision"] == "BLOCKED_ANCHOR_UNIT_NORMALIZATION_MISSING" for row in rows),
+        "M0 anchor-value freeze must block on unit normalization",
+    )
+    galaxy_rows = [row for row in rows if row["galaxy_id"] != "ALL"]
+    require(len(galaxy_rows) == 18, "M0 anchor-value freeze must cover eighteen galaxies")
+    require(
+        sum(int(row["imported_source_rows"]) for row in galaxy_rows) == 450,
+        "M0 anchor-value freeze must reference 450 imported source rows",
+    )
+    require(
+        all(row["selected_anchor_class"] == "source_side_baryonic_gravity_velocity_carrier" for row in rows),
+        "M0 anchor-value freeze must use the selected baryonic carrier class",
+    )
+    require(
+        all(row["frozen_source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 anchor-value freeze source columns mismatch",
+    )
+    require(
+        all("v_obs_km_s" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor-value freeze must forbid observed velocity",
+    )
+    require(all(row["anchor_value_source_frozen"] == "true" for row in rows), "M0 anchor-value source must be frozen")
+    require(
+        all(row["anchor_numeric_value_rows_written"] == "0" for row in rows),
+        "M0 anchor-value freeze cannot write numeric anchor rows",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor-value freeze cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor-value freeze cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor-value freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_unit_normalization_v08"},
+        "M0 anchor-value freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor-value freeze summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_VALUE_FREEZE_V08",
+        "M0 anchor-value freeze summary id mismatch",
+    )
+    require(
+        row["anchor_value_freeze_artifact"] == "m0_no_dark_velocity_anchor_value_freeze_v08",
+        "M0 anchor-value freeze artifact mismatch",
+    )
+    require(row["value_freeze_rows"] == "22", "M0 anchor-value freeze row count mismatch")
+    require(row["galaxy_value_freeze_rows"] == "18", "M0 anchor-value freeze galaxy count mismatch")
+    require(row["imported_source_rows_referenced"] == "450", "M0 anchor-value freeze imported row count mismatch")
+    require(row["blocked_value_freeze_checks"] == "1", "M0 anchor-value freeze blocked count mismatch")
+    require(row["anchor_value_source_frozen"] == "true", "M0 anchor-value freeze summary must freeze source")
+    require(row["anchor_numeric_value_rows_written"] == "0", "M0 anchor-value freeze summary cannot write numeric anchors")
+    require(row["velocity_formula_written"] == "false", "M0 anchor-value freeze summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor-value freeze summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor-value freeze summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor-value freeze summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_VALUE_FREEZE_PRESENT_BLOCKED_UNIT_NORMALIZATION_MISSING",
+        "M0 anchor-value freeze status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_unit_normalization_v08",
+        "M0 anchor-value freeze next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_unit_normalization_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_unit_normalization_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_unit_normalization_summary_v08.csv")
+    require(len(rows) == 7, "M0 anchor-unit normalization must have seven checks")
+    require(
+        rows[0]["unit_normalization_decision"] == "READY_FOR_ANCHOR_UNIT_NORMALIZATION_REVIEW",
+        "M0 anchor-unit normalization handoff mismatch",
+    )
+    require(
+        sum(row["unit_normalization_decision"] == "ANCHOR_UNIT_NORMALIZATION_DECLARED_NO_RESCALE" for row in rows) == 3,
+        "M0 anchor-unit normalization must declare three source component units",
+    )
+    require(
+        any(row["unit_normalization_decision"] == "BLOCKED_COMPONENT_COMBINATION_RULE_MISSING" for row in rows),
+        "M0 anchor-unit normalization must block on component-combination rule",
+    )
+    require(
+        {row["source_column"] for row in rows if row["anchor_unit_component"] == "source_component_unit"}
+        == {"v_gas_km_s", "v_disk_km_s", "v_bulge_km_s"},
+        "M0 anchor-unit normalization source component columns mismatch",
+    )
+    require(all(row["normalized_unit"] == "km/s" for row in rows), "M0 anchor-unit normalization must keep km/s")
+    require(all("posthoc_unit_rescale" in row["forbidden_inputs"] for row in rows), "M0 anchor-unit must forbid posthoc rescale")
+    require(all(row["unit_normalization_written"] == "true" for row in rows), "M0 anchor-unit normalization must be written")
+    require(
+        all(row["component_combination_rule_written"] == "false" for row in rows),
+        "M0 anchor-unit normalization cannot write combination rule",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor-unit normalization cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor-unit normalization cannot write predictions",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor-unit normalization cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_component_combination_rule_v08"},
+        "M0 anchor-unit normalization next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor-unit normalization summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_UNIT_NORMALIZATION_V08",
+        "M0 anchor-unit normalization summary id mismatch",
+    )
+    require(
+        row["anchor_unit_normalization_artifact"] == "m0_no_dark_velocity_anchor_unit_normalization_v08",
+        "M0 anchor-unit normalization artifact mismatch",
+    )
+    require(row["unit_normalization_checks"] == "7", "M0 anchor-unit normalization check count mismatch")
+    require(row["source_component_units_normalized"] == "3", "M0 anchor-unit normalized component count mismatch")
+    require(row["blocked_unit_normalization_checks"] == "1", "M0 anchor-unit blocked count mismatch")
+    require(row["unit_normalization_written"] == "true", "M0 anchor-unit summary must write normalization")
+    require(row["component_combination_rule_written"] == "false", "M0 anchor-unit summary cannot write combination rule")
+    require(row["velocity_formula_written"] == "false", "M0 anchor-unit summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor-unit summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor-unit summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor-unit summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_UNIT_NORMALIZATION_PRESENT_BLOCKED_COMPONENT_COMBINATION_RULE_MISSING",
+        "M0 anchor-unit normalization status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_component_combination_rule_v08",
+        "M0 anchor-unit normalization next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_component_combination_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_combination_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_combination_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 anchor component-combination rule must have six checks")
+    require(
+        rows[0]["component_combination_decision"] == "READY_FOR_COMPONENT_COMBINATION_RULE_REVIEW",
+        "M0 anchor component-combination handoff mismatch",
+    )
+    require(
+        any(row["component_combination_decision"] == "BLOCKED_COMPONENT_WEIGHT_POLICY_MISSING" for row in rows),
+        "M0 anchor component-combination rule must block on component-weight policy",
+    )
+    require(
+        all(row["source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 anchor component-combination source columns mismatch",
+    )
+    require(
+        all("v_obs_km_s" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor component-combination must forbid observed velocity",
+    )
+    require(
+        all("posthoc_weight_fit" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor component-combination must forbid posthoc weight fitting",
+    )
+    require(
+        all(row["component_combination_rule_written"] == "true" for row in rows),
+        "M0 anchor component-combination rule must be written",
+    )
+    require(
+        all(row["component_weight_policy_written"] == "false" for row in rows),
+        "M0 anchor component-combination cannot write weight policy",
+    )
+    require(
+        all(row["combined_anchor_values_written"] == "0" for row in rows),
+        "M0 anchor component-combination cannot write combined values",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor component-combination cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor component-combination cannot write predictions",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor component-combination cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_component_weight_policy_v08"},
+        "M0 anchor component-combination next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor component-combination summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMPONENT_COMBINATION_RULE_V08",
+        "M0 anchor component-combination summary id mismatch",
+    )
+    require(
+        row["anchor_component_combination_artifact"] == "m0_no_dark_velocity_anchor_component_combination_rule_v08",
+        "M0 anchor component-combination artifact mismatch",
+    )
+    require(row["component_combination_checks"] == "6", "M0 anchor component-combination check count mismatch")
+    require(row["declared_component_combination_guards"] == "4", "M0 anchor component-combination guard count mismatch")
+    require(row["blocked_component_combination_checks"] == "1", "M0 anchor component-combination blocked count mismatch")
+    require(row["component_combination_rule_written"] == "true", "M0 anchor component-combination summary must write rule")
+    require(row["component_weight_policy_written"] == "false", "M0 anchor component-combination summary cannot write weights")
+    require(row["combined_anchor_values_written"] == "0", "M0 anchor component-combination summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 anchor component-combination summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor component-combination summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor component-combination summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor component-combination summary cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M0_NO_DARK_ANCHOR_COMPONENT_COMBINATION_RULE_PRESENT_BLOCKED_COMPONENT_WEIGHT_POLICY_MISSING",
+        "M0 anchor component-combination status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_component_weight_policy_v08",
+        "M0 anchor component-combination next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_component_weight_policy_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_weight_policy_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_weight_policy_summary_v08.csv")
+    require(len(rows) == 6, "M0 anchor component-weight policy must have six checks")
+    require(
+        rows[0]["weight_policy_decision"] == "READY_FOR_COMPONENT_WEIGHT_POLICY_REVIEW",
+        "M0 anchor component-weight policy handoff mismatch",
+    )
+    require(
+        any(row["weight_policy_decision"] == "BLOCKED_COMPONENT_WEIGHT_VALUE_FREEZE_MISSING" for row in rows),
+        "M0 anchor component-weight policy must block on weight-value freeze",
+    )
+    require(
+        all(row["source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 anchor component-weight policy source columns mismatch",
+    )
+    require(
+        all("posthoc_weight_fit" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor component-weight policy must forbid posthoc weight fitting",
+    )
+    require(
+        all("posthoc_normalization" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor component-weight policy must forbid posthoc normalization",
+    )
+    require(
+        all(row["component_weight_policy_written"] == "true" for row in rows),
+        "M0 anchor component-weight policy must be written",
+    )
+    require(
+        all(row["component_weight_values_frozen"] == "false" for row in rows),
+        "M0 anchor component-weight policy cannot freeze values",
+    )
+    require(
+        all(row["combined_anchor_values_written"] == "0" for row in rows),
+        "M0 anchor component-weight policy cannot write combined values",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor component-weight policy cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor component-weight policy cannot write predictions",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor component-weight policy cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_component_weight_value_freeze_v08"},
+        "M0 anchor component-weight policy next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor component-weight policy summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMPONENT_WEIGHT_POLICY_V08",
+        "M0 anchor component-weight policy summary id mismatch",
+    )
+    require(
+        row["anchor_component_weight_policy_artifact"] == "m0_no_dark_velocity_anchor_component_weight_policy_v08",
+        "M0 anchor component-weight policy artifact mismatch",
+    )
+    require(row["component_weight_policy_checks"] == "6", "M0 anchor component-weight policy check count mismatch")
+    require(row["declared_component_weight_policy_guards"] == "4", "M0 anchor component-weight policy guard count mismatch")
+    require(row["blocked_component_weight_policy_checks"] == "1", "M0 anchor component-weight policy blocked count mismatch")
+    require(row["component_weight_policy_written"] == "true", "M0 anchor component-weight policy summary must write policy")
+    require(row["component_weight_values_frozen"] == "false", "M0 anchor component-weight policy summary cannot freeze values")
+    require(row["combined_anchor_values_written"] == "0", "M0 anchor component-weight policy summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 anchor component-weight policy summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor component-weight policy summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor component-weight policy summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor component-weight policy summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_COMPONENT_WEIGHT_POLICY_PRESENT_BLOCKED_WEIGHT_VALUE_FREEZE_MISSING",
+        "M0 anchor component-weight policy status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_component_weight_value_freeze_v08",
+        "M0 anchor component-weight policy next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_component_weight_value_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_weight_value_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_component_weight_value_freeze_summary_v08.csv")
+    require(len(rows) == 6, "M0 anchor component-weight value freeze must have six checks")
+    require(
+        rows[0]["weight_value_freeze_decision"] == "READY_FOR_COMPONENT_WEIGHT_VALUE_FREEZE_REVIEW",
+        "M0 anchor component-weight value-freeze handoff mismatch",
+    )
+    require(
+        any(row["weight_value_freeze_decision"] == "BLOCKED_COMBINED_ANCHOR_RULE_MISSING" for row in rows),
+        "M0 anchor component-weight value freeze must block on combined-anchor rule",
+    )
+    require(
+        all(row["source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 anchor component-weight value freeze source columns mismatch",
+    )
+    require(
+        all("posthoc_combined_anchor_value" in row["forbidden_inputs"] for row in rows),
+        "M0 anchor component-weight value freeze must forbid posthoc combined anchors",
+    )
+    require(
+        all(row["component_weight_values_frozen"] == "true" for row in rows),
+        "M0 anchor component-weight value freeze must freeze symbolic slots",
+    )
+    require(
+        all(row["numeric_weight_values_written"] == "0" for row in rows),
+        "M0 anchor component-weight value freeze cannot write numeric weights",
+    )
+    require(
+        all(row["combined_anchor_rule_written"] == "false" for row in rows),
+        "M0 anchor component-weight value freeze cannot write combined-anchor rule",
+    )
+    require(
+        all(row["combined_anchor_values_written"] == "0" for row in rows),
+        "M0 anchor component-weight value freeze cannot write combined values",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 anchor component-weight value freeze cannot write formula")
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 anchor component-weight value freeze cannot write predictions",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 anchor component-weight value freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_velocity_anchor_combined_anchor_rule_v08"},
+        "M0 anchor component-weight value freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 anchor component-weight value freeze summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMPONENT_WEIGHT_VALUE_FREEZE_V08",
+        "M0 anchor component-weight value freeze summary id mismatch",
+    )
+    require(
+        row["anchor_component_weight_value_freeze_artifact"]
+        == "m0_no_dark_velocity_anchor_component_weight_value_freeze_v08",
+        "M0 anchor component-weight value freeze artifact mismatch",
+    )
+    require(row["component_weight_value_freeze_checks"] == "6", "M0 anchor component-weight value freeze check count mismatch")
+    require(row["symbolic_weight_value_slots_frozen"] == "3", "M0 anchor component-weight value freeze frozen count mismatch")
+    require(row["blocked_component_weight_value_freeze_checks"] == "1", "M0 anchor component-weight value freeze blocked count mismatch")
+    require(row["component_weight_values_frozen"] == "true", "M0 anchor component-weight value freeze summary must freeze slots")
+    require(row["numeric_weight_values_written"] == "0", "M0 anchor component-weight value freeze summary cannot write weights")
+    require(row["combined_anchor_rule_written"] == "false", "M0 anchor component-weight value freeze summary cannot write rule")
+    require(row["combined_anchor_values_written"] == "0", "M0 anchor component-weight value freeze summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 anchor component-weight value freeze summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 anchor component-weight value freeze summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 anchor component-weight value freeze summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 anchor component-weight value freeze summary cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M0_NO_DARK_ANCHOR_COMPONENT_WEIGHT_VALUE_FREEZE_PRESENT_BLOCKED_COMBINED_ANCHOR_RULE_MISSING",
+        "M0 anchor component-weight value freeze status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_rule_v08",
+        "M0 anchor component-weight value freeze next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_combined_anchor_rule_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_rule_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_rule_summary_v08.csv")
+    require(len(rows) == 6, "M0 combined-anchor rule must have six checks")
+    require(
+        rows[0]["combined_anchor_rule_decision"] == "READY_FOR_COMBINED_ANCHOR_RULE_REVIEW",
+        "M0 combined-anchor rule handoff mismatch",
+    )
+    require(
+        any(row["combined_anchor_rule_decision"] == "BLOCKED_COMBINED_ANCHOR_EXPRESSION_FREEZE_MISSING" for row in rows),
+        "M0 combined-anchor rule must block on expression freeze",
+    )
+    require(
+        all(row["source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 combined-anchor rule source columns mismatch",
+    )
+    require(
+        all("w_gas" in row["symbolic_slots"] and "n_anchor" in row["symbolic_slots"] for row in rows),
+        "M0 combined-anchor rule symbolic slot mismatch",
+    )
+    require(
+        all("posthoc_formula_switch" in row["forbidden_inputs"] for row in rows),
+        "M0 combined-anchor rule must forbid posthoc formula switching",
+    )
+    require(all(row["combined_anchor_rule_written"] == "true" for row in rows), "M0 combined-anchor rule must be written")
+    require(
+        all(row["combined_anchor_expression_written"] == "false" for row in rows),
+        "M0 combined-anchor rule cannot freeze expression",
+    )
+    require(
+        all(row["combined_anchor_values_written"] == "0" for row in rows),
+        "M0 combined-anchor rule cannot write values",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 combined-anchor rule cannot write formula")
+    require(all(row["numeric_prediction_rows_written"] == "0" for row in rows), "M0 combined-anchor rule cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 combined-anchor rule cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows}
+        == {"m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08"},
+        "M0 combined-anchor rule next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 combined-anchor rule summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMBINED_ANCHOR_RULE_V08",
+        "M0 combined-anchor rule summary id mismatch",
+    )
+    require(
+        row["anchor_combined_anchor_rule_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_rule_v08",
+        "M0 combined-anchor rule artifact mismatch",
+    )
+    require(row["combined_anchor_rule_checks"] == "6", "M0 combined-anchor rule check count mismatch")
+    require(row["declared_combined_anchor_rule_guards"] == "3", "M0 combined-anchor rule guard count mismatch")
+    require(row["blocked_combined_anchor_rule_checks"] == "1", "M0 combined-anchor rule blocked count mismatch")
+    require(row["combined_anchor_rule_written"] == "true", "M0 combined-anchor rule summary must write rule")
+    require(row["combined_anchor_expression_written"] == "false", "M0 combined-anchor rule summary cannot write expression")
+    require(row["combined_anchor_values_written"] == "0", "M0 combined-anchor rule summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 combined-anchor rule summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 combined-anchor rule summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 combined-anchor rule summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 combined-anchor rule summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_COMBINED_ANCHOR_RULE_PRESENT_BLOCKED_EXPRESSION_FREEZE_MISSING",
+        "M0 combined-anchor rule status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08",
+        "M0 combined-anchor rule next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_summary_v08.csv")
+    expression = (
+        "v_anchor_sq_km2_s2 = (s_gas*w_gas*v_gas_km_s^2 + "
+        "s_disk*w_disk*v_disk_km_s^2 + s_bulge*w_bulge*v_bulge_km_s^2) / n_anchor"
+    )
+    require(len(rows) == 6, "M0 combined-anchor expression freeze must have six checks")
+    require(
+        rows[0]["expression_freeze_decision"] == "READY_FOR_COMBINED_ANCHOR_EXPRESSION_FREEZE_REVIEW",
+        "M0 combined-anchor expression freeze handoff mismatch",
+    )
+    require(
+        any(row["expression_freeze_decision"] == "BLOCKED_COMBINED_ANCHOR_VALUE_FREEZE_MISSING" for row in rows),
+        "M0 combined-anchor expression freeze must block on value freeze",
+    )
+    require(all(row["frozen_expression"] == expression for row in rows), "M0 combined-anchor expression mismatch")
+    require(
+        all(row["source_columns"] == "v_gas_km_s;v_disk_km_s;v_bulge_km_s" for row in rows),
+        "M0 combined-anchor expression source columns mismatch",
+    )
+    require(
+        all("w_gas" in row["symbolic_slots"] and "n_anchor" in row["symbolic_slots"] for row in rows),
+        "M0 combined-anchor expression symbolic slot mismatch",
+    )
+    require(all("v_obs_km_s" in row["forbidden_inputs"] for row in rows), "M0 expression must forbid observed velocity")
+    require(
+        all(row["combined_anchor_expression_frozen"] == "true" for row in rows),
+        "M0 combined-anchor expression must be frozen",
+    )
+    require(
+        all(row["combined_anchor_values_written"] == "0" for row in rows),
+        "M0 combined-anchor expression freeze cannot write values",
+    )
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 expression freeze cannot write formula")
+    require(all(row["numeric_prediction_rows_written"] == "0" for row in rows), "M0 expression freeze cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 expression freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows}
+        == {"m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08"},
+        "M0 combined-anchor expression next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 combined-anchor expression summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMBINED_ANCHOR_EXPRESSION_FREEZE_V08",
+        "M0 combined-anchor expression summary id mismatch",
+    )
+    require(
+        row["anchor_combined_anchor_expression_artifact"]
+        == "m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08",
+        "M0 combined-anchor expression artifact mismatch",
+    )
+    require(row["expression_freeze_checks"] == "6", "M0 combined-anchor expression check count mismatch")
+    require(row["frozen_expression_checks"] == "4", "M0 combined-anchor expression frozen count mismatch")
+    require(row["blocked_expression_freeze_checks"] == "1", "M0 combined-anchor expression blocked count mismatch")
+    require(row["combined_anchor_expression_frozen"] == "true", "M0 combined-anchor expression summary must freeze")
+    require(row["frozen_expression"] == expression, "M0 combined-anchor expression summary expression mismatch")
+    require(row["combined_anchor_values_written"] == "0", "M0 combined-anchor expression summary cannot write values")
+    require(row["velocity_formula_written"] == "false", "M0 combined-anchor expression summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 combined-anchor expression summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 combined-anchor expression summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 combined-anchor expression summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_ANCHOR_COMBINED_ANCHOR_EXPRESSION_FROZEN_BLOCKED_VALUE_FREEZE_MISSING",
+        "M0 combined-anchor expression status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08",
+        "M0 combined-anchor expression next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_anchor_combined_anchor_value_freeze_summary_v08.csv")
+    require(len(rows) == 450, "M0 combined-anchor value freeze must cover 450 source rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "M0 combined-anchor value freeze must cover eighteen galaxies")
+    require(all(row["s_gas"] == row["s_disk"] == row["s_bulge"] == "1" for row in rows), "M0 signs must be identity")
+    require(all(row["w_gas"] == row["w_disk"] == row["w_bulge"] == "1" for row in rows), "M0 weights must be identity")
+    require(all(row["n_anchor"] == "1" for row in rows), "M0 normalization must be identity")
+    require(all(float(row["v_anchor_sq_km2_s2"]) >= 0.0 for row in rows), "M0 anchor square cannot be negative")
+    require(all(float(row["v_anchor_km_s"]) >= 0.0 for row in rows), "M0 anchor velocity cannot be negative")
+    require(all("v_obs_km_s" in row["forbidden_inputs"] for row in rows), "M0 value freeze must forbid observed velocity")
+    require(all(row["combined_anchor_values_written"] == "true" for row in rows), "M0 combined-anchor values must be written")
+    require(all(row["velocity_formula_written"] == "false" for row in rows), "M0 value freeze cannot write formula")
+    require(all(row["numeric_prediction_rows_written"] == "0" for row in rows), "M0 value freeze cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 value freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows}
+        == {"m0_no_dark_velocity_readout_formula_body_freeze_v08"},
+        "M0 combined-anchor value next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 combined-anchor value summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_ANCHOR_COMBINED_ANCHOR_VALUE_FREEZE_V08",
+        "M0 combined-anchor value summary id mismatch",
+    )
+    require(
+        row["anchor_combined_anchor_value_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08",
+        "M0 combined-anchor value artifact mismatch",
+    )
+    require(row["source_rows_evaluated"] == "450", "M0 combined-anchor value row count mismatch")
+    require(row["galaxies_with_anchor_values"] == "18", "M0 combined-anchor galaxy count mismatch")
+    require(row["identity_weight_rows"] == "450", "M0 combined-anchor identity rows mismatch")
+    require(row["negative_anchor_sq_rows"] == "0", "M0 combined-anchor negative square count mismatch")
+    require(row["combined_anchor_values_written"] == "450", "M0 combined-anchor written count mismatch")
+    require(row["velocity_formula_written"] == "false", "M0 combined-anchor value summary cannot write formula")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 combined-anchor value summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 combined-anchor value summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 combined-anchor value summary cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M0_NO_DARK_ANCHOR_COMBINED_ANCHOR_VALUES_FROZEN_BLOCKED_VELOCITY_FORMULA_BODY_FREEZE_MISSING",
+        "M0 combined-anchor value status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_velocity_readout_formula_body_freeze_v08",
+        "M0 combined-anchor value summary next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_velocity_readout_formula_body_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_velocity_readout_formula_body_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_velocity_readout_formula_body_freeze_summary_v08.csv")
+    formula_body = "v_body_km_s(R) := v_anchor_km_s(R)"
+    require(len(rows) == 5, "M0 velocity formula-body freeze must have five checks")
+    require(
+        rows[0]["formula_body_freeze_decision"] == "READY_FOR_VELOCITY_FORMULA_BODY_FREEZE_REVIEW",
+        "M0 formula-body freeze handoff mismatch",
+    )
+    require(
+        any(row["formula_body_freeze_decision"] == "BLOCKED_PREDICTION_ROW_VALUE_FREEZE_MISSING" for row in rows),
+        "M0 formula-body freeze must block on prediction row value freeze",
+    )
+    require(all(row["frozen_formula_body"] == formula_body for row in rows), "M0 formula-body freeze formula mismatch")
+    require(all(row["formula_body_frozen"] == "true" for row in rows), "M0 formula body must be frozen")
+    require(
+        all(row["velocity_formula_body_written"] == "true" for row in rows),
+        "M0 formula-body freeze must write the formula body",
+    )
+    require(
+        all(row["numeric_prediction_rows_written"] == "0" for row in rows),
+        "M0 formula-body freeze cannot write prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 formula-body freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_prediction_row_value_freeze_v08"},
+        "M0 formula-body freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 formula-body freeze summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M0_NO_DARK_VELOCITY_READOUT_FORMULA_BODY_FREEZE_V08",
+        "M0 formula-body freeze summary id mismatch",
+    )
+    require(
+        row["formula_body_freeze_artifact"] == "m0_no_dark_velocity_readout_formula_body_freeze_v08",
+        "M0 formula-body freeze artifact mismatch",
+    )
+    require(row["formula_body_freeze_checks"] == "5", "M0 formula-body freeze check count mismatch")
+    require(row["frozen_formula_body_checks"] == "3", "M0 formula-body frozen check count mismatch")
+    require(row["blocked_formula_body_freeze_checks"] == "1", "M0 formula-body blocked count mismatch")
+    require(row["formula_body_frozen"] == "true", "M0 formula-body summary must freeze formula body")
+    require(row["frozen_formula_body"] == formula_body, "M0 formula-body summary formula mismatch")
+    require(row["velocity_formula_body_written"] == "true", "M0 formula-body summary must write formula body")
+    require(row["numeric_prediction_rows_written"] == "0", "M0 formula-body summary cannot write predictions")
+    require(row["families_with_numeric_predictions"] == "0", "M0 formula-body summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 formula-body summary cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M0_NO_DARK_VELOCITY_FORMULA_BODY_FROZEN_BLOCKED_PREDICTION_ROW_VALUE_FREEZE_MISSING",
+        "M0 formula-body freeze status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_prediction_row_value_freeze_v08",
+        "M0 formula-body freeze summary next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_prediction_row_value_freeze_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_prediction_row_value_freeze_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_prediction_row_value_freeze_summary_v08.csv")
+    formula_body = "v_body_km_s(R) := v_anchor_km_s(R)"
+    require(len(rows) == 450, "M0 prediction row value freeze must cover 450 rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "M0 prediction row value freeze must cover eighteen galaxies")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 prediction row value freeze must be M0-only")
+    require(all(row["frozen_formula_body"] == formula_body for row in rows), "M0 prediction row value formula mismatch")
+    require(
+        all(row["v_anchor_km_s"] == row["frozen_prediction_value_km_s"] for row in rows),
+        "M0 frozen prediction values must equal the frozen anchor values",
+    )
+    require(all("v_obs_km_s" in row["forbidden_inputs"] for row in rows), "M0 prediction value freeze must forbid observed velocity")
+    require(all(row["prediction_row_values_frozen"] == "true" for row in rows), "M0 prediction row values must be frozen")
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "M0 prediction value freeze cannot write family rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 prediction value freeze cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_no_dark_family_prediction_row_emission_v08"},
+        "M0 prediction value freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 prediction value freeze summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_PREDICTION_ROW_VALUE_FREEZE_V08", "M0 prediction value summary id mismatch")
+    require(
+        row["prediction_row_value_freeze_artifact"] == "m0_no_dark_prediction_row_value_freeze_v08",
+        "M0 prediction value artifact mismatch",
+    )
+    require(
+        row["source_formula_body_artifact"] == "m0_no_dark_velocity_readout_formula_body_freeze_v08",
+        "M0 prediction value formula-body source mismatch",
+    )
+    require(
+        row["source_anchor_value_artifact"] == "m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08",
+        "M0 prediction value anchor source mismatch",
+    )
+    require(row["source_rows_evaluated"] == "450", "M0 prediction value source row count mismatch")
+    require(row["galaxies_with_frozen_values"] == "18", "M0 prediction value galaxy count mismatch")
+    require(row["family_id"] == "M0", "M0 prediction value summary family mismatch")
+    require(row["frozen_formula_body"] == formula_body, "M0 prediction value summary formula mismatch")
+    require(row["prediction_row_values_frozen"] == "450", "M0 prediction value frozen count mismatch")
+    require(row["family_prediction_rows_written"] == "0", "M0 prediction value summary cannot write family rows")
+    require(row["families_with_numeric_predictions"] == "0", "M0 prediction value summary cannot ready families")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 prediction value summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_PREDICTION_ROW_VALUES_FROZEN_BLOCKED_FAMILY_ROW_EMISSION_MISSING",
+        "M0 prediction value status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_no_dark_family_prediction_row_emission_v08",
+        "M0 prediction value summary next artifact mismatch",
+    )
+
+
+def validate_m0_no_dark_family_prediction_row_emission_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_no_dark_family_prediction_row_emission_v08.csv")
+    summary = read_csv(ROOT / "data/derived/m0_no_dark_family_prediction_row_emission_summary_v08.csv")
+    require(len(rows) == 450, "M0 family prediction row emission must cover 450 rows")
+    require(len({row["galaxy_id"] for row in rows}) == 18, "M0 family prediction row emission must cover 18 galaxies")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 family prediction row emission family mismatch")
+    require(
+        {row["prediction_source_slot"] for row in rows} == {"M0:no_dark_readout_formula"},
+        "M0 family prediction row emission source slot mismatch",
+    )
+    require(
+        {row["prediction_status"] for row in rows} == {"PREDICTION_ROW_EMITTED_NOT_SCORED"},
+        "M0 family prediction rows must remain unscored",
+    )
+    require(all(row["family_prediction_row_written"] == "true" for row in rows), "M0 family rows must be written")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 family rows cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_label_rule_table_v06"},
+        "M0 family row emission next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 family row emission summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_NO_DARK_FAMILY_PREDICTION_ROW_EMISSION_V08", "M0 family row emission summary id mismatch")
+    require(
+        row["family_row_emission_artifact"] == "m0_no_dark_family_prediction_row_emission_v08",
+        "M0 family row emission artifact mismatch",
+    )
+    require(
+        row["target_prediction_table_artifact"] == "family_prediction_tables_v08.csv",
+        "M0 family row emission target table mismatch",
+    )
+    require(
+        row["source_prediction_row_value_artifact"] == "m0_no_dark_prediction_row_value_freeze_v08",
+        "M0 family row emission source value artifact mismatch",
+    )
+    require(row["family_id"] == "M0", "M0 family row emission summary family mismatch")
+    require(row["emitted_prediction_rows"] == "450", "M0 family row emission count mismatch")
+    require(row["galaxies_with_emitted_rows"] == "18", "M0 family row emission galaxy count mismatch")
+    require(row["families_with_numeric_predictions"] == "1", "M0 family row emission numeric family count mismatch")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 family row emission cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_NO_DARK_FAMILY_PREDICTION_ROWS_EMITTED_SCORING_BLOCKED",
+        "M0 family row emission status mismatch",
+    )
+    require(row["next_required_artifact"] == "m0_label_rule_table_v06", "M0 family row emission next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m0_no_dark_family_prediction_row_emission_only_no_scores_no_dark_sector_verdict",
+        "M0 family row emission claim boundary mismatch",
+    )
+
+
+def validate_m0_label_rule_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_label_rule_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m0_label_rule_table_summary_v06.csv")
+    require(len(rows) == 6, "M0 label rule table must define six components")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 label rule family mismatch")
+    require({row["formula_slot"] for row in rows} == {"morphology_label_rule"}, "M0 label rule slot mismatch")
+    require(
+        {row["rule_component"] for row in rows}
+        == {
+            "source_observables",
+            "label_categories",
+            "fallback_labels",
+            "exception_policy",
+            "row_selector",
+            "freeze_audit",
+        },
+        "M0 label rule components mismatch",
+    )
+    require(all(row["frozen_before_scoring"] == "true" for row in rows), "M0 label rule must be frozen before scoring")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 label rule cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M0 label rule must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m1_tau_response_formula_table_v06"},
+        "M0 label rule next artifact mismatch",
+    )
+    require(len(summary) == 1, "M0 label rule summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_LABEL_RULE_TABLE_V06", "M0 label rule summary id mismatch")
+    require(row["label_rule_artifact"] == "m0_label_rule_table_v06", "M0 label rule artifact mismatch")
+    require(row["family_id"] == "M0", "M0 label rule summary family mismatch")
+    require(row["formula_slot"] == "morphology_label_rule", "M0 label rule summary slot mismatch")
+    require(row["rule_components"] == "6", "M0 label rule component count mismatch")
+    require(row["activated_rows_covered"] == "18", "M0 label rule activated row count mismatch")
+    require(row["row_label_values_written"] == "0", "M0 label rule cannot write row labels")
+    require(row["label_rule_status"] == "M0_LABEL_RULE_TABLE_READY_NO_LABEL_VALUES", "M0 label rule status mismatch")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 label rule cannot allow scoring")
+    require(row["overall_status"] == "M0_LABEL_RULE_TABLE_READY_SCORING_BLOCKED", "M0 label rule overall status mismatch")
+    require(row["next_required_artifact"] == "m1_tau_response_formula_table_v06", "M0 label rule summary next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m0_label_rule_table_only_no_label_validation_no_scores_no_dark_sector_verdict",
+        "M0 label rule claim boundary mismatch",
+    )
+
+
+def validate_m1_tau_response_formula_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_tau_response_formula_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m1_tau_response_formula_table_summary_v06.csv")
+    require(len(rows) == 6, "M1 response formula table must define six components")
+    require({row["family_id"] for row in rows} == {"M1"}, "M1 response formula family mismatch")
+    require({row["formula_slot"] for row in rows} == {"tau_response_formula"}, "M1 response formula slot mismatch")
+    require(
+        {row["response_component"] for row in rows}
+        == {
+            "activation_rule",
+            "carrier",
+            "amplitude_law",
+            "scale_law",
+            "channel_handoff",
+            "zero_response_policy",
+        },
+        "M1 response components mismatch",
+    )
+    require(all(row["response_tau_formula_claimed"] == "false" for row in rows), "M1 cannot claim Response_tau formula")
+    require(all(row["numeric_response_values_written"] == "0" for row in rows), "M1 cannot write response values")
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "M1 cannot write prediction rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 response table cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M1 response table must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m1_admissibility_table_v06"},
+        "M1 response table next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 response summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_TAU_RESPONSE_FORMULA_TABLE_V06", "M1 response summary id mismatch")
+    require(
+        row["response_formula_table_artifact"] == "m1_tau_response_formula_table_v06",
+        "M1 response artifact mismatch",
+    )
+    require(row["family_id"] == "M1", "M1 response summary family mismatch")
+    require(row["formula_slot"] == "tau_response_formula", "M1 response summary slot mismatch")
+    require(row["response_components"] == "6", "M1 response component count mismatch")
+    require(row["response_tau_formula_claimed"] == "false", "M1 response summary cannot claim formula")
+    require(row["numeric_response_values_written"] == "0", "M1 response summary cannot write values")
+    require(row["family_prediction_rows_written"] == "0", "M1 response summary cannot write prediction rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 response summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_TAU_RESPONSE_FORMULA_TABLE_READY_ADMISSIBILITY_BLOCKED",
+        "M1 response overall status mismatch",
+    )
+    require(row["next_required_artifact"] == "m1_admissibility_table_v06", "M1 response next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m1_tau_response_formula_table_only_no_response_tau_formula_no_predictions_no_scores",
+        "M1 response claim boundary mismatch",
+    )
+
+
+def validate_m1_admissibility_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_admissibility_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m1_admissibility_table_summary_v06.csv")
+    require(len(rows) == 6, "M1 admissibility table must define six rows")
+    require({row["family_id"] for row in rows} == {"M1"}, "M1 admissibility family mismatch")
+    require({row["formula_slot"] for row in rows} == {"response_admissibility_rule"}, "M1 admissibility slot mismatch")
+    require(
+        {row["admissibility_class"] for row in rows}
+        == {
+            "source_freeze_admissibility",
+            "non_circularity_guard",
+            "no_posthoc_rescue_guard",
+            "scale_readout_guard",
+            "zero_response_guard",
+            "prediction_handoff_guard",
+        },
+        "M1 admissibility classes mismatch",
+    )
+    require(all(row["admissibility_status"] == "READY" for row in rows), "M1 admissibility rows must be ready")
+    require(
+        all(row["response_tau_formula_claim_allowed"] == "false" for row in rows),
+        "M1 admissibility cannot allow Response_tau formula claim",
+    )
+    require(
+        all(row["numeric_response_values_allowed"] == "false" for row in rows),
+        "M1 admissibility cannot allow response values",
+    )
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "M1 admissibility cannot write rows")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 admissibility cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M1 admissibility must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m2_benchmark_profile_table_v06"},
+        "M1 admissibility next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 admissibility summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_ADMISSIBILITY_TABLE_V06", "M1 admissibility summary id mismatch")
+    require(row["admissibility_artifact"] == "m1_admissibility_table_v06", "M1 admissibility artifact mismatch")
+    require(row["response_formula_table_status"] == "READY", "M1 admissibility must inherit ready response table")
+    require(row["admissibility_rows"] == "6", "M1 admissibility summary row count mismatch")
+    require(row["ready_admissibility_rows"] == "6", "M1 admissibility must ready six rows")
+    require(row["blocked_admissibility_rows"] == "0", "M1 admissibility must block zero rows")
+    require(row["response_tau_formula_claim_allowed"] == "false", "M1 admissibility cannot allow formula claim")
+    require(row["numeric_response_values_allowed"] == "false", "M1 admissibility cannot allow values")
+    require(row["family_prediction_rows_written"] == "0", "M1 admissibility cannot write rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 admissibility cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_ADMISSIBILITY_TABLE_READY_M2_BENCHMARK_BLOCKED",
+        "M1 admissibility status mismatch",
+    )
+    require(row["next_required_artifact"] == "m2_benchmark_profile_table_v06", "M1 admissibility next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m1_admissibility_table_only_no_response_tau_formula_no_values_no_predictions_no_scores",
+        "M1 admissibility claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_inventory_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_inventory_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_inventory_summary_v10.csv")
+    require(len(rows) == 6, "M1 response inventory must define six rows")
+    require(
+        [row["inventory_row_id"] for row in rows] == [f"M1RPI10_{index:03d}" for index in range(1, 7)],
+        "M1 response inventory ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M1_GLOBAL"}, "M1 response inventory readiness mismatch")
+    require({row["inventory_scope"] for row in rows} == {"global_response_parameters"}, "M1 response inventory scope mismatch")
+    require(
+        {row["response_component"] for row in rows}
+        == {
+            "activation_rule",
+            "carrier",
+            "amplitude_law",
+            "scale_law",
+            "channel_handoff",
+            "zero_response_policy",
+        },
+        "M1 response inventory component mismatch",
+    )
+    require(all(row["countability_status"] == "COUNTABILITY_CLASSIFICATION_PENDING" for row in rows), "M1 inventory must defer countability")
+    require(all(row["count_value_written"] == "0" for row in rows), "M1 inventory cannot write count values")
+    require(all(row["numeric_response_value_written"] == "0" for row in rows), "M1 inventory cannot write response values")
+    require(all(row["per_galaxy_privilege_written"] == "0" for row in rows), "M1 inventory cannot write per-galaxy privileges")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 inventory cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m1_response_parameter_count_classification_v11.csv" for row in rows),
+        "M1 inventory next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 response inventory summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_INVENTORY_V10", "M1 inventory summary id mismatch")
+    require(row["inventory_artifact"] == "m1_response_parameter_inventory_v10", "M1 inventory artifact mismatch")
+    require(row["readiness_id"] == "NCR05_M1_GLOBAL", "M1 inventory summary readiness mismatch")
+    require(row["inventory_rows"] == "6", "M1 inventory row count mismatch")
+    require(row["inventory_rows_present"] == "6", "M1 inventory present count mismatch")
+    require(row["countability_classified_rows"] == "0", "M1 inventory cannot classify rows")
+    require(row["numeric_count_values_written"] == "0", "M1 inventory cannot write counts")
+    require(row["numeric_response_values_written"] == "0", "M1 inventory cannot write values")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M1 inventory cannot write per-galaxy privileges")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 inventory cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_INVENTORY_V10_PRESENT_COUNTABILITY_CLASSIFICATION_PENDING",
+        "M1 inventory status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_count_classification_v11.csv",
+        "M1 inventory summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_inventory_only_no_counts_no_values_no_scores",
+        "M1 inventory claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_count_classification_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_count_classification_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_count_classification_summary_v11.csv")
+    require(len(rows) == 6, "M1 response count classification must define six rows")
+    require(
+        [row["classification_row_id"] for row in rows] == [f"M1RPCC11_{index:03d}" for index in range(1, 7)],
+        "M1 response count classification ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M1_GLOBAL"}, "M1 response classification readiness mismatch")
+    require({row["family_id"] for row in rows} == {"M1"}, "M1 response classification family mismatch")
+    require(
+        {row["response_component"] for row in rows}
+        == {
+            "activation_rule",
+            "carrier",
+            "amplitude_law",
+            "scale_law",
+            "channel_handoff",
+            "zero_response_policy",
+        },
+        "M1 response classification component mismatch",
+    )
+    classes = {row["response_component"]: row["countability_class"] for row in rows}
+    require(
+        classes
+        == {
+            "activation_rule": "FIXED_ADMISSIBILITY_GUARD_COUNTS_IF_ROW_SPECIFIC_SWITCH",
+            "carrier": "FIXED_PLACEHOLDER_COUNTS_IF_PHYSICAL_CARRIER_PARAMETERIZED",
+            "amplitude_law": "COUNT_IF_ADJUSTABLE_RESPONSE_AMPLITUDE",
+            "scale_law": "COUNT_IF_ADJUSTABLE_RESPONSE_SCALE",
+            "channel_handoff": "FIXED_PROTOCOL_HANDOFF_CHILD_SLOTS_COUNT",
+            "zero_response_policy": "FIXED_NULL_ROUTE_COUNTS_IF_RESCUE_TERM",
+        },
+        "M1 response countability classes mismatch",
+    )
+    require(all(row["classification_status"] == "CLASSIFIED_COUNT_VALUE_PENDING" for row in rows), "M1 classification status mismatch")
+    require(all(row["numeric_count_value_written"] == "0" for row in rows), "M1 classification cannot write counts")
+    require(all(row["numeric_response_value_written"] == "0" for row in rows), "M1 classification cannot write response values")
+    require(all(row["per_galaxy_privilege_value_written"] == "0" for row in rows), "M1 classification cannot write privileges")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 classification cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m1_response_parameter_count_value_ledger_v12.csv" for row in rows),
+        "M1 classification next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 response classification summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_COUNT_CLASSIFICATION_V11", "M1 classification summary id mismatch")
+    require(row["classification_artifact"] == "m1_response_parameter_count_classification_v11", "M1 classification artifact mismatch")
+    require(row["classification_rows"] == "6", "M1 classification row count mismatch")
+    require(row["classified_rows"] == "6", "M1 classification classified count mismatch")
+    require(row["fixed_or_guard_classes"] == "4", "M1 classification fixed/guard count mismatch")
+    require(row["count_if_adjustable_classes"] == "2", "M1 classification adjustable count mismatch")
+    require(row["numeric_count_values_written"] == "0", "M1 classification summary cannot write counts")
+    require(row["numeric_response_values_written"] == "0", "M1 classification summary cannot write response values")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M1 classification summary cannot write privileges")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 classification summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING",
+        "M1 classification status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_count_value_ledger_v12.csv",
+        "M1 classification summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_count_classification_only_no_counts_no_values_no_scores",
+        "M1 classification claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_count_value_ledger_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_count_value_ledger_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_count_value_ledger_summary_v12.csv")
+    require(len(rows) == 6, "M1 response count-value ledger must define six rows")
+    require(
+        [row["ledger_row_id"] for row in rows] == [f"M1RPCVL12_{index:03d}" for index in range(1, 7)],
+        "M1 response count-value ledger ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M1_GLOBAL"}, "M1 ledger readiness mismatch")
+    require({row["family_id"] for row in rows} == {"M1"}, "M1 ledger family mismatch")
+    statuses = {row["response_component"]: row["count_value_status"] for row in rows}
+    require(
+        statuses
+        == {
+            "activation_rule": "RESOLVED_ZERO_ADMISSIBILITY_GUARD",
+            "carrier": "CONDITIONAL_COUNT_VALUE_PENDING",
+            "amplitude_law": "CONDITIONAL_COUNT_VALUE_PENDING",
+            "scale_law": "CONDITIONAL_COUNT_VALUE_PENDING",
+            "channel_handoff": "RESOLVED_ZERO_PROTOCOL_HANDOFF_CONTAINER",
+            "zero_response_policy": "RESOLVED_ZERO_NULL_ROUTE_GUARD",
+        },
+        "M1 ledger count-value statuses mismatch",
+    )
+    require(sum(row["slot_count_value"] == "0" for row in rows) == 3, "M1 ledger must write three zero slot values")
+    require(sum(row["resolution_needed"] == "true" for row in rows) == 3, "M1 ledger must leave three conditional rows")
+    require(all(row["final_m1_global_count_input_allowed"] == "false" for row in rows), "M1 ledger cannot allow final M1 count")
+    require(all(row["response_value_input_allowed"] == "false" for row in rows), "M1 ledger cannot allow response values")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M1 ledger cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 ledger cannot allow scoring")
+    require(len(summary) == 1, "M1 response count-value ledger summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_COUNT_VALUE_LEDGER_V12", "M1 ledger summary id mismatch")
+    require(row["ledger_artifact"] == "m1_response_parameter_count_value_ledger_v12", "M1 ledger artifact mismatch")
+    require(row["classification_status"] == "M1_RESPONSE_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING", "M1 ledger classification status mismatch")
+    require(row["ledger_rows"] == "6", "M1 ledger row count mismatch")
+    require(row["resolved_zero_rows"] == "3", "M1 ledger zero row count mismatch")
+    require(row["conditional_pending_rows"] == "3", "M1 ledger conditional row count mismatch")
+    require(row["numeric_slot_count_values_written"] == "3", "M1 ledger numeric slot count mismatch")
+    require(row["final_m1_global_count_written"] == "false", "M1 ledger cannot write final M1 count")
+    require(row["numeric_response_values_written"] == "0", "M1 ledger cannot write response values")
+    require(row["parsimony_scores_written"] == "0", "M1 ledger cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 ledger cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M1 ledger status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_adjustable_slot_resolution_v13.csv",
+        "M1 ledger next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_count_value_ledger_only_no_final_k_no_response_values_no_scores",
+        "M1 ledger claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_adjustable_slot_resolution_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_adjustable_slot_resolution_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_adjustable_slot_resolution_summary_v13.csv")
+    require(len(rows) == 3, "M1 response adjustable-slot resolution must define three rows")
+    require(
+        [row["resolution_row_id"] for row in rows] == [f"M1RPASR13_{index:03d}" for index in range(1, 4)],
+        "M1 adjustable-slot resolution ids mismatch",
+    )
+    require(
+        {row["ledger_row_id"] for row in rows} == {"M1RPCVL12_002", "M1RPCVL12_003", "M1RPCVL12_004"},
+        "M1 adjustable-slot resolution source rows mismatch",
+    )
+    require(
+        {row["response_component"] for row in rows} == {"carrier", "amplitude_law", "scale_law"},
+        "M1 adjustable-slot resolution components mismatch",
+    )
+    require(
+        all(row["slot_resolution_status"] == "RESOLVED_ZERO_INACTIVE_OR_PLACEHOLDER_RESPONSE_SLOT" for row in rows),
+        "M1 adjustable-slot resolution statuses mismatch",
+    )
+    require(all(row["slot_count_value"] == "0" for row in rows), "M1 adjustable-slot resolution must write zero slot values")
+    require(
+        all(row["adjustable_response_parameter_found"] == "false" for row in rows),
+        "M1 adjustable-slot resolution cannot find adjustable response parameters",
+    )
+    require(
+        all(row["final_count_candidate_input_allowed"] == "true" for row in rows),
+        "M1 adjustable-slot resolution must allow only final-count candidate input",
+    )
+    require(all(row["response_value_input_allowed"] == "false" for row in rows), "M1 adjustable-slot resolution cannot allow response values")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M1 adjustable-slot resolution cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 adjustable-slot resolution cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m1_response_parameter_final_count_candidate_v14.csv" for row in rows),
+        "M1 adjustable-slot resolution next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 adjustable-slot resolution summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13", "M1 adjustable-slot summary id mismatch")
+    require(row["resolution_artifact"] == "m1_response_parameter_adjustable_slot_resolution_v13", "M1 adjustable-slot artifact mismatch")
+    require(
+        row["ledger_status"] == "M1_RESPONSE_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M1 adjustable-slot ledger status mismatch",
+    )
+    require(row["conditional_rows_checked"] == "3", "M1 adjustable-slot conditional row count mismatch")
+    require(row["resolved_zero_rows"] == "3", "M1 adjustable-slot resolved-zero count mismatch")
+    require(row["unresolved_rows"] == "0", "M1 adjustable-slot unresolved row count mismatch")
+    require(row["adjustable_response_parameters_found"] == "0", "M1 adjustable-slot adjustable count mismatch")
+    require(row["final_m1_global_count_candidate_ready"] == "true", "M1 adjustable-slot must ready the final-count candidate input")
+    require(row["final_m1_global_count_written"] == "false", "M1 adjustable-slot cannot write final M1 count")
+    require(row["numeric_response_values_written"] == "0", "M1 adjustable-slot cannot write response values")
+    require(row["parsimony_scores_written"] == "0", "M1 adjustable-slot cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 adjustable-slot cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M1 adjustable-slot status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_final_count_candidate_v14.csv",
+        "M1 adjustable-slot next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_adjustable_slot_resolution_only_no_final_k_no_response_values_no_scores",
+        "M1 adjustable-slot claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_final_count_candidate_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_final_count_candidate_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_final_count_candidate_summary_v14.csv")
+    require(len(rows) == 1, "M1 v14 final-count candidate must have one row")
+    row = rows[0]
+    require(row["candidate_row_id"] == "M1RPFC14_001", "M1 v14 candidate row id mismatch")
+    require(row["family_id"] == "M1", "M1 v14 family mismatch")
+    require(row["count_domain"] == "global_response_parameters", "M1 v14 count domain mismatch")
+    require(
+        row["input_artifacts"] == "m1_response_parameter_count_value_ledger_v12.csv;m1_response_parameter_adjustable_slot_resolution_v13.csv",
+        "M1 v14 input artifacts mismatch",
+    )
+    require(row["slot_count_rows_used"] == "6", "M1 v14 must use six slot count rows")
+    require(row["resolved_zero_slot_rows"] == "6", "M1 v14 must resolve six zero rows")
+    require(row["unresolved_slot_rows"] == "0", "M1 v14 unresolved row count mismatch")
+    require(row["adjustable_response_parameters_found"] == "0", "M1 v14 adjustable response count mismatch")
+    require(row["candidate_k_m1_global"] == "0", "M1 v14 candidate count mismatch")
+    require(
+        row["candidate_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M1 v14 candidate status mismatch",
+    )
+    require(row["freeze_input_allowed"] == "true", "M1 v14 must allow freeze input")
+    require(row["response_value_input_allowed"] == "false", "M1 v14 cannot allow response values")
+    require(row["parsimony_input_allowed"] == "false", "M1 v14 cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M1 v14 cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_final_count_freeze_v15.csv",
+        "M1 v14 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_final_count_candidate_only_no_freeze_no_response_values_no_scores",
+        "M1 v14 claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M1 v14 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_CANDIDATE_V14", "M1 v14 summary id mismatch")
+    require(row["candidate_artifact"] == "m1_response_parameter_final_count_candidate_v14", "M1 v14 artifact mismatch")
+    require(
+        row["v12_ledger_status"] == "M1_RESPONSE_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M1 v14 v12 status mismatch",
+    )
+    require(
+        row["v13_resolution_status"] == "M1_RESPONSE_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M1 v14 v13 status mismatch",
+    )
+    require(row["slot_count_rows_used"] == "6", "M1 v14 summary slot count mismatch")
+    require(row["resolved_zero_slot_rows"] == "6", "M1 v14 summary zero rows mismatch")
+    require(row["unresolved_slot_rows"] == "0", "M1 v14 summary unresolved rows mismatch")
+    require(row["adjustable_response_parameters_found"] == "0", "M1 v14 summary adjustable response count mismatch")
+    require(row["candidate_k_m1_global"] == "0", "M1 v14 summary candidate count mismatch")
+    require(row["final_count_frozen"] == "false", "M1 v14 cannot freeze final count")
+    require(row["numeric_response_values_written"] == "0", "M1 v14 cannot write response values")
+    require(row["parsimony_scores_written"] == "0", "M1 v14 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 v14 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M1 v14 summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_final_count_freeze_v15.csv",
+        "M1 v14 summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_final_count_candidate_only_no_freeze_no_response_values_no_scores",
+        "M1 v14 summary claim boundary mismatch",
+    )
+
+
+def validate_m1_response_parameter_final_count_freeze_v15() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_response_parameter_final_count_freeze_v15.csv")
+    summary = read_csv(ROOT / "data/derived/m1_response_parameter_final_count_freeze_summary_v15.csv")
+    require(len(rows) == 1, "M1 v15 final-count freeze must have one row")
+    row = rows[0]
+    require(row["freeze_row_id"] == "M1RPFCF15_001", "M1 v15 freeze row id mismatch")
+    require(row["candidate_row_id"] == "M1RPFC14_001", "M1 v15 candidate row id mismatch")
+    require(row["family_id"] == "M1", "M1 v15 family mismatch")
+    require(row["count_domain"] == "global_response_parameters", "M1 v15 count domain mismatch")
+    require(row["frozen_k_m1_global"] == "0", "M1 v15 frozen count mismatch")
+    require(
+        row["freeze_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_RESPONSE_PRIVILEGE_AUDIT_PENDING",
+        "M1 v15 freeze status mismatch",
+    )
+    require(
+        row["candidate_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M1 v15 candidate status mismatch",
+    )
+    require(row["per_galaxy_response_privilege_input_allowed"] == "true", "M1 v15 must allow the per-galaxy audit input")
+    require(row["response_value_input_allowed"] == "false", "M1 v15 cannot allow response values")
+    require(row["parsimony_input_allowed"] == "false", "M1 v15 cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M1 v15 cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m1_per_galaxy_response_privilege_count_audit_v10.csv",
+        "M1 v15 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_final_count_freeze_only_no_response_values_no_parsimony_no_scores",
+        "M1 v15 claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M1 v15 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_FREEZE_V15", "M1 v15 summary id mismatch")
+    require(row["freeze_artifact"] == "m1_response_parameter_final_count_freeze_v15", "M1 v15 artifact mismatch")
+    require(
+        row["candidate_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M1 v15 summary candidate status mismatch",
+    )
+    require(row["frozen_k_m1_global"] == "0", "M1 v15 summary frozen count mismatch")
+    require(row["final_count_frozen"] == "true", "M1 v15 must freeze final count")
+    require(row["numeric_response_values_written"] == "0", "M1 v15 cannot write response values")
+    require(row["per_galaxy_response_privilege_counts_written"] == "0", "M1 v15 cannot write per-galaxy counts")
+    require(row["parsimony_scores_written"] == "0", "M1 v15 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 v15 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_RESPONSE_PARAMETER_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_RESPONSE_PRIVILEGE_AUDIT_PENDING",
+        "M1 v15 summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_per_galaxy_response_privilege_count_audit_v10.csv",
+        "M1 v15 summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_response_parameter_final_count_freeze_only_no_response_values_no_parsimony_no_scores",
+        "M1 v15 summary claim boundary mismatch",
+    )
+
+
+def validate_m1_per_galaxy_response_privilege_count_audit_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_per_galaxy_response_privilege_count_audit_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m1_per_galaxy_response_privilege_count_audit_summary_v10.csv")
+    require(len(rows) == 18, "M1 per-galaxy response privilege audit must cover eighteen rows")
+    require(
+        [row["audit_row_id"] for row in rows] == [f"M1PGRPCA10_{index:03d}" for index in range(1, 19)],
+        "M1 per-galaxy response privilege audit ids mismatch",
+    )
+    require(
+        {row["source_activation_status"] for row in rows} == {"ACTIVATION_BLOCKED"},
+        "M1 per-galaxy audit must preserve source activation status",
+    )
+    require(
+        {row["m1_global_freeze_status"] for row in rows}
+        == {"M1_RESPONSE_PARAMETER_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_RESPONSE_PRIVILEGE_AUDIT_PENDING"},
+        "M1 per-galaxy audit must inherit M1 global freeze status",
+    )
+    require(
+        {row["m1_admissibility_status"] for row in rows} == {"M1_ADMISSIBILITY_TABLE_READY_M2_BENCHMARK_BLOCKED"},
+        "M1 per-galaxy audit must inherit M1 admissibility status",
+    )
+    require(
+        {row["row_response_privilege_status"] for row in rows}
+        == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M1_RESPONSE_PRIVILEGE"},
+        "M1 per-galaxy audit must resolve all rows as zero response privileges",
+    )
+    require(
+        all(row["per_galaxy_response_privilege_count_value"] == "0" for row in rows),
+        "M1 per-galaxy audit counts must be zero",
+    )
+    require(all(row["freeze_input_allowed"] == "true" for row in rows), "M1 per-galaxy audit must allow freeze input")
+    require(
+        all(row["response_value_input_allowed"] == "false" for row in rows),
+        "M1 per-galaxy audit cannot allow response values",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M1 per-galaxy audit cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M1 per-galaxy audit cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m1_per_galaxy_response_privilege_count_freeze_v11.csv" for row in rows),
+        "M1 per-galaxy audit next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 per-galaxy audit summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_AUDIT_V10",
+        "M1 per-galaxy audit summary id mismatch",
+    )
+    require(
+        row["audit_artifact"] == "m1_per_galaxy_response_privilege_count_audit_v10",
+        "M1 per-galaxy audit artifact mismatch",
+    )
+    require(row["source_rows_checked"] == "18", "M1 per-galaxy audit source row count mismatch")
+    require(row["resolved_zero_rows"] == "18", "M1 per-galaxy audit resolved row count mismatch")
+    require(row["unresolved_rows"] == "0", "M1 per-galaxy audit unresolved count mismatch")
+    require(row["per_galaxy_response_privilege_values_written"] == "18", "M1 per-galaxy audit value count mismatch")
+    require(row["per_galaxy_response_count_freeze_ready"] == "true", "M1 per-galaxy audit must be ready for freeze")
+    require(row["per_galaxy_response_count_frozen"] == "false", "M1 per-galaxy audit cannot freeze count")
+    require(row["numeric_response_values_written"] == "0", "M1 per-galaxy audit cannot write response values")
+    require(row["parsimony_scores_written"] == "0", "M1 per-galaxy audit cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 per-galaxy audit cannot allow scoring")
+    require(
+        row["overall_status"] == "M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_AUDIT_V10_READY_FOR_FREEZE",
+        "M1 per-galaxy audit status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_per_galaxy_response_privilege_count_freeze_v11.csv",
+        "M1 per-galaxy audit summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m1_per_galaxy_response_privilege_count_audit_only_no_freeze_no_response_values_no_scores",
+        "M1 per-galaxy audit claim boundary mismatch",
+    )
+
+
+def validate_m1_per_galaxy_response_privilege_count_freeze_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m1_per_galaxy_response_privilege_count_freeze_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m1_per_galaxy_response_privilege_count_freeze_summary_v11.csv")
+    require(len(rows) == 18, "M1 per-galaxy response privilege freeze must cover eighteen rows")
+    require(
+        [row["freeze_row_id"] for row in rows] == [f"M1PGRPCF11_{index:03d}" for index in range(1, 19)],
+        "M1 per-galaxy response privilege freeze ids mismatch",
+    )
+    require(
+        {row["freeze_status"] for row in rows}
+        == {"M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_FREEZE_V11_FROZEN"},
+        "M1 per-galaxy response privilege freeze status mismatch",
+    )
+    require(
+        {row["audit_status"] for row in rows} == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M1_RESPONSE_PRIVILEGE"},
+        "M1 per-galaxy response privilege freeze audit status mismatch",
+    )
+    require(
+        all(row["frozen_per_galaxy_response_privilege_count"] == "0" for row in rows),
+        "M1 per-galaxy response privilege freeze values must be zero",
+    )
+    require(
+        all(row["response_value_input_allowed"] == "false" for row in rows),
+        "M1 per-galaxy response privilege freeze cannot allow response values",
+    )
+    require(
+        all(row["parsimony_input_allowed"] == "false" for row in rows),
+        "M1 per-galaxy response privilege freeze cannot allow parsimony",
+    )
+    require(
+        all(row["endpoint_scoring_allowed"] == "false" for row in rows),
+        "M1 per-galaxy response privilege freeze cannot allow scoring",
+    )
+    require(
+        all(row["next_required_artifact"] == "m2_benchmark_parameter_inventory_v10.csv" for row in rows),
+        "M1 per-galaxy response privilege freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M1 per-galaxy response privilege freeze summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_FREEZE_V11",
+        "M1 per-galaxy response privilege freeze summary id mismatch",
+    )
+    require(
+        row["freeze_artifact"] == "m1_per_galaxy_response_privilege_count_freeze_v11",
+        "M1 per-galaxy response privilege freeze artifact mismatch",
+    )
+    require(
+        row["audit_status"] == "M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_AUDIT_V10_READY_FOR_FREEZE",
+        "M1 per-galaxy response privilege freeze audit summary status mismatch",
+    )
+    require(row["source_rows_checked"] == "18", "M1 per-galaxy response privilege freeze source row count mismatch")
+    require(row["frozen_zero_rows"] == "18", "M1 per-galaxy response privilege freeze zero row count mismatch")
+    require(row["unresolved_rows"] == "0", "M1 per-galaxy response privilege freeze unresolved count mismatch")
+    require(row["per_galaxy_response_count_frozen"] == "true", "M1 per-galaxy response privilege freeze must freeze")
+    require(
+        row["frozen_per_galaxy_response_privilege_count_total"] == "0",
+        "M1 per-galaxy response privilege freeze total mismatch",
+    )
+    require(row["numeric_response_values_written"] == "0", "M1 per-galaxy response privilege freeze cannot write values")
+    require(row["parsimony_scores_written"] == "0", "M1 per-galaxy response privilege freeze cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M1 per-galaxy response privilege freeze cannot score")
+    require(
+        row["overall_status"] == "M1_PER_GALAXY_RESPONSE_PRIVILEGE_COUNT_FREEZE_V11_READY_M2_GLOBAL_COUNT_PENDING",
+        "M1 per-galaxy response privilege freeze status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_inventory_v10.csv",
+        "M1 per-galaxy response privilege freeze summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"]
+        == "m1_per_galaxy_response_privilege_count_freeze_only_no_response_values_no_parsimony_no_scores",
+        "M1 per-galaxy response privilege freeze claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_inventory_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_inventory_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_inventory_summary_v10.csv")
+    require(len(rows) == 12, "M2 benchmark parameter inventory must cover twelve rows")
+    require(
+        [row["inventory_row_id"] for row in rows] == [f"M2BPI10_{index:03d}" for index in range(1, 13)],
+        "M2 benchmark parameter inventory ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M2_GLOBAL"}, "M2 inventory readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 inventory family id mismatch")
+    require(
+        {row["source_artifact"] for row in rows}
+        == {"m2_benchmark_profile_table_v06", "m2_nuisance_policy_table_v06"},
+        "M2 inventory source artifacts mismatch",
+    )
+    require(
+        sum(row["source_artifact"] == "m2_benchmark_profile_table_v06" for row in rows) == 6,
+        "M2 inventory profile source row count mismatch",
+    )
+    require(
+        sum(row["source_artifact"] == "m2_nuisance_policy_table_v06" for row in rows) == 6,
+        "M2 inventory nuisance source row count mismatch",
+    )
+    require(
+        all(row["countability_status"] == "COUNTABILITY_CLASSIFICATION_PENDING" for row in rows),
+        "M2 inventory countability must remain pending",
+    )
+    require(all(row["count_value_written"] == "0" for row in rows), "M2 inventory cannot write count values")
+    require(
+        all(row["numeric_benchmark_value_written"] == "0" for row in rows),
+        "M2 inventory cannot write benchmark values",
+    )
+    require(
+        all(row["family_prediction_rows_written"] == "0" for row in rows),
+        "M2 inventory cannot write prediction rows",
+    )
+    require(
+        all(row["per_galaxy_privilege_written"] == "0" for row in rows),
+        "M2 inventory cannot write per-galaxy privileges",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 inventory cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m2_benchmark_parameter_count_classification_v11.csv" for row in rows),
+        "M2 inventory next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 inventory summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M2_BENCHMARK_PARAMETER_INVENTORY_V10", "M2 inventory summary id mismatch")
+    require(row["inventory_artifact"] == "m2_benchmark_parameter_inventory_v10", "M2 inventory artifact mismatch")
+    require(row["readiness_id"] == "NCR05_M2_GLOBAL", "M2 inventory summary readiness id mismatch")
+    require(row["family_id"] == "M2", "M2 inventory summary family id mismatch")
+    require(row["inventory_rows"] == "12", "M2 inventory summary row count mismatch")
+    require(row["profile_source_rows"] == "6", "M2 inventory profile row count mismatch")
+    require(row["nuisance_source_rows"] == "6", "M2 inventory nuisance row count mismatch")
+    require(row["inventory_rows_present"] == "12", "M2 inventory rows present mismatch")
+    require(row["countability_classified_rows"] == "0", "M2 inventory cannot classify countability")
+    require(row["numeric_count_values_written"] == "0", "M2 inventory cannot write count values")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 inventory cannot write benchmark values")
+    require(row["family_prediction_rows_written"] == "0", "M2 inventory cannot write prediction rows")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M2 inventory cannot write privilege values")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 inventory cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_BENCHMARK_PARAMETER_INVENTORY_V10_PRESENT_COUNTABILITY_CLASSIFICATION_PENDING",
+        "M2 inventory status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_count_classification_v11.csv",
+        "M2 inventory summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m2_benchmark_parameter_inventory_only_no_counts_no_values_no_predictions_no_scores",
+        "M2 inventory claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_count_classification_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_count_classification_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_count_classification_summary_v11.csv")
+    require(len(rows) == 12, "M2 benchmark parameter classification must cover twelve rows")
+    require(
+        [row["classification_row_id"] for row in rows] == [f"M2BPCC11_{index:03d}" for index in range(1, 13)],
+        "M2 benchmark parameter classification ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M2_GLOBAL"}, "M2 classification readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 classification family id mismatch")
+    require(
+        {row["classification_status"] for row in rows} == {"CLASSIFIED_COUNT_VALUE_PENDING"},
+        "M2 classification status mismatch",
+    )
+    require(
+        sum(row["countability_class"].startswith("FIXED_") for row in rows) == 4,
+        "M2 classification fixed/guard count mismatch",
+    )
+    require(
+        sum("COUNT_IF" in row["countability_class"] for row in rows) == 8,
+        "M2 classification count-if count mismatch",
+    )
+    require(all(row["numeric_count_value_written"] == "0" for row in rows), "M2 classification cannot write counts")
+    require(
+        all(row["numeric_benchmark_value_written"] == "0" for row in rows),
+        "M2 classification cannot write benchmark values",
+    )
+    require(
+        all(row["family_prediction_rows_written"] == "0" for row in rows),
+        "M2 classification cannot write prediction rows",
+    )
+    require(
+        all(row["per_galaxy_privilege_value_written"] == "0" for row in rows),
+        "M2 classification cannot write privilege values",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 classification cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m2_benchmark_parameter_count_value_ledger_v12.csv" for row in rows),
+        "M2 classification next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 classification summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M2_BENCHMARK_PARAMETER_COUNT_CLASSIFICATION_V11",
+        "M2 classification summary id mismatch",
+    )
+    require(
+        row["classification_artifact"] == "m2_benchmark_parameter_count_classification_v11",
+        "M2 classification artifact mismatch",
+    )
+    require(
+        row["inventory_status"] == "M2_BENCHMARK_PARAMETER_INVENTORY_V10_PRESENT_COUNTABILITY_CLASSIFICATION_PENDING",
+        "M2 classification inventory status mismatch",
+    )
+    require(row["classification_rows"] == "12", "M2 classification row count mismatch")
+    require(row["classified_rows"] == "12", "M2 classified row count mismatch")
+    require(row["fixed_or_guard_classes"] == "4", "M2 fixed/guard summary mismatch")
+    require(row["count_if_adjustable_classes"] == "8", "M2 count-if summary mismatch")
+    require(row["disqualifying_classes"] == "0", "M2 disqualifying summary mismatch")
+    require(row["numeric_count_values_written"] == "0", "M2 classification cannot write count values")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 classification cannot write benchmark values")
+    require(row["family_prediction_rows_written"] == "0", "M2 classification cannot write prediction rows")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M2 classification cannot write privileges")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 classification cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_BENCHMARK_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING",
+        "M2 classification status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_count_value_ledger_v12.csv",
+        "M2 classification summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m2_benchmark_parameter_count_classification_only_no_counts_no_values_no_predictions_no_scores",
+        "M2 classification claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_count_value_ledger_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_count_value_ledger_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_count_value_ledger_summary_v12.csv")
+    require(len(rows) == 12, "M2 benchmark parameter value ledger must cover twelve rows")
+    require(
+        [row["ledger_row_id"] for row in rows] == [f"M2BPCVL12_{index:03d}" for index in range(1, 13)],
+        "M2 benchmark parameter value ledger ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M2_GLOBAL"}, "M2 ledger readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 ledger family id mismatch")
+    require(sum(row["slot_count_value"] == "0" for row in rows) == 4, "M2 ledger zero row count mismatch")
+    require(sum(row["resolution_needed"] == "true" for row in rows) == 8, "M2 ledger conditional row count mismatch")
+    require(
+        sum(row["slot_count_value"] == "VALUE_PENDING_BENCHMARK_SLOT_RESOLUTION" for row in rows) == 8,
+        "M2 ledger pending slot value count mismatch",
+    )
+    require(
+        all(row["final_m2_global_count_input_allowed"] == "false" for row in rows),
+        "M2 ledger cannot allow final global count input",
+    )
+    require(
+        all(row["benchmark_value_input_allowed"] == "false" for row in rows),
+        "M2 ledger cannot allow benchmark values",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M2 ledger cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 ledger cannot allow scoring")
+    require(len(summary) == 1, "M2 ledger summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M2_BENCHMARK_PARAMETER_COUNT_VALUE_LEDGER_V12", "M2 ledger summary id mismatch")
+    require(row["ledger_artifact"] == "m2_benchmark_parameter_count_value_ledger_v12", "M2 ledger artifact mismatch")
+    require(
+        row["classification_status"] == "M2_BENCHMARK_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING",
+        "M2 ledger classification status mismatch",
+    )
+    require(row["ledger_rows"] == "12", "M2 ledger row count mismatch")
+    require(row["resolved_zero_rows"] == "4", "M2 ledger resolved-zero count mismatch")
+    require(row["conditional_pending_rows"] == "8", "M2 ledger conditional count mismatch")
+    require(row["numeric_slot_count_values_written"] == "4", "M2 ledger numeric slot count mismatch")
+    require(row["final_m2_global_count_written"] == "false", "M2 ledger cannot write final M2 count")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 ledger cannot write benchmark values")
+    require(row["family_prediction_rows_written"] == "0", "M2 ledger cannot write prediction rows")
+    require(row["parsimony_scores_written"] == "0", "M2 ledger cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 ledger cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M2_BENCHMARK_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M2 ledger status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_adjustable_slot_resolution_v13.csv",
+        "M2 ledger next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m2_benchmark_parameter_count_value_ledger_only_no_final_k_no_values_no_predictions_no_scores",
+        "M2 ledger claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_adjustable_slot_resolution_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_adjustable_slot_resolution_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_adjustable_slot_resolution_summary_v13.csv")
+    require(len(rows) == 8, "M2 adjustable-slot resolution must cover eight conditional rows")
+    require(
+        [row["resolution_row_id"] for row in rows] == [f"M2BPASR13_{index:03d}" for index in range(1, 9)],
+        "M2 adjustable-slot resolution ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M2_GLOBAL"}, "M2 adjustable readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 adjustable family id mismatch")
+    require(
+        {row["prior_count_value_status"] for row in rows} == {"CONDITIONAL_COUNT_VALUE_PENDING"},
+        "M2 adjustable rows must resolve conditional ledger rows",
+    )
+    require(
+        {row["slot_resolution_status"] for row in rows}
+        == {"RESOLVED_ZERO_NO_ACTIVE_BENCHMARK_SLOT_UNDER_CURRENT_SCAFFOLD"},
+        "M2 adjustable resolution status mismatch",
+    )
+    require(all(row["slot_count_value"] == "0" for row in rows), "M2 adjustable rows must resolve to zero")
+    require(
+        all(row["adjustable_benchmark_parameter_found"] == "false" for row in rows),
+        "M2 adjustable rows cannot find active benchmark parameters",
+    )
+    require(
+        all(row["final_count_candidate_input_allowed"] == "true" for row in rows),
+        "M2 adjustable rows must allow final-count candidate input",
+    )
+    require(
+        all(row["benchmark_value_input_allowed"] == "false" for row in rows),
+        "M2 adjustable rows cannot allow benchmark values",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M2 adjustable rows cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 adjustable rows cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m2_benchmark_parameter_final_count_candidate_v14.csv" for row in rows),
+        "M2 adjustable rows next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 adjustable summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M2_BENCHMARK_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13",
+        "M2 adjustable summary id mismatch",
+    )
+    require(
+        row["resolution_artifact"] == "m2_benchmark_parameter_adjustable_slot_resolution_v13",
+        "M2 adjustable artifact mismatch",
+    )
+    require(
+        row["ledger_status"]
+        == "M2_BENCHMARK_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M2 adjustable ledger status mismatch",
+    )
+    require(row["conditional_rows_checked"] == "8", "M2 adjustable conditional count mismatch")
+    require(row["resolved_zero_rows"] == "8", "M2 adjustable zero count mismatch")
+    require(row["unresolved_rows"] == "0", "M2 adjustable unresolved count mismatch")
+    require(row["adjustable_benchmark_parameters_found"] == "0", "M2 adjustable parameter count mismatch")
+    require(row["final_m2_global_count_candidate_ready"] == "true", "M2 final count candidate readiness mismatch")
+    require(row["final_m2_global_count_written"] == "false", "M2 adjustable cannot write final count")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 adjustable cannot write benchmark values")
+    require(row["family_prediction_rows_written"] == "0", "M2 adjustable cannot write predictions")
+    require(row["parsimony_scores_written"] == "0", "M2 adjustable cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 adjustable cannot allow scoring")
+    require(
+        row["overall_status"]
+        == "M2_BENCHMARK_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M2 adjustable status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_final_count_candidate_v14.csv",
+        "M2 adjustable next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"]
+        == "m2_benchmark_parameter_adjustable_slot_resolution_only_no_final_k_no_values_no_predictions_no_scores",
+        "M2 adjustable claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_final_count_candidate_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_final_count_candidate_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_final_count_candidate_summary_v14.csv")
+    require(len(rows) == 1, "M2 final count candidate must have one row")
+    row = rows[0]
+    require(row["candidate_row_id"] == "M2BPFC14_001", "M2 final count candidate row id mismatch")
+    require(row["family_id"] == "M2", "M2 final count candidate family mismatch")
+    require(row["count_domain"] == "global_benchmark_parameters", "M2 final count candidate domain mismatch")
+    require(row["slot_count_rows_used"] == "12", "M2 final count candidate must use twelve slot rows")
+    require(row["resolved_zero_slot_rows"] == "12", "M2 final count candidate zero-row count mismatch")
+    require(row["unresolved_slot_rows"] == "0", "M2 final count candidate cannot have unresolved rows")
+    require(row["adjustable_benchmark_parameters_found"] == "0", "M2 final count candidate cannot find adjustable parameters")
+    require(row["candidate_k_m2_global"] == "0", "M2 final count candidate value mismatch")
+    require(
+        row["candidate_status"] == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M2 final count candidate status mismatch",
+    )
+    require(row["freeze_input_allowed"] == "true", "M2 final count candidate must allow freeze input")
+    require(row["benchmark_value_input_allowed"] == "false", "M2 final count candidate cannot allow benchmark values")
+    require(row["parsimony_input_allowed"] == "false", "M2 final count candidate cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M2 final count candidate cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m2_benchmark_parameter_final_count_freeze_v15.csv",
+        "M2 final count candidate next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m2_benchmark_parameter_final_count_candidate_only_no_freeze_no_values_no_predictions_no_scores",
+        "M2 final count candidate claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M2 final count candidate summary must have one row")
+    summary_row = summary[0]
+    require(
+        summary_row["summary_id"] == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_CANDIDATE_V14",
+        "M2 final count candidate summary id mismatch",
+    )
+    require(
+        summary_row["candidate_artifact"] == "m2_benchmark_parameter_final_count_candidate_v14",
+        "M2 final count candidate artifact mismatch",
+    )
+    require(
+        summary_row["v13_resolution_status"]
+        == "M2_BENCHMARK_PARAMETER_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M2 final count candidate v13 status mismatch",
+    )
+    require(summary_row["slot_count_rows_used"] == "12", "M2 final count candidate summary row count mismatch")
+    require(summary_row["resolved_zero_slot_rows"] == "12", "M2 final count candidate summary zero count mismatch")
+    require(summary_row["unresolved_slot_rows"] == "0", "M2 final count candidate summary unresolved mismatch")
+    require(summary_row["adjustable_benchmark_parameters_found"] == "0", "M2 final count candidate summary adjustable mismatch")
+    require(summary_row["candidate_k_m2_global"] == "0", "M2 final count candidate summary value mismatch")
+    require(summary_row["final_count_frozen"] == "false", "M2 final count candidate cannot freeze count")
+    require(summary_row["numeric_benchmark_values_written"] == "0", "M2 final count candidate cannot write values")
+    require(summary_row["family_prediction_rows_written"] == "0", "M2 final count candidate cannot write predictions")
+    require(summary_row["parsimony_scores_written"] == "0", "M2 final count candidate cannot write parsimony")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "M2 final count candidate cannot allow scoring")
+    require(
+        summary_row["overall_status"] == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M2 final count candidate summary status mismatch",
+    )
+    require(
+        summary_row["next_required_artifact"] == "m2_benchmark_parameter_final_count_freeze_v15.csv",
+        "M2 final count candidate summary next artifact mismatch",
+    )
+    require(
+        summary_row["claim_boundary"]
+        == "m2_benchmark_parameter_final_count_candidate_only_no_freeze_no_values_no_predictions_no_scores",
+        "M2 final count candidate summary claim boundary mismatch",
+    )
+
+
+def validate_m2_benchmark_parameter_final_count_freeze_v15() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_parameter_final_count_freeze_v15.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_parameter_final_count_freeze_summary_v15.csv")
+    require(len(rows) == 1, "M2 final count freeze must have one row")
+    row = rows[0]
+    require(row["freeze_row_id"] == "M2BPFCF15_001", "M2 final count freeze row id mismatch")
+    require(row["candidate_row_id"] == "M2BPFC14_001", "M2 final count freeze candidate id mismatch")
+    require(row["family_id"] == "M2", "M2 final count freeze family mismatch")
+    require(row["count_domain"] == "global_benchmark_parameters", "M2 final count freeze domain mismatch")
+    require(row["frozen_k_m2_global"] == "0", "M2 final count freeze value mismatch")
+    require(
+        row["freeze_status"]
+        == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_BENCHMARK_PRIVILEGE_AUDIT_PENDING",
+        "M2 final count freeze status mismatch",
+    )
+    require(
+        row["candidate_status"] == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M2 final count freeze candidate status mismatch",
+    )
+    require(row["per_galaxy_benchmark_privilege_input_allowed"] == "true", "M2 freeze must allow per-galaxy audit input")
+    require(row["benchmark_value_input_allowed"] == "false", "M2 freeze cannot allow benchmark values")
+    require(row["parsimony_input_allowed"] == "false", "M2 freeze cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M2 freeze cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m2_per_galaxy_benchmark_privilege_count_audit_v10.csv",
+        "M2 final count freeze next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m2_benchmark_parameter_final_count_freeze_only_no_benchmark_values_no_predictions_no_parsimony_no_scores",
+        "M2 final count freeze claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M2 final count freeze summary must have one row")
+    summary_row = summary[0]
+    require(summary_row["summary_id"] == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_FREEZE_V15", "M2 freeze summary id mismatch")
+    require(summary_row["freeze_artifact"] == "m2_benchmark_parameter_final_count_freeze_v15", "M2 freeze artifact mismatch")
+    require(summary_row["frozen_k_m2_global"] == "0", "M2 freeze summary value mismatch")
+    require(summary_row["final_count_frozen"] == "true", "M2 freeze summary must freeze count")
+    require(summary_row["numeric_benchmark_values_written"] == "0", "M2 freeze cannot write values")
+    require(
+        summary_row["per_galaxy_benchmark_privilege_counts_written"] == "0",
+        "M2 freeze cannot write per-galaxy counts",
+    )
+    require(summary_row["family_prediction_rows_written"] == "0", "M2 freeze cannot write predictions")
+    require(summary_row["parsimony_scores_written"] == "0", "M2 freeze cannot write parsimony")
+    require(summary_row["endpoint_scoring_allowed_anywhere"] == "false", "M2 freeze cannot allow scoring")
+    require(
+        summary_row["overall_status"]
+        == "M2_BENCHMARK_PARAMETER_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_BENCHMARK_PRIVILEGE_AUDIT_PENDING",
+        "M2 freeze summary status mismatch",
+    )
+    require(
+        summary_row["next_required_artifact"] == "m2_per_galaxy_benchmark_privilege_count_audit_v10.csv",
+        "M2 freeze summary next artifact mismatch",
+    )
+    require(
+        summary_row["claim_boundary"]
+        == "m2_benchmark_parameter_final_count_freeze_only_no_benchmark_values_no_predictions_no_parsimony_no_scores",
+        "M2 freeze summary claim boundary mismatch",
+    )
+
+
+def validate_m2_per_galaxy_benchmark_privilege_count_audit_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_per_galaxy_benchmark_privilege_count_audit_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m2_per_galaxy_benchmark_privilege_count_audit_summary_v10.csv")
+    require(len(rows) == 18, "M2 per-galaxy benchmark audit must cover eighteen rows")
+    require(
+        [row["audit_row_id"] for row in rows] == [f"M2PGBMPCA10_{idx:03d}" for idx in range(1, 19)],
+        "M2 per-galaxy benchmark audit row ids mismatch",
+    )
+    require(
+        {row["row_benchmark_privilege_status"] for row in rows}
+        == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M2_BENCHMARK_PRIVILEGE"},
+        "M2 per-galaxy benchmark audit status mismatch",
+    )
+    require(
+        all(row["per_galaxy_benchmark_privilege_count_value"] == "0" for row in rows),
+        "M2 per-galaxy benchmark audit must write zero privilege values",
+    )
+    require(all(row["benchmark_value_input_allowed"] == "false" for row in rows), "M2 audit cannot allow values")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M2 audit cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 audit cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m2_per_galaxy_benchmark_privilege_count_freeze_v11.csv" for row in rows),
+        "M2 audit next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 per-galaxy benchmark audit summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M2_PER_GALAXY_BENCHMARK_PRIVILEGE_COUNT_AUDIT_V10",
+        "M2 per-galaxy benchmark audit summary id mismatch",
+    )
+    require(row["source_rows_checked"] == "18", "M2 audit summary row count mismatch")
+    require(row["resolved_zero_rows"] == "18", "M2 audit summary zero row count mismatch")
+    require(row["unresolved_rows"] == "0", "M2 audit summary unresolved mismatch")
+    require(row["per_galaxy_benchmark_count_freeze_ready"] == "true", "M2 audit must be freeze-ready")
+    require(row["per_galaxy_benchmark_count_frozen"] == "false", "M2 audit cannot freeze counts")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 audit cannot write benchmark values")
+    require(row["parsimony_scores_written"] == "0", "M2 audit cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 audit cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_PER_GALAXY_BENCHMARK_PRIVILEGE_COUNT_AUDIT_V10_READY_FOR_FREEZE",
+        "M2 audit summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m2_per_galaxy_benchmark_privilege_count_freeze_v11.csv",
+        "M2 audit summary next artifact mismatch",
+    )
+
+
+def validate_m2_per_galaxy_benchmark_privilege_count_freeze_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_per_galaxy_benchmark_privilege_count_freeze_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m2_per_galaxy_benchmark_privilege_count_freeze_summary_v11.csv")
+    require(len(rows) == 18, "M2 per-galaxy benchmark freeze must cover eighteen rows")
+    require(
+        [row["freeze_row_id"] for row in rows] == [f"M2PGBMPCF11_{idx:03d}" for idx in range(1, 19)],
+        "M2 per-galaxy benchmark freeze row ids mismatch",
+    )
+    require(
+        {row["freeze_status"] for row in rows} == {"M2_PER_GALAXY_BENCHMARK_PRIVILEGE_COUNT_FREEZE_V11_FROZEN"},
+        "M2 per-galaxy benchmark freeze status mismatch",
+    )
+    require(
+        {row["audit_status"] for row in rows} == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M2_BENCHMARK_PRIVILEGE"},
+        "M2 per-galaxy benchmark freeze audit status mismatch",
+    )
+    require(
+        all(row["frozen_per_galaxy_benchmark_privilege_count"] == "0" for row in rows),
+        "M2 per-galaxy benchmark freeze must freeze zero values",
+    )
+    require(all(row["benchmark_value_input_allowed"] == "false" for row in rows), "M2 freeze cannot allow values")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M2 freeze cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 freeze cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "shared_input_count_discount_policy_v10.csv" for row in rows),
+        "M2 per-galaxy benchmark freeze next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 per-galaxy benchmark freeze summary must have one row")
+    row = summary[0]
+    require(
+        row["summary_id"] == "M2_PER_GALAXY_BENCHMARK_PRIVILEGE_COUNT_FREEZE_V11",
+        "M2 per-galaxy benchmark freeze summary id mismatch",
+    )
+    require(row["source_rows_checked"] == "18", "M2 freeze summary row count mismatch")
+    require(row["frozen_zero_rows"] == "18", "M2 freeze summary zero row count mismatch")
+    require(row["unresolved_rows"] == "0", "M2 freeze summary unresolved mismatch")
+    require(row["per_galaxy_benchmark_count_frozen"] == "true", "M2 freeze summary must freeze count")
+    require(row["frozen_per_galaxy_benchmark_privilege_count_total"] == "0", "M2 freeze total mismatch")
+    require(row["numeric_benchmark_values_written"] == "0", "M2 freeze cannot write benchmark values")
+    require(row["parsimony_scores_written"] == "0", "M2 freeze cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 freeze cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_PER_GALAXY_BENCHMARK_PRIVILEGE_COUNT_FREEZE_V11_READY_SHARED_COUNT_PENDING",
+        "M2 freeze summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "shared_input_count_discount_policy_v10.csv",
+        "M2 freeze summary next artifact mismatch",
+    )
+
+
+def validate_m2_benchmark_profile_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_benchmark_profile_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m2_benchmark_profile_table_summary_v06.csv")
+    require(len(rows) == 6, "M2 benchmark profile table must define six rows")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 profile family mismatch")
+    require({row["formula_slot"] for row in rows} == {"benchmark_profile_formula"}, "M2 profile slot mismatch")
+    require(
+        {row["profile_component"] for row in rows}
+        == {
+            "profile_family_registry",
+            "halo_parameter_slots",
+            "prior_policy",
+            "nuisance_policy_link",
+            "profile_switch_policy",
+            "prediction_handoff",
+        },
+        "M2 profile components mismatch",
+    )
+    require(all(row["profile_table_status"] == "READY" for row in rows), "M2 profile rows must be ready")
+    require(all(row["numeric_profile_values_written"] == "0" for row in rows), "M2 profile cannot write values")
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "M2 profile cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 profile cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M2 profile must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m2_nuisance_policy_table_v06"},
+        "M2 profile next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 profile summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M2_BENCHMARK_PROFILE_TABLE_V06", "M2 profile summary id mismatch")
+    require(row["benchmark_profile_artifact"] == "m2_benchmark_profile_table_v06", "M2 profile artifact mismatch")
+    require(row["family_id"] == "M2", "M2 profile summary family mismatch")
+    require(row["formula_slot"] == "benchmark_profile_formula", "M2 profile summary slot mismatch")
+    require(row["profile_components"] == "6", "M2 profile component count mismatch")
+    require(row["numeric_profile_values_written"] == "0", "M2 profile summary cannot write values")
+    require(row["family_prediction_rows_written"] == "0", "M2 profile summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 profile summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_BENCHMARK_PROFILE_TABLE_READY_NUISANCE_BLOCKED",
+        "M2 profile status mismatch",
+    )
+    require(row["next_required_artifact"] == "m2_nuisance_policy_table_v06", "M2 profile next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m2_benchmark_profile_table_only_no_profile_values_no_predictions_no_scores_no_validation",
+        "M2 profile claim boundary mismatch",
+    )
+
+
+def validate_m2_nuisance_policy_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/m2_nuisance_policy_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/m2_nuisance_policy_table_summary_v06.csv")
+    require(len(rows) == 6, "M2 nuisance policy table must define six rows")
+    require({row["family_id"] for row in rows} == {"M2"}, "M2 nuisance family mismatch")
+    require({row["formula_slot"] for row in rows} == {"benchmark_nuisance_policy"}, "M2 nuisance slot mismatch")
+    require(
+        {row["nuisance_component"] for row in rows}
+        == {
+            "stellar_mass_to_light_policy",
+            "gas_scaling_policy",
+            "uncertainty_policy",
+            "nuisance_prior_policy",
+            "shared_baryonic_fairness_policy",
+            "prediction_handoff",
+        },
+        "M2 nuisance components mismatch",
+    )
+    require(all(row["nuisance_policy_status"] == "READY" for row in rows), "M2 nuisance rows must be ready")
+    require(all(row["numeric_nuisance_values_written"] == "0" for row in rows), "M2 nuisance cannot write values")
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "M2 nuisance cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M2 nuisance cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "M2 nuisance must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"shared_scoring_input_table_v06"},
+        "M2 nuisance next artifact mismatch",
+    )
+    require(len(summary) == 1, "M2 nuisance summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M2_NUISANCE_POLICY_TABLE_V06", "M2 nuisance summary id mismatch")
+    require(row["nuisance_policy_artifact"] == "m2_nuisance_policy_table_v06", "M2 nuisance artifact mismatch")
+    require(
+        row["benchmark_profile_status"] == "M2_BENCHMARK_PROFILE_TABLE_READY_NUISANCE_BLOCKED",
+        "M2 nuisance benchmark profile status mismatch",
+    )
+    require(row["family_id"] == "M2", "M2 nuisance summary family mismatch")
+    require(row["formula_slot"] == "benchmark_nuisance_policy", "M2 nuisance summary slot mismatch")
+    require(row["nuisance_components"] == "6", "M2 nuisance component count mismatch")
+    require(row["numeric_nuisance_values_written"] == "0", "M2 nuisance summary cannot write values")
+    require(row["family_prediction_rows_written"] == "0", "M2 nuisance summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M2 nuisance summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M2_NUISANCE_POLICY_TABLE_READY_SHARED_INPUTS_BLOCKED",
+        "M2 nuisance status mismatch",
+    )
+    require(row["next_required_artifact"] == "shared_scoring_input_table_v06", "M2 nuisance next artifact mismatch")
+    require(
+        row["claim_boundary"] == "m2_nuisance_policy_table_only_no_nuisance_values_no_predictions_no_scores_no_validation",
+        "M2 nuisance claim boundary mismatch",
+    )
+
+
+def validate_shared_scoring_input_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/shared_scoring_input_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/shared_scoring_input_table_summary_v06.csv")
+    require(len(rows) == 6, "shared scoring input table must define six rows")
+    require({row["family_scope"] for row in rows} == {"ALL"}, "shared input family scope mismatch")
+    require({row["formula_slot"] for row in rows} == {"shared_scoring_inputs"}, "shared input slot mismatch")
+    require(
+        {row["input_component"] for row in rows}
+        == {
+            "data_loader_policy",
+            "radial_grid_policy",
+            "radial_mask_policy",
+            "uncertainty_handling_policy",
+            "baryonic_component_policy",
+            "parameter_count_handoff",
+        },
+        "shared input components mismatch",
+    )
+    require(all(row["shared_input_status"] == "READY" for row in rows), "shared input rows must be ready")
+    require(all(row["numeric_input_values_written"] == "0" for row in rows), "shared input cannot write values")
+    require(all(row["family_prediction_rows_written"] == "0" for row in rows), "shared input cannot write predictions")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "shared input cannot allow scoring")
+    require(all("endpoint_residual" in row["forbidden_inputs"] for row in rows), "shared input must forbid residual leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"numeric_parameter_count_table_v06"},
+        "shared input next artifact mismatch",
+    )
+    require(len(summary) == 1, "shared input summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "SHARED_SCORING_INPUT_TABLE_V06", "shared input summary id mismatch")
+    require(row["shared_input_artifact"] == "shared_scoring_input_table_v06", "shared input artifact mismatch")
+    require(
+        row["m2_nuisance_status"] == "M2_NUISANCE_POLICY_TABLE_READY_SHARED_INPUTS_BLOCKED",
+        "shared input M2 nuisance status mismatch",
+    )
+    require(row["family_scope"] == "ALL", "shared input summary scope mismatch")
+    require(row["formula_slot"] == "shared_scoring_inputs", "shared input summary slot mismatch")
+    require(row["shared_input_components"] == "6", "shared input component count mismatch")
+    require(row["numeric_input_values_written"] == "0", "shared input summary cannot write values")
+    require(row["family_prediction_rows_written"] == "0", "shared input summary cannot write predictions")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "shared input summary cannot allow scoring")
+    require(
+        row["overall_status"] == "SHARED_SCORING_INPUT_TABLE_READY_PARAMETER_COUNTS_BLOCKED",
+        "shared input status mismatch",
+    )
+    require(row["next_required_artifact"] == "numeric_parameter_count_table_v06", "shared input next artifact mismatch")
+    require(
+        row["claim_boundary"] == "shared_scoring_input_table_only_no_numeric_inputs_no_predictions_no_scores_no_validation",
+        "shared input claim boundary mismatch",
+    )
+
+
+def validate_numeric_parameter_count_table_v06() -> None:
+    rows = read_csv(ROOT / "data/derived/numeric_parameter_count_table_v06.csv")
+    summary = read_csv(ROOT / "data/derived/numeric_parameter_count_table_summary_v06.csv")
+    require(len(rows) == 8, "numeric parameter count table v06 must define eight count-rule rows")
+    require({"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in rows}), "v06 count rows missing families")
+    require(
+        all(row["count_value_status"] == "FINAL_NUMERIC_COUNT_VALUE_BLOCKED_UNTIL_V08" for row in rows),
+        "v06 count values must remain final-count blocked",
+    )
+    require(all(row["numeric_count_value"] == "VALUE_NOT_WRITTEN_IN_V06" for row in rows), "v06 cannot write final counts")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v06 count rows cannot allow scoring")
+    require(all("family_winner" in row["forbidden_inputs"] for row in rows), "v06 count rows must forbid winner leakage")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"numeric_parameter_count_table_v08.csv"},
+        "v06 count next artifact mismatch",
+    )
+    require(len(summary) == 1, "v06 count summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "NUMERIC_PARAMETER_COUNT_TABLE_V06", "v06 count summary id mismatch")
+    require(row["count_artifact"] == "numeric_parameter_count_table_v06", "v06 count artifact mismatch")
+    require(
+        row["shared_input_status"] == "SHARED_SCORING_INPUT_TABLE_READY_PARAMETER_COUNTS_BLOCKED",
+        "v06 count shared input status mismatch",
+    )
+    require(row["count_rows"] == "8", "v06 count row count mismatch")
+    require(row["numeric_count_values_written"] == "0", "v06 cannot write final count values")
+    require(row["parsimony_scores_written"] == "0", "v06 cannot write parsimony scores")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v06 count summary cannot allow scoring")
+    require(
+        row["overall_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_CONTRACT_READY_FINAL_COUNTS_BLOCKED",
+        "v06 count status mismatch",
+    )
+    require(row["next_required_artifact"] == "numeric_parameter_count_table_v08.csv", "v06 count next artifact mismatch")
+    require(
+        row["claim_boundary"] == "numeric_parameter_count_table_contract_only_no_final_counts_no_parsimony_no_scores",
+        "v06 count claim boundary mismatch",
+    )
+
+
+def validate_shared_input_count_discount_policy_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/shared_input_count_discount_policy_v10.csv")
+    summary = read_csv(ROOT / "data/derived/shared_input_count_discount_policy_summary_v10.csv")
+    require(len(rows) == 6, "shared input count-discount policy must cover six rows")
+    require(
+        [row["policy_row_id"] for row in rows] == [f"SICDP10_{idx:03d}" for idx in range(1, 7)],
+        "shared input discount policy row ids mismatch",
+    )
+    require(
+        {row["discount_policy_status"] for row in rows} == {"RESOLVED_ZERO_NO_SHARED_INPUT_COUNT_DISCOUNT"},
+        "shared input discount policy status mismatch",
+    )
+    require(all(row["shared_discount_count_value"] == "0" for row in rows), "shared discount values must be zero")
+    require(all(row["final_count_input_allowed"] == "true" for row in rows), "shared policy must allow final-count handoff")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "shared policy cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "shared policy cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "numeric_parameter_count_table_final_values_v10.csv" for row in rows),
+        "shared policy next artifact mismatch",
+    )
+    require(len(summary) == 1, "shared input discount policy summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "SHARED_INPUT_COUNT_DISCOUNT_POLICY_V10", "shared policy summary id mismatch")
+    require(row["shared_input_rows_checked"] == "6", "shared policy row count mismatch")
+    require(row["zero_discount_rows"] == "6", "shared policy zero row count mismatch")
+    require(row["unresolved_rows"] == "0", "shared policy unresolved row mismatch")
+    require(row["shared_discount_policy_frozen"] == "true", "shared policy must be frozen")
+    require(row["shared_discount_count_total"] == "0", "shared policy total mismatch")
+    require(row["final_numeric_count_values_written"] == "0", "shared policy cannot write final counts")
+    require(row["parsimony_scores_written"] == "0", "shared policy cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "shared policy cannot allow scoring")
+    require(
+        row["overall_status"] == "SHARED_INPUT_COUNT_DISCOUNT_POLICY_V10_READY_FINAL_NUMERIC_COUNTS_PENDING",
+        "shared policy summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "numeric_parameter_count_table_final_values_v10.csv",
+        "shared policy summary next artifact mismatch",
+    )
+
+
+def validate_numeric_parameter_count_table_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/numeric_parameter_count_table_v08.csv")
+    summary = read_csv(ROOT / "data/derived/numeric_parameter_count_table_summary_v08.csv")
+    require(len(rows) == 7, "numeric parameter count table v08 must check seven readiness rows")
+    require({"M0", "M1", "M2", "ALL"}.issubset({row["family_id"] for row in rows}), "v08 count rows missing families")
+    require(all(row["readiness_status"] == "COUNT_NOT_READY" for row in rows), "v08 readiness rows must remain not ready")
+    require(
+        all(row["final_numeric_count_status"] == "FINAL_NUMERIC_COUNT_VALUE_PENDING_EXPLICIT_FINAL_VALUES" for row in rows),
+        "v08 count values must wait for explicit final-value freeze",
+    )
+    require(
+        all(row["numeric_parameter_count_value"] == "VALUE_PENDING_READINESS_CLOSURE" for row in rows),
+        "v08 cannot write numeric count values",
+    )
+    require(
+        all(row["per_galaxy_privilege_count_value"] == "VALUE_PENDING_READINESS_CLOSURE" for row in rows),
+        "v08 cannot write per-galaxy privilege count values",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "v08 cannot allow parsimony input")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v08 cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"numeric_parameter_count_table_final_values_v10.csv"},
+        "v08 next artifact mismatch",
+    )
+    require(len(summary) == 1, "v08 count summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "NUMERIC_PARAMETER_COUNT_TABLE_V08", "v08 count summary id mismatch")
+    require(row["count_artifact"] == "numeric_parameter_count_table_v08", "v08 count artifact mismatch")
+    require(
+        row["source_contract_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_CONTRACT_READY_FINAL_COUNTS_BLOCKED",
+        "v08 source contract status mismatch",
+    )
+    require(row["readiness_rows_checked"] == "7", "v08 readiness row count mismatch")
+    require(row["blocked_count_rows"] == "7", "v08 blocked count row mismatch")
+    require(row["numeric_count_values_written"] == "0", "v08 cannot write final count values")
+    require(row["per_galaxy_privilege_values_written"] == "0", "v08 cannot write privilege count values")
+    require(row["parsimony_scores_written"] == "0", "v08 cannot write parsimony scores")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 count summary cannot allow scoring")
+    require(
+        row["overall_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_V08_BLOCKED_ON_FINAL_NUMERIC_COUNT_VALUES",
+        "v08 count status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "numeric_parameter_count_table_final_values_v10.csv",
+        "v08 count next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "numeric_parameter_count_table_v08_only_no_parsimony_no_scores_no_verdict",
+        "v08 count claim boundary mismatch",
+    )
+
+
+def validate_numeric_parameter_count_table_final_values_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/numeric_parameter_count_table_final_values_v10.csv")
+    summary = read_csv(ROOT / "data/derived/numeric_parameter_count_table_final_values_summary_v10.csv")
+    require(len(rows) == 7, "v10 final count values must freeze seven rows")
+    require(
+        [row["final_count_row_id"] for row in rows] == [f"NPCFV10_{idx:03d}" for idx in range(1, 8)],
+        "v10 final count row ids mismatch",
+    )
+    require({row["family_id"] for row in rows} == {"M0", "M1", "M2", "ALL"}, "v10 final count rows missing families")
+    require(
+        all(row["source_final_numeric_count_status"] == "FINAL_NUMERIC_COUNT_VALUE_PENDING_EXPLICIT_FINAL_VALUES" for row in rows),
+        "v10 final count source status mismatch",
+    )
+    require(all(row["closure_decision"] == "COUNT_READINESS_READY" for row in rows), "v10 closure decisions must be ready")
+    require(
+        all(row["final_numeric_count_status"] == "FINAL_NUMERIC_COUNT_VALUE_FROZEN" for row in rows),
+        "v10 final count values must be frozen",
+    )
+    require(all(row["numeric_parameter_count_value"] == "0" for row in rows), "v10 numeric count values must be zero")
+    require(all(row["per_galaxy_privilege_count_value"] == "0" for row in rows), "v10 privilege count values must be zero")
+    require(all(row["shared_discount_count_value"] == "0" for row in rows), "v10 shared discount values must be zero")
+    require(all(row["final_parsimony_count_value"] == "0" for row in rows), "v10 parsimony count values must be zero")
+    require(all(row["parsimony_input_allowed"] == "true" for row in rows), "v10 must hand count values to parsimony input")
+    require(
+        all(row["next_required_artifact"] == "control_runner_outputs_v08.csv" for row in rows),
+        "v10 final count next artifact mismatch",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v10 final count rows cannot allow scoring")
+    require(len(summary) == 1, "v10 final count summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "NUMERIC_PARAMETER_COUNT_TABLE_FINAL_VALUES_V10", "v10 final count summary id mismatch")
+    require(row["final_values_artifact"] == "numeric_parameter_count_table_final_values_v10", "v10 final count artifact mismatch")
+    require(row["v08_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_V08_BLOCKED_ON_FINAL_NUMERIC_COUNT_VALUES", "v10 v08 status mismatch")
+    require(row["closure_status"] == "NUMERIC_COUNT_READINESS_CLOSURE_READY_FOR_FINAL_COUNTS", "v10 closure status mismatch")
+    require(
+        row["shared_discount_status"] == "SHARED_INPUT_COUNT_DISCOUNT_POLICY_V10_READY_FINAL_NUMERIC_COUNTS_PENDING",
+        "v10 shared discount status mismatch",
+    )
+    require(row["final_count_rows"] == "7", "v10 final count row count mismatch")
+    require(row["final_numeric_count_values_written"] == "7", "v10 final count written mismatch")
+    require(row["per_galaxy_privilege_values_written"] == "3", "v10 privilege written mismatch")
+    require(row["shared_discount_count_total"] == "0", "v10 shared discount total mismatch")
+    require(row["final_parsimony_count_total"] == "0", "v10 parsimony count total mismatch")
+    require(row["parsimony_scores_written"] == "0", "v10 must not write parsimony scores")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v10 cannot allow endpoint scoring")
+    require(
+        row["overall_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_FINAL_VALUES_V10_READY_FOR_GLOBAL_SCORING_PREREQUISITES",
+        "v10 final count status mismatch",
+    )
+    require(row["next_required_artifact"] == "control_runner_outputs_v08.csv", "v10 final count next artifact mismatch")
+    require(
+        row["claim_boundary"] == "numeric_parameter_count_table_final_values_only_no_parsimony_no_scores_no_verdict",
+        "v10 final count claim boundary mismatch",
+    )
+
+
+def validate_control_runner_outputs_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/control_runner_outputs_v08.csv")
+    summary = read_csv(ROOT / "data/derived/control_runner_outputs_summary_v08.csv")
+    require(len(rows) == 6, "v08 control runner outputs must cover six runners")
+    require(
+        [row["control_output_id"] for row in rows] == [f"CRO08_{idx:03d}" for idx in range(1, 7)],
+        "v08 control runner output row ids mismatch",
+    )
+    require(
+        {row["output_contract_status"] for row in rows} == {"OUTPUT_CONTRACT_READY_NOT_RUN"},
+        "v08 control output contract status mismatch",
+    )
+    require(
+        all(row["source_execution_status"] == "RUNNER_CONTRACT_DECLARED_NOT_IMPLEMENTED" for row in rows),
+        "v08 control output source status mismatch",
+    )
+    require(all(row["control_result_rows_written"] == "0" for row in rows), "v08 cannot write control result rows")
+    require(all(row["control_scores_written"] == "0" for row in rows), "v08 cannot write control scores")
+    require(all(row["control_pass_claim_allowed"] == "false" for row in rows), "v08 cannot allow control pass claims")
+    require(
+        all(row["next_required_artifact"] == "numeric_decision_thresholds_v08.csv" for row in rows),
+        "v08 control output next artifact mismatch",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v08 cannot allow endpoint scoring")
+    require(len(summary) == 1, "v08 control output summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "CONTROL_RUNNER_OUTPUTS_V08", "v08 control output summary id mismatch")
+    require(row["control_output_artifact"] == "control_runner_outputs_v08", "v08 control output artifact mismatch")
+    require(row["runner_contract_rows_checked"] == "6", "v08 control output runner count mismatch")
+    require(row["output_contract_rows_written"] == "6", "v08 control output contract count mismatch")
+    require(row["control_result_rows_written"] == "0", "v08 cannot write control result rows")
+    require(row["control_scores_written"] == "0", "v08 cannot write control scores")
+    require(row["control_pass_claim_allowed_anywhere"] == "false", "v08 cannot allow control pass claims")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 cannot allow endpoint scoring")
+    require(
+        row["overall_status"] == "CONTROL_RUNNER_OUTPUTS_V08_READY_FOR_DECISION_THRESHOLDS",
+        "v08 control output status mismatch",
+    )
+    require(row["next_required_artifact"] == "numeric_decision_thresholds_v08.csv", "v08 control output next artifact mismatch")
+    require(
+        row["claim_boundary"] == "control_runner_outputs_v08_contract_only_no_control_results_no_scores_no_verdict",
+        "v08 control output claim boundary mismatch",
+    )
+
+
+def validate_control_execution_readiness_v09() -> None:
+    rows = read_csv(ROOT / "data/derived/control_execution_readiness_v09.csv")
+    summary = read_csv(ROOT / "data/derived/control_execution_readiness_summary_v09.csv")
+    require(len(rows) == 6, "v09 control execution readiness must cover six controls")
+    require(
+        {row["score_calculation_preflight_status"] for row in rows} == {"READY_FOR_SCORE_CALCULATION_PRECHECK"},
+        "v09 controls must be ready for score-calculation preflight",
+    )
+    require(
+        {row["verdict_control_status"] for row in rows} == {"BLOCKED_NOT_EXECUTED_NO_PASS_CLAIM"},
+        "v09 controls must block verdict readiness",
+    )
+    require({row["control_result_rows_written"] for row in rows} == {"0"}, "v09 cannot write control result rows")
+    require({row["control_scores_written"] for row in rows} == {"0"}, "v09 cannot write control scores")
+    require(all(row["control_pass_claim_allowed"] == "false" for row in rows), "v09 cannot allow control pass claims")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v09 cannot allow endpoint scoring")
+    require(all(row["dark_sector_verdict_allowed"] == "false" for row in rows), "v09 cannot allow verdicts")
+    require(len(summary) == 1, "v09 control execution summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "CONTROL_EXECUTION_READINESS_V09", "v09 control readiness summary id mismatch")
+    require(row["controls_checked"] == "6", "v09 must check six controls")
+    require(row["score_calculation_ready_controls"] == "6", "v09 must ready six controls for score calculation")
+    require(row["verdict_ready_controls"] == "0", "v09 must ready zero controls for verdicts")
+    require(row["control_result_rows_written"] == "0", "v09 summary cannot write control result rows")
+    require(row["control_scores_written"] == "0", "v09 summary cannot write control scores")
+    require(row["control_pass_claim_allowed_anywhere"] == "false", "v09 summary cannot allow control pass")
+    require(row["score_calculation_preflight_ready"] == "true", "v09 score-calculation preflight must be ready")
+    require(row["family_verdict_controls_ready"] == "false", "v09 family verdict controls must remain blocked")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary cannot allow endpoint scoring")
+    require(row["dark_sector_verdict_allowed_anywhere"] == "false", "v09 summary cannot allow verdicts")
+    require(
+        row["overall_status"] == "CONTROL_EXECUTION_READINESS_SCORE_CALCULATION_READY_VERDICT_CONTROLS_BLOCKED",
+        "v09 control readiness status mismatch",
+    )
+    require(row["next_required_artifact"] == "endpoint_scoring_runner_v01", "v09 next artifact mismatch")
+
+
+def validate_endpoint_scoring_runner_v01() -> None:
+    rows = read_csv(ROOT / "data/derived/endpoint_scoring_runner_v01.csv")
+    summary = read_csv(ROOT / "data/derived/endpoint_scoring_runner_summary_v01.csv")
+    require(len(rows) == 18, "v01 endpoint scoring runner must write eighteen raw diagnostic rows")
+    require({row["family_id"] for row in rows} == {"M0"}, "v01 runner must be M0-only")
+    require(
+        {row["raw_score_status"] for row in rows} == {"RAW_M0_ADEQUACY_DIAGNOSTIC_WRITTEN_NOT_VERDICT"},
+        "v01 runner must write raw diagnostics only",
+    )
+    require(
+        sum(int(row["radial_points_scored"]) for row in rows) == 450,
+        "v01 runner must score 450 radial points",
+    )
+    for row in rows:
+        full = float(row["chi2_full_raw"])
+        inner = float(row["chi2_inner_raw"])
+        outer = float(row["chi2_outer_raw"])
+        penalty = float(row["parsimony_penalty_raw"])
+        raw_score = float(row["raw_m0_adequacy_diagnostic"])
+        require(abs(raw_score - (full + 0.5 * inner + 0.5 * outer + penalty)) < 0.000002, "v01 score formula mismatch")
+        require(row["family_comparison_allowed"] == "false", "v01 cannot allow family comparison")
+        require(row["control_pass_claim_allowed"] == "false", "v01 cannot allow control pass claims")
+        require(row["endpoint_scoring_allowed"] == "false", "v01 cannot allow endpoint scoring")
+        require(row["dark_sector_verdict_allowed"] == "false", "v01 cannot allow dark-sector verdicts")
+    require(len(summary) == 1, "v01 runner summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "ENDPOINT_SCORING_RUNNER_V01", "v01 runner summary id mismatch")
+    require(row["scoring_mode"] == "RAW_M0_ADEQUACY_DIAGNOSTIC_ONLY", "v01 scoring mode mismatch")
+    require(row["raw_diagnostic_rows_written"] == "18", "v01 summary row count mismatch")
+    require(row["radial_points_scored"] == "450", "v01 summary radial count mismatch")
+    require(row["families_scored"] == "1", "v01 summary family count mismatch")
+    require(row["family_comparison_rows_written"] == "0", "v01 cannot write family comparison rows")
+    require(row["control_result_rows_written"] == "0", "v01 cannot write control result rows")
+    require(row["endpoint_verdict_scores_written"] == "0", "v01 cannot write endpoint verdict scores")
+    require(row["family_comparison_allowed_anywhere"] == "false", "v01 summary cannot allow family comparison")
+    require(row["control_pass_claim_allowed_anywhere"] == "false", "v01 summary cannot allow control pass")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v01 summary cannot allow endpoint scoring")
+    require(row["dark_sector_verdict_allowed_anywhere"] == "false", "v01 summary cannot allow verdicts")
+    require(
+        row["overall_status"] == "ENDPOINT_SCORING_RUNNER_V01_RAW_M0_ADEQUACY_DIAGNOSTICS_WRITTEN_VERDICT_BLOCKED",
+        "v01 runner status mismatch",
+    )
+    require(row["next_required_artifact"] == "control_result_execution_v01.csv", "v01 next artifact mismatch")
+
+
+def validate_family_prediction_comparability_v09() -> None:
+    rows = read_csv(ROOT / "data/derived/family_prediction_comparability_v09.csv")
+    summary = read_csv(ROOT / "data/derived/family_prediction_comparability_summary_v09.csv")
+    require([row["family_id"] for row in rows] == ["M0", "M1", "M2"], "v09 comparability family order mismatch")
+    require(
+        {row["family_id"]: row["numeric_prediction_rows_written"] for row in rows}
+        == {"M0": "450", "M1": "0", "M2": "0"},
+        "v09 comparability prediction row counts mismatch",
+    )
+    require(rows[0]["allowed_scoring_mode"] == "M0_ADEQUACY_DIAGNOSTIC_ONLY", "v09 M0 adequacy mode mismatch")
+    require(rows[0]["blocked_scoring_mode"] == "M0_M1_M2_FAMILY_COMPARISON", "v09 M0 blocked mode mismatch")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v09 cannot allow endpoint scoring")
+    require(all(row["dark_sector_verdict_allowed"] == "false" for row in rows), "v09 cannot allow verdicts")
+    require(len(summary) == 1, "v09 comparability summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FAMILY_PREDICTION_COMPARABILITY_V09", "v09 comparability summary id mismatch")
+    require(row["families_checked"] == "3", "v09 must check three families")
+    require(row["families_with_numeric_predictions"] == "1", "v09 must report one family with predictions")
+    require(row["families_without_numeric_predictions"] == "2", "v09 must report two families without predictions")
+    require(row["m0_adequacy_scoring_basis_available"] == "true", "v09 M0 adequacy basis mismatch")
+    require(row["family_comparison_scoring_allowed"] == "false", "v09 family comparison must remain blocked")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 summary cannot allow scoring")
+    require(row["dark_sector_verdict_allowed_anywhere"] == "false", "v09 summary cannot allow verdicts")
+    require(
+        row["overall_status"] == "FAMILY_PREDICTION_COMPARABILITY_M0_ONLY_FAMILY_COMPARISON_BLOCKED",
+        "v09 comparability status mismatch",
+    )
+    require(row["next_required_artifact"] == "control_runner_outputs_v08.csv", "v09 next artifact mismatch")
+
+
+def validate_numeric_decision_thresholds_v08() -> None:
+    rows = read_csv(ROOT / "data/derived/numeric_decision_thresholds_v08.csv")
+    summary = read_csv(ROOT / "data/derived/numeric_decision_thresholds_summary_v08.csv")
+    require(len(rows) == 4, "v08 numeric decision thresholds must cover four verdict labels")
+    require(
+        [row["numeric_threshold_id"] for row in rows] == [f"NDT08_{idx:03d}" for idx in range(1, 5)],
+        "v08 numeric decision threshold ids mismatch",
+    )
+    require(
+        {row["verdict_label"] for row in rows} == {"M0_SUFFICIENT", "M1_FAVORED", "M2_BENCHMARK_STRONGER", "UNRESOLVED"},
+        "v08 numeric decision threshold labels mismatch",
+    )
+    require(
+        {row["numeric_threshold_status"] for row in rows} == {"NUMERIC_THRESHOLD_FROZEN_NOT_EVALUATED"},
+        "v08 numeric decision threshold status mismatch",
+    )
+    require({row["minimum_heldout_margin"] for row in rows} == {"0"}, "v08 minimum heldout margin mismatch")
+    require({row["maximum_control_failures"] for row in rows} == {"0"}, "v08 maximum control failures mismatch")
+    require(all(row["stability_required"] == "true" for row in rows), "v08 thresholds must require stability")
+    require(
+        {row["rank_required"] for row in rows if row["verdict_label"] != "UNRESOLVED"} == {"1"},
+        "v08 non-unresolved rank requirement mismatch",
+    )
+    require(
+        [row["rank_required"] for row in rows if row["verdict_label"] == "UNRESOLVED"] == ["0"],
+        "v08 unresolved rank requirement mismatch",
+    )
+    require(
+        [row["unresolved_fallback_allowed"] for row in rows if row["verdict_label"] == "UNRESOLVED"] == ["true"],
+        "v08 unresolved fallback mismatch",
+    )
+    require(
+        all(row["next_required_artifact"] == "scoring_preflight_v07.csv" for row in rows),
+        "v08 numeric decision thresholds must point to scoring preflight",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v08 thresholds cannot allow endpoint scoring")
+    require(len(summary) == 1, "v08 numeric decision threshold summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "NUMERIC_DECISION_THRESHOLDS_V08", "v08 numeric threshold summary id mismatch")
+    require(row["source_threshold_rows_checked"] == "4", "v08 source threshold row count mismatch")
+    require(row["numeric_threshold_rows_written"] == "4", "v08 numeric threshold row count mismatch")
+    require(row["endpoint_scores_written"] == "0", "v08 cannot write endpoint scores")
+    require(row["verdicts_written"] == "0", "v08 cannot write verdicts")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v08 cannot allow endpoint scoring")
+    require(
+        row["overall_status"] == "NUMERIC_DECISION_THRESHOLDS_V08_READY_FOR_SCORING_PREFLIGHT",
+        "v08 numeric threshold status mismatch",
+    )
+    require(row["next_required_artifact"] == "scoring_preflight_v07.csv", "v08 numeric threshold next artifact mismatch")
+    require(
+        row["claim_boundary"] == "numeric_decision_thresholds_v08_threshold_freeze_only_no_scores_no_verdict",
+        "v08 numeric threshold claim boundary mismatch",
+    )
+
+
+def validate_m0_global_parameter_inventory_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_parameter_inventory_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_parameter_inventory_summary_v10.csv")
+    require(len(rows) == 6, "M0 v10 global inventory must expose six slots")
+    require(
+        [row["inventory_row_id"] for row in rows] == [f"M0GPI10_{index:03d}" for index in range(1, 7)],
+        "M0 v10 inventory row ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M0_GLOBAL"}, "M0 v10 readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 v10 family mismatch")
+    require({row["inventory_scope"] for row in rows} == {"global_formula_parameters"}, "M0 v10 scope mismatch")
+    require(
+        {row["countability_status"] for row in rows} == {"COUNTABILITY_CLASSIFICATION_PENDING"},
+        "M0 v10 must leave countability pending",
+    )
+    require(all(row["count_value_written"] == "0" for row in rows), "M0 v10 cannot write count values")
+    require(all(row["numeric_value_written"] == "0" for row in rows), "M0 v10 cannot write numeric values")
+    require(
+        all(row["per_galaxy_privilege_written"] == "0" for row in rows),
+        "M0 v10 cannot write per-galaxy privilege values",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v10 cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_global_parameter_count_classification_v11.csv"},
+        "M0 v10 next artifact mismatch",
+    )
+    require("readout_operator" in {row["global_slot_name"] for row in rows}, "M0 v10 missing readout operator slot")
+    require("no_dark_constraint" in {row["global_slot_name"] for row in rows}, "M0 v10 missing no-dark slot")
+    require(len(summary) == 1, "M0 v10 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_PARAMETER_INVENTORY_V10", "M0 v10 summary id mismatch")
+    require(row["inventory_artifact"] == "m0_global_parameter_inventory_v10", "M0 v10 artifact mismatch")
+    require(row["readiness_id"] == "NCR05_M0_GLOBAL", "M0 v10 summary readiness mismatch")
+    require(row["family_id"] == "M0", "M0 v10 summary family mismatch")
+    require(row["inventory_rows"] == "6", "M0 v10 must summarize six rows")
+    require(row["inventory_rows_present"] == "6", "M0 v10 must present six rows")
+    require(row["countability_classified_rows"] == "0", "M0 v10 cannot classify countability")
+    require(row["numeric_count_values_written"] == "0", "M0 v10 cannot write numeric counts")
+    require(row["numeric_values_written"] == "0", "M0 v10 cannot write numeric values")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M0 v10 cannot write privilege values")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v10 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_PARAMETER_INVENTORY_V10_PRESENT_COUNTABILITY_CLASSIFICATION_PENDING",
+        "M0 v10 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_global_parameter_count_classification_v11.csv",
+        "M0 v10 summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_parameter_inventory_only_no_counts_no_values_no_scores",
+        "M0 v10 claim boundary mismatch",
+    )
+
+
+def validate_m0_global_parameter_count_classification_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_parameter_count_classification_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_parameter_count_classification_summary_v11.csv")
+    require(len(rows) == 6, "M0 v11 countability classification must expose six rows")
+    require(
+        [row["classification_row_id"] for row in rows] == [f"M0GPCC11_{index:03d}" for index in range(1, 7)],
+        "M0 v11 classification row ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M0_GLOBAL"}, "M0 v11 readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 v11 family mismatch")
+    require(
+        {row["classification_status"] for row in rows} == {"CLASSIFIED_COUNT_VALUE_PENDING"},
+        "M0 v11 rows must remain count-value pending",
+    )
+    require(all(row["numeric_count_value_written"] == "0" for row in rows), "M0 v11 cannot write count values")
+    require(all(row["numeric_value_written"] == "0" for row in rows), "M0 v11 cannot write numeric values")
+    require(
+        all(row["per_galaxy_privilege_value_written"] == "0" for row in rows),
+        "M0 v11 cannot write per-galaxy privilege values",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v11 cannot allow scoring")
+    require(
+        {row["next_required_artifact"] for row in rows} == {"m0_global_parameter_count_value_ledger_v12.csv"},
+        "M0 v11 next artifact mismatch",
+    )
+    classes = {row["global_slot_name"]: row["countability_class"] for row in rows}
+    require(
+        classes["no_dark_constraint"] == "FIXED_FAMILY_GUARD_DISQUALIFIES_IF_COMPENSATOR",
+        "M0 v11 no-dark guard class mismatch",
+    )
+    require(
+        classes["readout_operator"] == "COUNT_IF_ADJUSTABLE_READOUT_OPERATOR_PARAMETER",
+        "M0 v11 readout operator class mismatch",
+    )
+    require(
+        classes["assembly"] == "AGGREGATE_AUDIT_ROW_CHILD_SLOTS_COUNT",
+        "M0 v11 assembly class mismatch",
+    )
+    require(len(summary) == 1, "M0 v11 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_PARAMETER_COUNT_CLASSIFICATION_V11", "M0 v11 summary id mismatch")
+    require(
+        row["classification_artifact"] == "m0_global_parameter_count_classification_v11",
+        "M0 v11 artifact mismatch",
+    )
+    require(
+        row["inventory_status"] == "M0_GLOBAL_PARAMETER_INVENTORY_V10_PRESENT_COUNTABILITY_CLASSIFICATION_PENDING",
+        "M0 v11 must inherit ready v10 inventory",
+    )
+    require(row["classification_rows"] == "6", "M0 v11 must summarize six rows")
+    require(row["classified_rows"] == "6", "M0 v11 must classify six rows")
+    require(row["fixed_or_neutral_classes"] == "1", "M0 v11 fixed class count mismatch")
+    require(row["count_if_adjustable_classes"] == "4", "M0 v11 count-if class count mismatch")
+    require(row["disqualifying_classes"] == "1", "M0 v11 disqualifying class count mismatch")
+    require(row["numeric_count_values_written"] == "0", "M0 v11 cannot write numeric counts")
+    require(row["numeric_values_written"] == "0", "M0 v11 cannot write numeric values")
+    require(row["per_galaxy_privilege_values_written"] == "0", "M0 v11 cannot write privilege values")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v11 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING",
+        "M0 v11 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_global_parameter_count_value_ledger_v12.csv",
+        "M0 v11 summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_parameter_count_classification_only_no_numeric_counts_no_scores",
+        "M0 v11 claim boundary mismatch",
+    )
+
+
+def validate_m0_global_parameter_count_value_ledger_v12() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_parameter_count_value_ledger_v12.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_parameter_count_value_ledger_summary_v12.csv")
+    require(len(rows) == 6, "M0 v12 count value ledger must expose six rows")
+    require(
+        [row["ledger_row_id"] for row in rows] == [f"M0GPCVL12_{index:03d}" for index in range(1, 7)],
+        "M0 v12 ledger row ids mismatch",
+    )
+    require({row["readiness_id"] for row in rows} == {"NCR05_M0_GLOBAL"}, "M0 v12 readiness id mismatch")
+    require({row["family_id"] for row in rows} == {"M0"}, "M0 v12 family mismatch")
+    require(sum(row["slot_count_value"] == "0" for row in rows) == 2, "M0 v12 must resolve two zero slot values")
+    require(sum(row["resolution_needed"] == "true" for row in rows) == 4, "M0 v12 must leave four conditional rows")
+    require(
+        all(row["final_m0_global_count_input_allowed"] == "false" for row in rows),
+        "M0 v12 cannot allow final M0 global count input",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M0 v12 cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v12 cannot allow scoring")
+    values = {row["global_slot_name"]: row["slot_count_value"] for row in rows}
+    require(values["no_dark_constraint"] == "0", "M0 v12 no-dark guard must have zero slot value")
+    require(values["assembly"] == "0", "M0 v12 assembly row must have zero direct slot value")
+    require(
+        values["readout_operator"] == "VALUE_PENDING_ADJUSTABLE_SLOT_RESOLUTION",
+        "M0 v12 readout operator must remain resolution-pending",
+    )
+    require(len(summary) == 1, "M0 v12 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_PARAMETER_COUNT_VALUE_LEDGER_V12", "M0 v12 summary id mismatch")
+    require(row["ledger_artifact"] == "m0_global_parameter_count_value_ledger_v12", "M0 v12 artifact mismatch")
+    require(
+        row["classification_status"] == "M0_GLOBAL_PARAMETER_COUNT_CLASSIFICATION_V11_READY_COUNT_VALUE_PENDING",
+        "M0 v12 must inherit ready v11 classification",
+    )
+    require(row["ledger_rows"] == "6", "M0 v12 must summarize six rows")
+    require(row["resolved_zero_rows"] == "2", "M0 v12 resolved zero count mismatch")
+    require(row["conditional_pending_rows"] == "4", "M0 v12 conditional pending count mismatch")
+    require(row["disqualifying_guard_rows"] == "1", "M0 v12 disqualifying guard count mismatch")
+    require(row["numeric_slot_count_values_written"] == "2", "M0 v12 numeric slot value count mismatch")
+    require(row["final_m0_global_count_written"] == "false", "M0 v12 cannot write final M0 count")
+    require(row["parsimony_scores_written"] == "0", "M0 v12 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v12 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M0 v12 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_global_adjustable_slot_resolution_v13.csv",
+        "M0 v12 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_parameter_count_value_ledger_only_no_final_k_no_parsimony_no_scores",
+        "M0 v12 claim boundary mismatch",
+    )
+
+
+def validate_m0_global_adjustable_slot_resolution_v13() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_adjustable_slot_resolution_v13.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_adjustable_slot_resolution_summary_v13.csv")
+    require(len(rows) == 4, "M0 v13 adjustable-slot resolution must check four rows")
+    require(
+        [row["resolution_row_id"] for row in rows] == [f"M0GASR13_{index:03d}" for index in range(1, 5)],
+        "M0 v13 resolution row ids mismatch",
+    )
+    require(
+        {row["global_slot_name"] for row in rows}
+        == {"source_state", "baryonic_input", "readout_operator", "failure_route"},
+        "M0 v13 must resolve the four conditional v12 slots",
+    )
+    require(
+        all(row["prior_count_value_status"] == "CONDITIONAL_COUNT_VALUE_PENDING" for row in rows),
+        "M0 v13 rows must inherit conditional pending status",
+    )
+    require(
+        all(row["slot_resolution_status"] == "RESOLVED_ZERO_FIXED_SOURCE_SIDE_OR_GUARD" for row in rows),
+        "M0 v13 rows must resolve as source-side or guard zero slots",
+    )
+    require(all(row["slot_count_value"] == "0" for row in rows), "M0 v13 rows must resolve to zero")
+    require(all(row["adjustable_privilege_found"] == "false" for row in rows), "M0 v13 cannot find adjustable privileges")
+    require(
+        all(row["final_count_candidate_input_allowed"] == "true" for row in rows),
+        "M0 v13 must allow final-count-candidate input",
+    )
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M0 v13 cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v13 cannot allow scoring")
+    require(
+        any("M0NDRE08_PARAMETERS" in row["resolution_evidence"] for row in rows),
+        "M0 v13 must cite readout parameter evidence",
+    )
+    require(
+        any("M0NDFP07_FAILURE_REPORTING_ROUTE" in row["resolution_evidence"] for row in rows),
+        "M0 v13 must cite fallback failure-route evidence",
+    )
+    require(len(summary) == 1, "M0 v13 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_ADJUSTABLE_SLOT_RESOLUTION_V13", "M0 v13 summary id mismatch")
+    require(row["resolution_artifact"] == "m0_global_adjustable_slot_resolution_v13", "M0 v13 artifact mismatch")
+    require(
+        row["ledger_status"] == "M0_GLOBAL_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M0 v13 must inherit v12 ledger status",
+    )
+    require(row["conditional_rows_checked"] == "4", "M0 v13 checked row count mismatch")
+    require(row["resolved_zero_rows"] == "4", "M0 v13 resolved zero count mismatch")
+    require(row["unresolved_rows"] == "0", "M0 v13 unresolved row count mismatch")
+    require(row["adjustable_privileges_found"] == "0", "M0 v13 adjustable privilege count mismatch")
+    require(row["final_m0_global_count_candidate_ready"] == "true", "M0 v13 must ready final-count candidate")
+    require(row["final_m0_global_count_written"] == "false", "M0 v13 cannot write final M0 count")
+    require(row["parsimony_scores_written"] == "0", "M0 v13 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v13 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M0 v13 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_global_final_count_candidate_v14.csv",
+        "M0 v13 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_adjustable_slot_resolution_only_no_final_k_no_parsimony_no_scores",
+        "M0 v13 claim boundary mismatch",
+    )
+
+
+def validate_m0_global_final_count_candidate_v14() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_final_count_candidate_v14.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_final_count_candidate_summary_v14.csv")
+    require(len(rows) == 1, "M0 v14 final-count candidate must have one row")
+    row = rows[0]
+    require(row["candidate_row_id"] == "M0GFC14_001", "M0 v14 candidate row id mismatch")
+    require(row["family_id"] == "M0", "M0 v14 family mismatch")
+    require(row["count_domain"] == "global_formula_parameters", "M0 v14 count domain mismatch")
+    require(row["slot_count_rows_used"] == "6", "M0 v14 must use six slot count rows")
+    require(row["resolved_zero_slot_rows"] == "6", "M0 v14 must resolve six zero rows")
+    require(row["unresolved_slot_rows"] == "0", "M0 v14 unresolved row count mismatch")
+    require(row["adjustable_privileges_found"] == "0", "M0 v14 adjustable privilege count mismatch")
+    require(row["candidate_k_m0_global"] == "0", "M0 v14 candidate count mismatch")
+    require(
+        row["candidate_status"] == "M0_GLOBAL_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M0 v14 candidate status mismatch",
+    )
+    require(row["freeze_input_allowed"] == "true", "M0 v14 must allow freeze input")
+    require(row["parsimony_input_allowed"] == "false", "M0 v14 cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M0 v14 cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m0_global_final_count_freeze_v15.csv",
+        "M0 v14 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_final_count_candidate_only_no_freeze_no_parsimony_no_scores",
+        "M0 v14 claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M0 v14 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_FINAL_COUNT_CANDIDATE_V14", "M0 v14 summary id mismatch")
+    require(row["candidate_artifact"] == "m0_global_final_count_candidate_v14", "M0 v14 artifact mismatch")
+    require(
+        row["v12_ledger_status"] == "M0_GLOBAL_PARAMETER_COUNT_VALUE_LEDGER_V12_PARTIAL_VALUES_READY_ADJUSTABLE_SLOT_RESOLUTION_PENDING",
+        "M0 v14 v12 status mismatch",
+    )
+    require(
+        row["v13_resolution_status"] == "M0_GLOBAL_ADJUSTABLE_SLOT_RESOLUTION_V13_READY_FOR_FINAL_COUNT_CANDIDATE",
+        "M0 v14 v13 status mismatch",
+    )
+    require(row["slot_count_rows_used"] == "6", "M0 v14 summary slot count mismatch")
+    require(row["resolved_zero_slot_rows"] == "6", "M0 v14 summary zero rows mismatch")
+    require(row["unresolved_slot_rows"] == "0", "M0 v14 summary unresolved rows mismatch")
+    require(row["adjustable_privileges_found"] == "0", "M0 v14 summary adjustable count mismatch")
+    require(row["candidate_k_m0_global"] == "0", "M0 v14 summary candidate count mismatch")
+    require(row["final_count_frozen"] == "false", "M0 v14 cannot freeze final count")
+    require(row["parsimony_scores_written"] == "0", "M0 v14 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v14 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M0 v14 summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_global_final_count_freeze_v15.csv",
+        "M0 v14 summary next artifact mismatch",
+    )
+
+
+def validate_m0_global_final_count_freeze_v15() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_global_final_count_freeze_v15.csv")
+    summary = read_csv(ROOT / "data/derived/m0_global_final_count_freeze_summary_v15.csv")
+    require(len(rows) == 1, "M0 v15 final-count freeze must have one row")
+    row = rows[0]
+    require(row["freeze_row_id"] == "M0GFCF15_001", "M0 v15 freeze row id mismatch")
+    require(row["candidate_row_id"] == "M0GFC14_001", "M0 v15 candidate row id mismatch")
+    require(row["family_id"] == "M0", "M0 v15 family mismatch")
+    require(row["count_domain"] == "global_formula_parameters", "M0 v15 count domain mismatch")
+    require(row["frozen_k_m0_global"] == "0", "M0 v15 frozen count mismatch")
+    require(
+        row["freeze_status"] == "M0_GLOBAL_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_PRIVILEGE_AUDIT_PENDING",
+        "M0 v15 freeze status mismatch",
+    )
+    require(
+        row["candidate_status"] == "M0_GLOBAL_FINAL_COUNT_CANDIDATE_V14_READY_FOR_FREEZE",
+        "M0 v15 candidate status mismatch",
+    )
+    require(row["per_galaxy_count_input_allowed"] == "true", "M0 v15 must allow per-galaxy audit input")
+    require(row["parsimony_input_allowed"] == "false", "M0 v15 cannot allow parsimony")
+    require(row["endpoint_scoring_allowed"] == "false", "M0 v15 cannot allow scoring")
+    require(
+        row["next_required_artifact"] == "m0_per_galaxy_privilege_count_audit_v10.csv",
+        "M0 v15 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_global_final_count_freeze_only_no_per_galaxy_counts_no_parsimony_no_scores",
+        "M0 v15 claim boundary mismatch",
+    )
+    require(len(summary) == 1, "M0 v15 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_GLOBAL_FINAL_COUNT_FREEZE_V15", "M0 v15 summary id mismatch")
+    require(row["freeze_artifact"] == "m0_global_final_count_freeze_v15", "M0 v15 artifact mismatch")
+    require(row["frozen_k_m0_global"] == "0", "M0 v15 summary frozen count mismatch")
+    require(row["final_count_frozen"] == "true", "M0 v15 must freeze the global count")
+    require(row["per_galaxy_counts_written"] == "0", "M0 v15 cannot write per-galaxy counts")
+    require(row["parsimony_scores_written"] == "0", "M0 v15 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v15 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_GLOBAL_FINAL_COUNT_FREEZE_V15_READY_PER_GALAXY_PRIVILEGE_AUDIT_PENDING",
+        "M0 v15 summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_per_galaxy_privilege_count_audit_v10.csv",
+        "M0 v15 summary next artifact mismatch",
+    )
+
+
+def validate_m0_per_galaxy_privilege_count_audit_v10() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_per_galaxy_privilege_count_audit_v10.csv")
+    summary = read_csv(ROOT / "data/derived/m0_per_galaxy_privilege_count_audit_summary_v10.csv")
+    require(len(rows) == 18, "M0 v10 per-galaxy privilege audit must cover eighteen rows")
+    require(
+        [row["audit_row_id"] for row in rows] == [f"M0PGPCA10_{index:03d}" for index in range(1, 19)],
+        "M0 v10 per-galaxy audit ids mismatch",
+    )
+    require(
+        {row["source_activation_status"] for row in rows} == {"ACTIVATION_BLOCKED"},
+        "M0 v10 must preserve source activation status",
+    )
+    require(
+        {row["m0_label_rule_status"] for row in rows} == {"M0_LABEL_RULE_TABLE_READY_SCORING_BLOCKED"},
+        "M0 v10 must inherit label-rule status",
+    )
+    require(
+        {row["row_privilege_status"] for row in rows} == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M0_PRIVILEGE"},
+        "M0 v10 must resolve all rows as zero row-specific privileges",
+    )
+    require(all(row["per_galaxy_privilege_count_value"] == "0" for row in rows), "M0 v10 counts must be zero")
+    require(all(row["freeze_input_allowed"] == "true" for row in rows), "M0 v10 must allow freeze input")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M0 v10 cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v10 cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m0_per_galaxy_privilege_count_freeze_v11.csv" for row in rows),
+        "M0 v10 next artifact must be the per-galaxy count freeze",
+    )
+    require(len(summary) == 1, "M0 v10 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_PER_GALAXY_PRIVILEGE_COUNT_AUDIT_V10", "M0 v10 summary id mismatch")
+    require(row["audit_artifact"] == "m0_per_galaxy_privilege_count_audit_v10", "M0 v10 artifact mismatch")
+    require(row["source_rows_checked"] == "18", "M0 v10 source row count mismatch")
+    require(row["resolved_zero_rows"] == "18", "M0 v10 resolved row count mismatch")
+    require(row["unresolved_rows"] == "0", "M0 v10 unresolved count mismatch")
+    require(row["per_galaxy_privilege_values_written"] == "18", "M0 v10 value count mismatch")
+    require(row["per_galaxy_count_freeze_ready"] == "true", "M0 v10 must be ready for freeze")
+    require(row["per_galaxy_count_frozen"] == "false", "M0 v10 cannot freeze count")
+    require(row["parsimony_scores_written"] == "0", "M0 v10 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v10 cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_PER_GALAXY_PRIVILEGE_COUNT_AUDIT_V10_READY_FOR_FREEZE",
+        "M0 v10 summary status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m0_per_galaxy_privilege_count_freeze_v11.csv",
+        "M0 v10 summary next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_per_galaxy_privilege_count_audit_only_no_freeze_no_parsimony_no_scores",
+        "M0 v10 claim boundary mismatch",
+    )
+
+
+def validate_m0_per_galaxy_privilege_count_freeze_v11() -> None:
+    rows = read_csv(ROOT / "data/derived/m0_per_galaxy_privilege_count_freeze_v11.csv")
+    summary = read_csv(ROOT / "data/derived/m0_per_galaxy_privilege_count_freeze_summary_v11.csv")
+    require(len(rows) == 18, "M0 v11 per-galaxy privilege freeze must cover eighteen rows")
+    require(
+        [row["freeze_row_id"] for row in rows] == [f"M0PGPCF11_{index:03d}" for index in range(1, 19)],
+        "M0 v11 freeze ids mismatch",
+    )
+    require(
+        {row["freeze_status"] for row in rows} == {"M0_PER_GALAXY_PRIVILEGE_COUNT_FREEZE_V11_FROZEN"},
+        "M0 v11 rows must be frozen",
+    )
+    require(
+        {row["audit_status"] for row in rows} == {"RESOLVED_ZERO_NO_ROW_SPECIFIC_M0_PRIVILEGE"},
+        "M0 v11 must inherit zero row-specific privilege audit status",
+    )
+    require(all(row["frozen_per_galaxy_privilege_count"] == "0" for row in rows), "M0 v11 frozen counts must be zero")
+    require(all(row["parsimony_input_allowed"] == "false" for row in rows), "M0 v11 cannot allow parsimony")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "M0 v11 cannot allow scoring")
+    require(
+        all(row["next_required_artifact"] == "m1_response_parameter_inventory_v10.csv" for row in rows),
+        "M0 v11 must hand off to M1 global inventory",
+    )
+    require(len(summary) == 1, "M0 v11 summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "M0_PER_GALAXY_PRIVILEGE_COUNT_FREEZE_V11", "M0 v11 summary id mismatch")
+    require(row["freeze_artifact"] == "m0_per_galaxy_privilege_count_freeze_v11", "M0 v11 artifact mismatch")
+    require(row["source_rows_checked"] == "18", "M0 v11 source row count mismatch")
+    require(row["frozen_zero_rows"] == "18", "M0 v11 frozen zero count mismatch")
+    require(row["unresolved_rows"] == "0", "M0 v11 unresolved count mismatch")
+    require(row["per_galaxy_count_frozen"] == "true", "M0 v11 must freeze per-galaxy count")
+    require(row["frozen_per_galaxy_privilege_count_total"] == "0", "M0 v11 total count mismatch")
+    require(row["parsimony_scores_written"] == "0", "M0 v11 cannot write parsimony")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "M0 v11 cannot allow scoring")
+    require(
+        row["overall_status"] == "M0_PER_GALAXY_PRIVILEGE_COUNT_FREEZE_V11_READY_M1_GLOBAL_COUNT_PENDING",
+        "M0 v11 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "m1_response_parameter_inventory_v10.csv",
+        "M0 v11 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "m0_per_galaxy_privilege_count_freeze_only_no_parsimony_no_scores",
+        "M0 v11 claim boundary mismatch",
+    )
+
+
+def validate_numeric_count_readiness_closure_v09() -> None:
+    rows = read_csv(ROOT / "data/derived/numeric_count_readiness_closure_v09.csv")
+    summary = read_csv(ROOT / "data/derived/numeric_count_readiness_closure_summary_v09.csv")
+    require(len(rows) == 7, "v09 count readiness closure must check seven rows")
+    require(
+        [row["closure_row_id"] for row in rows] == [f"NCRC09_{index:03d}" for index in range(1, 8)],
+        "v09 closure row ids mismatch",
+    )
+    require({row["family_id"] for row in rows} == {"M0", "M1", "M2", "ALL"}, "v09 closure rows missing families")
+    require(all(row["source_readiness_status"] == "COUNT_NOT_READY" for row in rows), "v09 source readiness must remain source-manifest blocked")
+    require(rows[0]["closure_decision"] == "COUNT_READINESS_READY", "v09 M0 global row must be ready after v15 freeze")
+    require(rows[1]["closure_decision"] == "COUNT_READINESS_READY", "v09 M0 per-galaxy row must be ready after v11 freeze")
+    require(rows[2]["closure_decision"] == "COUNT_READINESS_READY", "v09 M1 global row must be ready after v15 freeze")
+    require(rows[3]["closure_decision"] == "COUNT_READINESS_READY", "v09 fourth closure row must now be ready")
+    require(rows[4]["closure_decision"] == "COUNT_READINESS_READY", "v09 fifth closure row must now be ready")
+    require(rows[5]["closure_decision"] == "COUNT_READINESS_READY", "v09 sixth closure row must now be ready")
+    require(rows[6]["closure_decision"] == "COUNT_READINESS_READY", "v09 seventh closure row must now be ready")
+    require(all(row["numeric_count_values_written"] == "0" for row in rows), "v09 cannot write numeric counts")
+    require(all(row["parsimony_scores_written"] == "0" for row in rows), "v09 cannot write parsimony scores")
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v09 cannot allow endpoint scoring")
+    require(rows[0]["readiness_id"] == "NCR05_M0_GLOBAL", "v09 first closure row must be M0 global")
+    require(
+        rows[0]["closure_blocker"] == "none",
+        "v09 first blocker must be cleared after M0 global final-count freeze",
+    )
+    require(
+        rows[0]["next_required_artifact"] == "none",
+        "v09 first next artifact mismatch",
+    )
+    require(rows[1]["closure_blocker"] == "none", "v09 second blocker mismatch")
+    require(
+        rows[1]["next_required_artifact"] == "none",
+        "v09 second next artifact mismatch",
+    )
+    require(rows[2]["closure_blocker"] == "none", "v09 third blocker mismatch")
+    require(
+        rows[2]["next_required_artifact"] == "none",
+        "v09 third next artifact mismatch",
+    )
+    require(rows[3]["closure_blocker"] == "none", "v09 fourth blocker mismatch")
+    require(
+        rows[3]["next_required_artifact"] == "none",
+        "v09 fourth next artifact mismatch",
+    )
+    require(
+        rows[4]["closure_blocker"] == "none",
+        "v09 fifth blocker mismatch",
+    )
+    require(
+        rows[4]["next_required_artifact"] == "none",
+        "v09 fifth next artifact mismatch",
+    )
+    require(
+        "M0_NO_DARK_FORMULA_TABLE_READY_FOR_PREDICTION_ROWS" in rows[0]["upstream_artifact_status"],
+        "v09 must record M0 formula table status",
+    )
+    require(
+        "SOURCE_ROW_AUDIT_SKELETON_PRESENT_NOT_COUNT_READY" in rows[1]["upstream_artifact_status"],
+        "v09 must record source-row audit skeleton status",
+    )
+    require(len(summary) == 1, "v09 closure summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "NUMERIC_COUNT_READINESS_CLOSURE_V09", "v09 summary id mismatch")
+    require(row["closure_artifact"] == "numeric_count_readiness_closure_v09", "v09 artifact mismatch")
+    require(
+        row["v08_status"] == "NUMERIC_PARAMETER_COUNT_TABLE_V08_BLOCKED_ON_FINAL_NUMERIC_COUNT_VALUES",
+        "v09 must record the current v08 final-values-blocked status",
+    )
+    require(row["readiness_rows_checked"] == "7", "v09 readiness row count mismatch")
+    require(rows[5]["closure_blocker"] == "none", "v09 sixth blocker mismatch")
+    require(rows[5]["next_required_artifact"] == "none", "v09 sixth next artifact mismatch")
+    require(rows[6]["closure_blocker"] == "none", "v09 seventh blocker mismatch")
+    require(rows[6]["next_required_artifact"] == "none", "v09 seventh next artifact mismatch")
+    require(row["closure_ready_rows"] == "7", "v09 must ready all closure rows")
+    require(row["closure_blocked_rows"] == "0", "v09 must clear all closure blockers")
+    require(row["numeric_count_values_written"] == "0", "v09 cannot write numeric count values")
+    require(row["parsimony_scores_written"] == "0", "v09 cannot write parsimony scores")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v09 cannot allow endpoint scoring")
+    require(
+        row["overall_status"] == "NUMERIC_COUNT_READINESS_CLOSURE_READY_FOR_FINAL_COUNTS",
+        "v09 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "numeric_parameter_count_table_final_values_v10.csv",
+        "v09 next artifact mismatch",
+    )
+    require(
+        row["claim_boundary"] == "numeric_count_readiness_closure_only_no_counts_no_parsimony_no_scores",
+        "v09 claim boundary mismatch",
+    )
+
+
+def validate_family_prediction_frontier_trace_v81() -> None:
+    rows = read_csv(ROOT / "data/derived/family_prediction_frontier_trace_v81.csv")
+    summary = read_csv(ROOT / "data/derived/family_prediction_frontier_trace_summary_v81.csv")
+    require(len(rows) == 7, "v81 frontier trace must have seven rows")
+    require(
+        [row["frontier_layer"] for row in rows]
+        == [
+            "family_prediction_table",
+            "m0_formula_table",
+            "m0_formula_body",
+            "m0_readout_equation",
+            "m0_equation_kernel",
+            "m0_frozen_expression_body",
+            "m0_payload_evidence",
+        ],
+        "v81 frontier trace order mismatch",
+    )
+    require(
+        rows[0]["numeric_prediction_rows_written"] == "450"
+        and all(row["numeric_prediction_rows_written"] == "0" for row in rows[1:]),
+        "v81 trace must report only the emitted M0 family prediction rows",
+    )
+    require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v81 trace cannot allow scoring")
+    require(
+        all(row["dark_sector_verdict_allowed"] == "false" for row in rows),
+        "v81 trace cannot decide dark-sector verdict",
+    )
+    require(rows[1]["artifact"] == "m0_no_dark_formula_table_v06", "v81 formula-table artifact mismatch")
+    require(rows[1]["blocking_slot"] == "formula_table_policy", "v81 first policy blocker slot mismatch")
+    require(
+        rows[1]["narrowed_next_artifact"] == "family_prediction_tables_v08.csv",
+        "v81 first policy blocker artifact mismatch",
+    )
+    require(
+        rows[0]["narrowed_next_artifact"] == "scoring_preflight_v07.csv",
+        "v81 family prediction blocker artifact mismatch",
+    )
+    require(len(summary) == 1, "v81 trace summary must have one row")
+    row = summary[0]
+    require(row["summary_id"] == "FAMILY_PREDICTION_FRONTIER_TRACE_V81", "v81 summary id mismatch")
+    require(row["trace_artifact"] == "family_prediction_frontier_trace_v81", "v81 trace artifact mismatch")
+    require(row["trace_steps"] == "7", "v81 summary trace count mismatch")
+    require(row["payload_side_ready"] == "true", "v81 payload side must be ready")
+    require(
+        row["first_family_prediction_frontier"] == "family_prediction_tables_v08.csv",
+        "v81 family frontier mismatch",
+    )
+    require(
+        row["first_content_blocker"] == "scoring_preflight_v07.csv",
+        "v81 first content blocker mismatch",
+    )
+    require(row["formula_rows_written"] == "0", "v81 must write zero formula rows")
+    require(row["numeric_prediction_rows_written"] == "450", "v81 must report 450 emitted M0 prediction rows")
+    require(row["endpoint_scoring_allowed_anywhere"] == "false", "v81 summary cannot allow scoring")
+    require(
+        row["overall_status"] == "FAMILY_PREDICTION_FRONTIER_TRACED_TO_SCORING_PREFLIGHT",
+        "v81 status mismatch",
+    )
+    require(
+        row["next_required_artifact"] == "scoring_preflight_v07.csv",
+        "v81 next artifact mismatch",
+    )
 
 
 def validate_source_import_template_v14() -> None:
@@ -2222,23 +7455,27 @@ def validate_scoring_dependency_closure_v24() -> None:
             "SCD24_REAL_VALUES",
             "SCD24_LEAKAGE_AUDIT",
             "SCD24_ROW_ACTIVATION",
+            "SCD24_FAMILY_FORMULA_TABLES",
+            "SCD24_PARAMETER_COUNTS",
+            "SCD24_CONTROL_RUNNERS",
+            "SCD24_DECISION_THRESHOLDS",
         },
         f"v24 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v24 rows cannot allow scoring")
     require(any(row["upstream_status"] == "PROVENANCE_PROMOTION_READY_NOT_IMPORTED" for row in rows), "v24 must include v23 ready")
     require(
-        any(row["upstream_status"] == "SCORING_ROW_ACTIVATION_READY_GLOBAL_SCORING_BLOCKED" for row in rows),
+        any(row["upstream_status"] == "SCORING_ACTIVATION_READY_GLOBAL_PREREQUISITES_READY" for row in rows),
         "v24 must include v13 row activation readiness",
     )
     require(len(summary) == 1, "v24 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_BLOCKED", "v24 summary must block scoring closure")
+    require(row["overall_status"] == "SCORING_DEPENDENCY_CLOSURE_READY", "v24 summary must mark dependency closure ready")
     require(row["dependencies_checked"] == "13", "v24 must check thirteen dependencies")
-    require(row["ready_dependencies"] == "9", "v24 must have nine ready dependencies")
-    require(row["blocked_dependencies"] == "4", "v24 must block four dependencies")
+    require(row["ready_dependencies"] == "13", "v24 must have thirteen ready dependencies")
+    require(row["blocked_dependencies"] == "0", "v24 must block zero dependencies")
     require(
-        row["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
+        row["next_required_artifact"] == "none",
         "v24 next artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v24 summary must forbid scoring")
@@ -2263,26 +7500,25 @@ def validate_scoring_unblock_priority_v25() -> None:
             "SCD24_REAL_VALUES",
             "SCD24_LEAKAGE_AUDIT",
             "SCD24_ROW_ACTIVATION",
+            "SCD24_FAMILY_FORMULA_TABLES",
+            "SCD24_PARAMETER_COUNTS",
+            "SCD24_CONTROL_RUNNERS",
+            "SCD24_DECISION_THRESHOLDS",
         },
         f"v25 ready ids mismatch: {ready_ids}",
     )
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v25 rows cannot allow scoring")
     frontier = [row for row in rows if row["frontier_now"] == "true"]
-    require(len(frontier) == 1, "v25 must identify exactly one current frontier")
-    require(frontier[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 first frontier must be family formula tables")
-    require(
-        frontier[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
-        "v25 frontier artifact must be family prediction tables",
-    )
+    require(frontier == [], "v25 must clear dependency frontiers")
     require(len(summary) == 1, "v25 summary must have one row")
     row = summary[0]
-    require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_IDENTIFIED", "v25 must identify a frontier")
+    require(row["overall_status"] == "SCORING_UNBLOCK_FRONTIER_CLEAR", "v25 must clear dependency frontier")
     require(row["priority_rows"] == "13", "v25 must summarize thirteen priorities")
-    require(row["blocked_priority_rows"] == "4", "v25 must preserve four blocked rows")
-    require(row["frontier_now_rows"] == "1", "v25 must summarize one current frontier")
-    require(row["first_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES", "v25 frontier dependency mismatch")
+    require(row["blocked_priority_rows"] == "0", "v25 must preserve zero blocked rows")
+    require(row["frontier_now_rows"] == "0", "v25 must summarize zero current frontiers")
+    require(row["first_frontier_dependency"] == "none", "v25 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
+        row["first_frontier_artifact"] == "none",
         "v25 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v25 summary must forbid scoring")
@@ -2323,16 +7559,16 @@ def validate_scoring_frontier_status_v72() -> None:
         "v72 second frontier must reflect v78 leakage pass",
     )
     require(
-        rows[1]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
-        "v72 second frontier must hand off to family prediction tables after v79",
+        rows[1]["next_required_artifact"] == "scoring_preflight_v07.csv",
+        "v72 second frontier must hand off to scoring preflight",
     )
     require(
-        rows[2]["current_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
+        rows[2]["current_status"] == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_PARAMETER_COUNTS_BLOCKED",
         "v72 third frontier must reflect v80 formula-slot blocker",
     )
     require(
-        rows[2]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
-        "v72 third frontier must point to family prediction tables",
+        rows[2]["next_required_artifact"] == "scoring_preflight_v07.csv",
+        "v72 third frontier must point to scoring preflight",
     )
     require(len(summary) == 1, "v72 summary must have one row")
     row = summary[0]
@@ -2341,7 +7577,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["blocked_frontier_rows"] == "3", "v72 must keep all frontier rows blocked")
     require(row["first_frontier_id"] == "SFS72_LEAKAGE_PARTIAL_SUFFICIENCY_RESPONSE", "v72 first frontier mismatch")
     require(
-        row["first_frontier_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
+        row["first_frontier_artifact"] == "scoring_preflight_v07.csv",
         "v72 first frontier artifact summary mismatch",
     )
     require(row["required_components_for_full_scoring_leakage_pass"] == "4", "v72 must require four leakage components")
@@ -2351,7 +7587,7 @@ def validate_scoring_frontier_status_v72() -> None:
     require(row["activation_rows_authorized"] == "0", "v72 summary cannot authorize activation")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v72 summary must forbid scoring")
     require(
-        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES",
+        row["overall_status"] == "SCORING_FRONTIER_BLOCKED_ON_SCORING_PREFLIGHT",
         "v72 status mismatch",
     )
 
@@ -2695,9 +7931,9 @@ def validate_post_writer_scoring_activation_recheck_v38() -> None:
     require(row["activation_recheck_rows"] == "18", "v38 must summarize eighteen rows")
     require(row["rows_activated_after_recheck"] == "18", "v38 must activate eighteen rows")
     require(row["row_level_blocked_rows_after_recheck"] == "0", "v38 must block zero rows at row level")
-    require(row["global_blockers_after_recheck"] == "4", "v38 must preserve four global blockers")
+    require(row["global_blockers_after_recheck"] == "0", "v38 must clear global blockers")
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v38 summary must forbid scoring")
-    require(row["overall_status"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_BLOCKED", "v38 summary must block")
+    require(row["overall_status"] == "POST_WRITER_SCORING_ACTIVATION_RECHECK_READY", "v38 summary must be ready")
     require(
         row["claim_boundary"] == "post_writer_scoring_activation_recheck_only_no_activation_no_scores_no_dark_sector_verdict",
         "v38 claim boundary mismatch",
@@ -2708,11 +7944,14 @@ def validate_post_writer_scoring_preflight_recheck_v39() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_preflight_recheck_v39.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_preflight_recheck_summary_v39.csv")
     require(len(rows) == 6, "v39 preflight recheck must cover six requirements")
-    require(all(row["v07_current_status"].startswith("BLOCKED") for row in rows), "v39 must inherit blocked v07 requirements")
+    require(
+        sum(row["v07_current_status"].startswith("BLOCKED") for row in rows) == 0,
+        "v39 must inherit zero blocked v07 requirements",
+    )
     require(all(row["v38_rows_activated_after_recheck"] == "18" for row in rows), "v39 must inherit eighteen activated rows")
     require(
-        all("v07_requirement_blocked" in row["preflight_recheck_blockers"] for row in rows),
-        "v39 must block on v07 requirements",
+        all("v07_requirement_blocked" not in row["preflight_recheck_blockers"] for row in rows),
+        "v39 must not block on v07 requirements after preflight clears",
     )
     require(
         all("post_writer_activation_recheck_zero_rows" not in row["preflight_recheck_blockers"] for row in rows),
@@ -2746,8 +7985,8 @@ def validate_post_writer_scoring_dependency_closure_recheck_v40() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_v40.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_scoring_dependency_closure_recheck_summary_v40.csv")
     require(len(rows) == 13, "v40 dependency recheck must cover thirteen dependencies")
-    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 9, "v40 must inherit nine ready v24 dependencies")
-    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 4, "v40 must inherit four blocked v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "READY" for row in rows) == 13, "v40 must inherit thirteen ready v24 dependencies")
+    require(sum(row["v24_dependency_decision"] == "BLOCKED" for row in rows) == 0, "v40 must inherit zero blocked v24 dependencies")
     require(all(row["v39_ready_requirements_after_recheck"] == "0" for row in rows), "v40 must inherit zero ready requirements")
     require(
         all(
@@ -2790,12 +8029,8 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
     require(len(rows) == 13, "v41 priority recheck must cover thirteen rows")
     require(all(row["v40_ready_dependencies_after_recheck"] == "0" for row in rows), "v41 must inherit zero ready dependencies")
     require(
-        all(
-            ("v25_priority_dependency_blocked" in row["priority_recheck_blockers"])
-            == (row["v25_frontier_now"] != "false" or int(row["priority_rank"]) >= 10)
-            for row in rows
-        ),
-        "v41 must flag v25 dependency blockers for the formula-table frontier and later blocked priorities",
+        all("v25_priority_dependency_blocked" not in row["priority_recheck_blockers"] for row in rows),
+        "v41 must not flag v25 dependency blockers after v25 frontier clears",
     )
     require(
         all("post_writer_dependency_recheck_zero_ready_dependencies" in row["priority_recheck_blockers"] for row in rows),
@@ -2805,27 +8040,23 @@ def validate_post_writer_scoring_unblock_priority_recheck_v41() -> None:
         all("post_writer_dependency_recheck_scoring_not_allowed" in row["priority_recheck_blockers"] for row in rows),
         "v41 must block on dependency scoring denial",
     )
-    require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 1, "v41 must mark one frontier row")
+    require(sum(row["frontier_now_after_recheck"] == "true" for row in rows) == 0, "v41 must mark zero frontier rows")
     frontier_rows = [row for row in rows if row["frontier_now_after_recheck"] == "true"]
-    require(frontier_rows[0]["dependency_id"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier row must be formula tables")
-    require(
-        frontier_rows[0]["next_required_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14",
-        "v41 frontier artifact mismatch",
-    )
+    require(frontier_rows == [], "v41 frontier rows must be empty")
     require(all(row["endpoint_scoring_allowed"] == "false" for row in rows), "v41 rows cannot allow scoring")
     require(len(summary) == 1, "v41 summary must have one row")
     row = summary[0]
     require(row["summary_id"] == "POST_WRITER_SCORING_UNBLOCK_PRIORITY_RECHECK_V41", "v41 summary id mismatch")
     require(row["priority_rows_rechecked"] == "13", "v41 must summarize thirteen priority rows")
     require(row["blocked_priority_rows_after_recheck"] == "13", "v41 must block thirteen priority rows")
-    require(row["frontier_now_rows_after_recheck"] == "1", "v41 must summarize one frontier row")
-    require(row["first_frontier_dependency_after_recheck"] == "SCD24_FAMILY_FORMULA_TABLES", "v41 frontier dependency mismatch")
+    require(row["frontier_now_rows_after_recheck"] == "0", "v41 must summarize zero frontier rows")
+    require(row["first_frontier_dependency_after_recheck"] == "none", "v41 frontier dependency mismatch")
     require(
-        row["first_frontier_artifact_after_recheck"] == "m0_no_dark_rule_parent_assumption_basis_v14",
+        row["first_frontier_artifact_after_recheck"] == "none",
         "v41 frontier artifact mismatch",
     )
     require(row["endpoint_scoring_allowed_anywhere"] == "false", "v41 summary must forbid scoring")
-    require(row["overall_status"] == "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CONFIRMED", "v41 summary must confirm frontier")
+    require(row["overall_status"] == "POST_WRITER_SCORING_UNBLOCK_FRONTIER_CLEAR", "v41 summary must clear frontier")
     require(
         row["claim_boundary"] == "post_writer_scoring_unblock_priority_recheck_only_no_scores_no_dark_sector_verdict",
         "v41 claim boundary mismatch",
@@ -2836,9 +8067,9 @@ def validate_post_writer_frontier_evidence_acceptance_recheck_v42() -> None:
     rows = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_v42.csv")
     summary = read_csv(ROOT / "data/derived/post_writer_frontier_evidence_acceptance_recheck_summary_v42.csv")
     require(len(rows) == 18, "v42 frontier acceptance recheck must cover eighteen rows")
-    require(all(row["v41_frontier_dependency"] == "SCD24_FAMILY_FORMULA_TABLES" for row in rows), "v42 must inherit the formula-table frontier")
+    require(all(row["v41_frontier_dependency"] == "none" for row in rows), "v42 must inherit no v41 frontier")
     require(
-        all(row["v41_frontier_artifact"] == "m0_no_dark_rule_parent_assumption_basis_v14" for row in rows),
+        all(row["v41_frontier_artifact"] == "none" for row in rows),
         "v42 must inherit the v41 frontier artifact",
     )
     require(all(row["v26_acceptance_status"] == "ACCEPTED_FOR_REVIEW" for row in rows), "v42 must inherit accepted v26 review")
@@ -3519,15 +8750,114 @@ def main() -> None:
     validate_source_import_values_v11()
     validate_source_import_real_values_gate_v12()
     validate_scoring_row_activation_policy_v79()
+    validate_m0_no_dark_rule_parent_assumption_basis_v14()
+    validate_m0_no_dark_rule_selection_map_v14()
+    validate_m0_no_dark_rule_term_generation_record_v14()
+    validate_m0_no_dark_rule_invariance_null_checks_v14()
+    validate_m0_no_dark_rule_dimensional_precheck_v14()
+    validate_m0_no_dark_rule_derivation_provenance_leakage_v14()
     validate_m0_no_dark_expression_rule_derivation_contract_v13()
+    validate_m0_no_dark_expression_source_basis_v13()
+    validate_m0_no_dark_expression_admissibility_rule_v13()
+    validate_m0_no_dark_expression_null_fallback_policy_v13()
+    validate_m0_no_dark_expression_output_class_v13()
+    validate_m0_no_dark_expression_source_rule_leakage_audit_v13()
     validate_m0_no_dark_expression_source_rule_contract_v12()
+    validate_m0_no_dark_expression_symbolic_form_v12()
+    validate_m0_no_dark_expression_input_domain_v12()
+    validate_m0_no_dark_expression_coefficient_freeze_v12()
+    validate_m0_no_dark_expression_dimensional_audit_v12()
+    validate_m0_no_dark_expression_machine_form_v12()
     validate_m0_no_dark_frozen_expression_contract_v11()
+    validate_m0_no_dark_kernel_expression_interface_v10()
+    validate_m0_no_dark_frozen_expression_statement_contract_v12()
+    validate_m0_no_dark_source_side_expression_statement_v13()
+    validate_m0_no_dark_statement_term_list_v13()
+    validate_m0_no_dark_statement_argument_signature_v13()
+    validate_m0_no_dark_statement_constraint_guards_v13()
+    validate_m0_no_dark_statement_pre_dimensional_proof_v13()
+    validate_m0_no_dark_statement_freeze_provenance_v13()
+    validate_m0_no_dark_frozen_expression_payload_contract_v11()
+    validate_m0_no_dark_payload_symbol_binding_table_v12()
+    validate_m0_no_dark_payload_constant_policy_v12()
+    validate_m0_no_dark_payload_dimensional_trace_v12()
+    validate_m0_no_dark_payload_machine_form_v12()
+    validate_m0_no_dark_payload_leakage_certificate_v12()
+    validate_m0_no_dark_frozen_expression_body_v14()
     validate_m0_no_dark_kernel_expression_contract_v10()
+    validate_m0_no_dark_equation_kernel_interface_v09()
     validate_m0_no_dark_equation_kernel_contract_v09()
+    validate_m0_no_dark_readout_equation_interface_v08()
     validate_m0_no_dark_readout_equation_contract_v08()
+    validate_m0_no_dark_formula_body_interface_v08()
     validate_m0_no_dark_formula_body_contract_v07()
+    validate_m0_no_dark_scale_policy_v07()
+    validate_m0_no_dark_fallback_policy_v07()
     validate_m0_no_dark_formula_table_contract_v06()
+    validate_family_prediction_tables_v08()
+    validate_family_prediction_comparability_v09()
+    validate_m0_no_dark_prediction_row_writer_v08()
+    validate_m0_no_dark_executable_prediction_kernel_v08()
+    validate_m0_no_dark_velocity_readout_formula_v08()
+    validate_m0_no_dark_source_to_rotation_equation_body_v08()
+    validate_m0_no_dark_source_to_velocity_coupling_rule_v08()
+    validate_m0_no_dark_velocity_unit_lift_rule_v08()
+    validate_m0_no_dark_velocity_dimension_anchor_rule_v08()
+    validate_m0_no_dark_velocity_anchor_source_law_v08()
+    validate_m0_no_dark_velocity_anchor_candidate_basis_v08()
+    validate_m0_no_dark_velocity_anchor_selection_rule_v08()
+    validate_m0_no_dark_velocity_anchor_value_freeze_v08()
+    validate_m0_no_dark_velocity_anchor_unit_normalization_v08()
+    validate_m0_no_dark_velocity_anchor_component_combination_rule_v08()
+    validate_m0_no_dark_velocity_anchor_component_weight_policy_v08()
+    validate_m0_no_dark_velocity_anchor_component_weight_value_freeze_v08()
+    validate_m0_no_dark_velocity_anchor_combined_anchor_rule_v08()
+    validate_m0_no_dark_velocity_anchor_combined_anchor_expression_freeze_v08()
+    validate_m0_no_dark_velocity_anchor_combined_anchor_value_freeze_v08()
+    validate_m0_no_dark_velocity_readout_formula_body_freeze_v08()
+    validate_m0_no_dark_prediction_row_value_freeze_v08()
+    validate_m0_no_dark_family_prediction_row_emission_v08()
+    validate_m0_label_rule_table_v06()
+    validate_m1_tau_response_formula_table_v06()
+    validate_m1_admissibility_table_v06()
+    validate_m1_response_parameter_inventory_v10()
+    validate_m1_response_parameter_count_classification_v11()
+    validate_m1_response_parameter_count_value_ledger_v12()
+    validate_m1_response_parameter_adjustable_slot_resolution_v13()
+    validate_m1_response_parameter_final_count_candidate_v14()
+    validate_m1_response_parameter_final_count_freeze_v15()
+    validate_m1_per_galaxy_response_privilege_count_audit_v10()
+    validate_m1_per_galaxy_response_privilege_count_freeze_v11()
+    validate_m2_benchmark_profile_table_v06()
+    validate_m2_nuisance_policy_table_v06()
+    validate_m2_benchmark_parameter_inventory_v10()
+    validate_m2_benchmark_parameter_count_classification_v11()
+    validate_m2_benchmark_parameter_count_value_ledger_v12()
+    validate_m2_benchmark_parameter_adjustable_slot_resolution_v13()
+    validate_m2_benchmark_parameter_final_count_candidate_v14()
+    validate_m2_benchmark_parameter_final_count_freeze_v15()
+    validate_m2_per_galaxy_benchmark_privilege_count_audit_v10()
+    validate_m2_per_galaxy_benchmark_privilege_count_freeze_v11()
+    validate_shared_scoring_input_table_v06()
+    validate_shared_input_count_discount_policy_v10()
+    validate_numeric_parameter_count_table_v06()
+    validate_numeric_parameter_count_table_v08()
+    validate_numeric_parameter_count_table_final_values_v10()
+    validate_control_runner_outputs_v08()
+    validate_control_execution_readiness_v09()
+    validate_endpoint_scoring_runner_v01()
+    validate_numeric_decision_thresholds_v08()
+    validate_m0_global_parameter_inventory_v10()
+    validate_m0_global_parameter_count_classification_v11()
+    validate_m0_global_parameter_count_value_ledger_v12()
+    validate_m0_global_adjustable_slot_resolution_v13()
+    validate_m0_global_final_count_candidate_v14()
+    validate_m0_global_final_count_freeze_v15()
+    validate_m0_per_galaxy_privilege_count_audit_v10()
+    validate_m0_per_galaxy_privilege_count_freeze_v11()
+    validate_numeric_count_readiness_closure_v09()
     validate_family_prediction_table_contract_v80()
+    validate_family_prediction_frontier_trace_v81()
     validate_scoring_activation_gate_v13()
     validate_source_import_template_v14()
     validate_active_v15_raw_sparc_like_input_writer_v56()

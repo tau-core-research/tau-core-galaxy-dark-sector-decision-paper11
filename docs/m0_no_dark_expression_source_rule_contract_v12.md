@@ -32,7 +32,7 @@ The source-rule contract exists, but zero source rules and zero numeric
 prediction rows are written. The first concrete missing artifact is:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+m0_no_dark_rule_invariance_null_checks_v14
 ```
 
 ## Claim Boundary

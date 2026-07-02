@@ -37,14 +37,19 @@ def frontier_rows() -> list[dict[str, object]]:
     v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
     v80_path = DERIVED / "family_prediction_table_contract_summary_v80.csv"
     v80 = read_csv(v80_path)[0] if v80_path.exists() else {}
+    v13_path = DERIVED / "scoring_activation_summary_v13.csv"
+    v13 = read_csv(v13_path)[0] if v13_path.exists() else {}
     partial_blocked = int(v73["blocked_or_missing_rows"])
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
     v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
-    v80_blocked = v80.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
+    v80_blocked = v80.get("overall_status") in {
+        "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
+        "FAMILY_PREDICTION_TABLE_CONTRACT_READY_PARAMETER_COUNTS_BLOCKED",
+    }
     if v79_ready:
-        next_global_artifact = str(v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
+        next_global_artifact = str(v13.get("next_required_artifact") or v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
         rank2_status = str(v78["overall_status"])
         rank2_blocked = "leakage pass is reviewed and row activation has been handed to v79"
         rank2_next = next_global_artifact
@@ -52,7 +57,7 @@ def frontier_rows() -> list[dict[str, object]]:
         rank3_blocked = (
             "family prediction table contract is ready, but formula slot tables remain blocked"
             if v80_blocked
-            else "row activation is ready; global scoring prerequisites remain blocked"
+            else "row activation is ready; scoring preflight remains blocked"
         )
         rank3_next = next_global_artifact
     elif v78_passed:
@@ -166,15 +171,24 @@ def summary(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     v79 = read_csv(v79_path)[0] if v79_path.exists() else {}
     v80_path = DERIVED / "family_prediction_table_contract_summary_v80.csv"
     v80 = read_csv(v80_path)[0] if v80_path.exists() else {}
+    v13_path = DERIVED / "scoring_activation_summary_v13.csv"
+    v13 = read_csv(v13_path)[0] if v13_path.exists() else {}
     partial_blocked = v73["blocked_or_missing_rows"]
     v76_ready = v76.get("overall_status") == "FULL_LEAKAGE_EVIDENCE_INGESTION_READY_FOR_TARGET_EVIDENCE_WRITE"
     v77_written = v77.get("overall_status") == "LEAKAGE_AUDIT_EVIDENCE_WRITTEN_REVIEW_PENDING"
     v78_passed = v78.get("overall_status") == "LEAKAGE_AUDIT_PASS_REVIEWED_ACTIVATION_PENDING"
     v79_ready = v79.get("overall_status") == "SCORING_ROW_ACTIVATION_POLICY_READY_GLOBAL_SCORING_BLOCKED"
-    v80_blocked = v80.get("overall_status") == "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED"
+    v80_blocked = v80.get("overall_status") in {
+        "FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED",
+        "FAMILY_PREDICTION_TABLE_CONTRACT_READY_PARAMETER_COUNTS_BLOCKED",
+    }
     if v79_ready:
-        overall_status = "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES"
-        first_artifact = str(v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
+        overall_status = (
+            "SCORING_FRONTIER_BLOCKED_ON_SCORING_PREFLIGHT"
+            if v13.get("overall_status") == "SCORING_ACTIVATION_READY_GLOBAL_PREREQUISITES_READY"
+            else "SCORING_FRONTIER_BLOCKED_ON_GLOBAL_SCORING_PREREQUISITES"
+        )
+        first_artifact = str(v13.get("next_required_artifact") or v80["next_required_artifact"]) if v80_blocked else str(v79["next_required_artifact"])
     elif v78_passed:
         overall_status = "SCORING_FRONTIER_BLOCKED_ON_SCORING_ROW_ACTIVATION"
         first_artifact = str(v78["next_required_artifact"])

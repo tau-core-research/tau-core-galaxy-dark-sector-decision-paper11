@@ -35,6 +35,86 @@ The protocol is intended to sit downstream of the Tau Core theory architecture
 and the private Paper 9--10 freeze/readout scaffolds
 \cite{tauCoreTheoryHub2026,tauCorePaper9,tauCorePaper10}.
 
+\section{Theory-Side Scoring Anchor}
+
+The Tau Core theory hub now supplies a restricted local scoring anchor that is
+relevant to this protocol but does not itself score galaxies. The anchor is the
+finite-local \(U_{\mathrm{read}}\) closure-defect partial-order diagnostic
+\cite{tauCoreTheoryHub2026}:
+\[
+\begin{aligned}
+\Theta_{\mathrm{vec}}(c)=(&
+\mathrm{rank}_{\mathrm{status}}(\mathrm{ClosureStatus}(c)),\\
+&\mathrm{rank}_{\mathrm{obstruction}}(\mathrm{ClosureObstruction}(c)),\\
+&\mathrm{rank}_{\mathrm{mismatch}}(\mathrm{ClosureMismatch}(c))).
+\end{aligned}
+\]
+and local relation
+\[
+c_i \leq_{\mathrm{read}} c_j
+\quad\Longleftrightarrow\quad
+\Theta_{\mathrm{vec}}(c_i)\geq_D \Theta_{\mathrm{vec}}(c_j).
+\]
+The hub records this object as a restricted formal local order-readout
+admissibility pass under stated assumptions. The pass is conditioned on
+family non-circularity, observer-interface admissibility, null/gauge
+preservation, conservative \(\mathrm{CG}_{\mathrm{read}}\) stability, and a
+reported partial-order incomparability envelope.
+
+For Paper 11, this result is a theory-side scoring primitive: it shows that a
+local Tau Core scoring/readout object can be made source-frozen,
+non-circular, observer-interface guarded, null/gauge compatible,
+coarse-graining conservative, and explicit about incomparability. It does not
+construct the galaxy endpoint score, fill family prediction tables, decide
+between \(M_0,M_1,M_2\), prove physical time, or establish a physical readout.
+
+The latest Tau Core theory-hub work also supplies a separate local
+\(K_{\mathrm{time}}\) audit pattern from the CERN/SPS chain: local nonphysical
+transport can feed a finite carrier family, and the declared local labels can
+be transported conditionally into standardized rank domains without erasing
+missing-proof, proxy-residual, or bridge-boundary information. For this paper
+that result is only a methodological guardrail for scoring design. It supports
+the separation of carrier recognition, rank-domain transport, and later
+\(\Theta_{\mathrm{time}}\)-like vector evaluation. It does not prove
+\(\Theta_{\mathrm{time}}\) totality, a preorder for galaxy data, a physical
+readout, or physical time.
+
+\section{Paper 10 Shape/Readout Consequence}
+
+The most relevant upstream Paper 10 update for Paper 11 is not a positive
+cosmological validation claim. It is a design constraint: level/amplitude
+support and shape/readout support must remain separate. In the DESI
+time/readout route, the constant-level DESI--chronometer replay is
+ordering-fragile under frozen controls, so it cannot be used as a scoring
+shortcut. The shape/readout route is more informative: Paper 10 records a
+source-strengthened but narrow and row-sensitive DESI shape-core support
+synthesis, with row-level caveats reduced but no endpoint validation
+\cite{tauCorePaper10}.
+
+For Paper 11 this means that the family comparison must not reward a model
+merely for absorbing a residual level. The \(M_0\) no-dark family must forbid
+hidden dark-sector compensation coefficients, the \(M_1\) Tau base-substrate
+response family must declare response channels before endpoint scoring, and
+the \(M_2\) standard dark-sector benchmark must be compared with controls that
+distinguish amplitude improvement from shape/control resistance. This update
+does not activate scoring and does not favor \(M_0\), \(M_1\), or \(M_2\).
+
+\section{External Readout-Time Motivation}
+
+Recent quantum-optical weak-measurement work gives an external motivation for
+treating time-like quantities as protocol/readout dependent observables rather
+than always as direct classical residence times. Angulo et al. report negative
+weak values for the time atoms spend in the excited state when a photon is
+transmitted through an atom cloud, using a cross-Kerr probe and comparing the
+inferred atomic-excitation time with group delay
+\cite{anguloNegativeWeakTime2026}. This is not time travel, not
+faster-than-light signalling, and not evidence for Tau Core. Its role here is
+methodological only: it supports the caution that a time-like measured
+quantity can depend on the source state, observer/readout interface, scale,
+post-selection, and null model. Paper 11 therefore treats galaxy endpoint
+readouts as declared protocol objects, not as automatically physical
+readouts.
+
 \section{Model Families}
 
 The protocol compares three families:
@@ -157,6 +237,14 @@ first scoring run: activated rows, observed input tables, family prediction
 tables, numeric parameter counts, control outputs, and numeric decision
 thresholds. The scoring formula components are present only as frozen policy;
 they are not executed.
+
+The v81 theory-side scoring anchor records the restricted local
+\(U_{\mathrm{read}}\) closure-defect partial-order diagnostic imported from
+the Tau Core theory hub. This strengthens the mathematical discipline of the
+Paper 11 scoring architecture by supplying a proof-backed local
+source-frozen scoring primitive. It does not activate endpoint scoring, fill
+family predictions, construct \(\mathrm{Response}_{\tau}\), or decide whether
+a dark-sector response layer is necessary.
 
 The v08 scoring-input scaffold creates the activated-row and observed-input
 table shapes expected by a future scoring runner. It activates zero rows and
@@ -288,8 +376,36 @@ blocked because no preflight requirement is ready after activation.
 
 The v41 post-writer scoring-unblock priority recheck links that blocked
 dependency graph back to the unblock ledger. The first frontier is
-\texttt{SCD24\_FAMILY\_FORMULA\_TABLES}, requiring
-\path{m0_no_dark_rule_parent_assumption_basis_v14}.
+\texttt{SCD24\_FAMILY\_FORMULA\_TABLES}. It requires
+\path{m0_no_dark_family_prediction_row_emission_v08}. This follows the source-side
+rule-derivation gates, the v13 statement-side freeze provenance route, the
+v12 payload gates through leakage certification, and the present-but-blocked
+\path{m0_no_dark_prediction_row_writer_v08} and
+\path{m0_no_dark_executable_prediction_kernel_v08} gates, plus the
+equation-free \path{m0_no_dark_velocity_readout_formula_v08} gate and the
+present-but-coupling-blocked
+\path{m0_no_dark_source_to_rotation_equation_body_v08} gate, followed by the
+present-but-unit-lift-blocked
+\path{m0_no_dark_source_to_velocity_coupling_rule_v08} gate, and the
+present-but-dimension-anchor-blocked
+\path{m0_no_dark_velocity_unit_lift_rule_v08} gate, followed by the
+present-but-anchor-source-law-blocked
+\path{m0_no_dark_velocity_dimension_anchor_rule_v08} gate and the
+present-but-candidate-basis-blocked
+\path{m0_no_dark_velocity_anchor_source_law_v08} gate and the
+present-but-selection-rule-blocked
+\path{m0_no_dark_velocity_anchor_candidate_basis_v08} gate and the
+present-but-value-freeze-blocked
+\path{m0_no_dark_velocity_anchor_selection_rule_v08} gate and the
+present-but-unit-normalization-blocked
+\path{m0_no_dark_velocity_anchor_value_freeze_v08} gate. The v14 M0 no-dark
+frozen-expression body formulates the source-side assembly envelope without a
+velocity formula or prediction rows. The v81 family-prediction frontier trace
+keeps the broad family-prediction table frontier while the M0 no-dark
+formula-table policy slots are now closed; the earlier gates, including the
+now-closed no-values coefficient-policy guard, fixed-scale guard, and
+fallback-policy guard, do not themselves
+define an executable formula or score.
 
 The v42 post-writer frontier evidence-acceptance recheck records that the
 current frontier is no longer provenance evidence. All eighteen rows remain
@@ -422,8 +538,189 @@ the next blocker through the v06 M0 no-dark formula contract, the v07 body
 contract, the v08 readout-equation contract, the v09 kernel contract, and the
 v10 kernel-expression contract, then through the v11 frozen-expression
 contract to the v12 source-rule contract and v13 rule-derivation contract. The
-first missing source-side derivation prerequisite is
-\path{m0_no_dark_rule_parent_assumption_basis_v14}.
+v14 parent-assumption basis, rule-selection map, and term-generation record
+are ready, the v13 statement-side gates through freeze provenance are ready,
+the v12 symbol-binding table is ready, the v12 constant policy is ready, the
+v12 dimensional trace is ready, the v12 machine-form payload is ready, and the
+v12 payload-leakage certificate is ready. The v14 M0 no-dark frozen-expression
+body is formulated as a definition-level assembly envelope, without velocity
+formula, prediction rows, or scoring. The v81 family-prediction frontier trace
+keeps the broad scoring frontier at \path{family_prediction_tables_v08.csv}
+after the M0 no-dark formula-table policy slots are closed; the table now
+contains 450 M0 no-dark family-prediction rows without endpoint scores, the
+row-writer gate is present, the executable-kernel gate is present, and
+the velocity-formula and equation-body gates are present without a lawful
+source-to-velocity coupling. The coupling-rule gate is present without a lawful
+velocity-unit lift. The velocity-unit lift gate is present without a lawful
+velocity-dimension anchor. The velocity-dimension anchor gate is present
+without a lawful anchor source law. The velocity-anchor source-law gate is
+present without a pre-scoring anchor candidate basis. The velocity-anchor
+candidate-basis gate is present without a pre-scoring anchor selection rule.
+The velocity-anchor selection-rule gate is present without a pre-scoring anchor
+value freeze. The velocity-anchor value-freeze gate is present without a
+formula-ready unit normalization. The velocity-anchor unit-normalization gate
+is present without a component-combination rule. The velocity-anchor
+component-combination rule is present without a component-weight policy. The
+velocity-anchor component-weight policy is present without a component-weight
+value freeze. The velocity-anchor component-weight value freeze is present
+without a combined-anchor rule. The velocity-anchor combined-anchor rule is
+present before the exact symbolic expression freeze. The velocity-anchor
+combined-anchor expression freeze is now present and fixes
+\[
+v_{\mathrm{anchor}}^2 =
+\frac{s_{\mathrm{gas}}w_{\mathrm{gas}}v_{\mathrm{gas}}^2
++s_{\mathrm{disk}}w_{\mathrm{disk}}v_{\mathrm{disk}}^2
++s_{\mathrm{bulge}}w_{\mathrm{bulge}}v_{\mathrm{bulge}}^2}
+{n_{\mathrm{anchor}}}\, .
+\]
+The velocity-readout formula body is now frozen as
+\[
+v_{\mathrm{body}}(R) := v_{\mathrm{anchor}}(R)\, ,
+\]
+but it writes no endpoint scores. The intervening
+\path{m0_no_dark_prediction_row_value_freeze_v08} artifact freezes 450 M0
+no-dark row values, and
+\path{m0_no_dark_family_prediction_row_emission_v08} emits those values into
+the family prediction table without scoring. The
+\path{m0_label_rule_table_v06} artifact freezes the M0 morphology-label rule
+without row-level label values or label validation. The
+\path{m1_tau_response_formula_table_v06} artifact closes the M1 response-slot
+contract as a scaffold only: it claims no \(\mathrm{Response}_{\tau}\)
+formula, writes no response values, writes no M1 prediction rows, and does not
+activate scoring. The \path{m1_admissibility_table_v06} artifact closes the M1
+admissibility rule as a pre-scoring non-circularity/no-posthoc-rescue guard,
+again without response values, M1 prediction rows, endpoint scores, or family
+comparison. The \path{m2_benchmark_profile_table_v06} artifact closes the M2
+benchmark-profile policy as a pre-scoring benchmark contract, without numeric
+profile values, M2 prediction rows, endpoint scores, standard dark-sector
+validation, or family comparison. The \path{m2_nuisance_policy_table_v06}
+artifact closes the M2 nuisance-policy slot as a pre-scoring contract,
+without numeric nuisance values, M2 prediction rows, endpoint scores, standard
+dark-sector validation, or family comparison. The
+\path{shared_scoring_input_table_v06} artifact closes the shared scoring-input
+slot as a pre-scoring contract, without numeric input values, family prediction
+rows, endpoint scores, or family comparison. The
+\path{numeric_parameter_count_table_v06} artifact closes the count-rule
+contract without final numeric count values, parsimony scores, endpoint scores,
+or family comparison. The \path{numeric_parameter_count_table_v08.csv}
+artifact is now present as a final-count readiness gate, but it writes no final
+numeric count values, no per-galaxy privilege counts, no parsimony scores, no
+endpoint scores, and no family comparison. The next concrete blocker is
+\path{numeric_count_readiness_closure_v09.csv}. The
+\path{numeric_count_readiness_closure_v09.csv} artifact is now present too and
+decomposes all seven count-readiness rows without writing counts or parsimony
+scores. The M0 global parameter inventory is now present as
+\path{m0_global_parameter_inventory_v10.csv}; it exposes the six global M0
+slot classes without count values or numeric values. The v11 countability
+classification is now present too and classifies those six slots without
+writing numeric count values, coefficient values, or per-galaxy privilege
+counts. The v12 count-value ledger is now present too; it resolves two zero
+slot values while keeping four conditional slot values pending and writes no
+final \(k_{\mathrm{M0}}\), parsimony score, or endpoint score. The v13
+adjustable-slot resolution is now present too; it resolves the four conditional
+slots to zero using source-basis, symbol-binding, shared-input,
+readout-contract, and fallback-policy evidence, while still writing no final
+\(k_{\mathrm{M0}}\), parsimony score, or endpoint score. The v14 final-count
+candidate is now present too and records candidate \(k_{\mathrm{M0}}=0\) only
+as a freeze input, without a frozen count, parsimony score, or endpoint score.
+The v15 final-count freeze is now present too and freezes
+\(k_{\mathrm{M0,global}}=0\), while still writing no per-galaxy counts,
+parsimony score, or endpoint score. The next concrete blocker is therefore
+\path{m0_per_galaxy_privilege_count_audit_v10.csv}. That audit is now present
+too and resolves all eighteen M0 rows as zero row-specific privileges, while
+still not freezing the per-galaxy count, computing parsimony, or activating
+scoring. The next concrete blocker is therefore
+\path{m0_per_galaxy_privilege_count_freeze_v11.csv}. That freeze is now present
+too and freezes all eighteen audited M0 rows at zero row-specific privileges,
+while still not computing parsimony or activating scoring. The next concrete
+blocker is therefore \path{m1_response_parameter_inventory_v10.csv}. That M1
+inventory is now present too and exposes the six M1 response slots without
+countability classification, response values, parsimony, or endpoint scoring.
+The next concrete blocker is therefore
+\path{m1_response_parameter_count_classification_v11.csv}. That classification
+is now present too and classifies the six M1 response slots without count
+values, response values, parsimony, or endpoint scoring. The next concrete
+blocker is therefore \path{m1_response_parameter_count_value_ledger_v12.csv}.
+That ledger is now present too and resolves activation, handoff, and
+zero-response guards to zero while leaving carrier, amplitude, and scale as
+conditional response slots. The next concrete blocker is therefore
+\path{m1_response_parameter_adjustable_slot_resolution_v13.csv}. That M1
+adjustable-slot resolution is now present too and resolves the current
+carrier, amplitude, and scale rows to zero under the no-response/no-values
+scaffold, without proving physical M1 absence. The next concrete blocker is
+therefore \path{m1_response_parameter_final_count_candidate_v14.csv}. That M1
+final-count candidate is now present too and records candidate
+\(k_{M1,\mathrm{global}}=0\) only as a freeze input, without freezing the count,
+writing \(\mathrm{Response}_\tau\), writing response values, parsimony, or
+scores. The next concrete blocker is therefore
+\path{m1_response_parameter_final_count_freeze_v15.csv}. That M1 final-count
+freeze is now present too and freezes protocol-local
+\(k_{M1,\mathrm{global}}=0\), without writing \(\mathrm{Response}_\tau\),
+response values, per-galaxy response privilege counts, parsimony, or scores.
+The next concrete blocker is therefore
+\path{m1_per_galaxy_response_privilege_count_audit_v10.csv}. That M1
+per-galaxy response-privilege audit is now present too and resolves all
+eighteen rows as zero row-specific M1 response privileges, without freezing the
+per-galaxy count, writing \(\mathrm{Response}_\tau\), response values,
+parsimony, or scores. The next concrete blocker is therefore
+\path{m1_per_galaxy_response_privilege_count_freeze_v11.csv}. That M1
+per-galaxy response-privilege freeze is now present too and freezes all
+eighteen audited rows at zero protocol-local response privileges, without
+writing \(\mathrm{Response}_\tau\), response values, parsimony, or scores. The
+next concrete blocker is therefore
+\path{m2_benchmark_parameter_inventory_v10.csv}. That M2 benchmark-parameter
+inventory is now present too and records twelve profile/nuisance slots for
+later countability classification, without writing benchmark values,
+prediction rows, parsimony, scores, or a dark-sector verdict. The next concrete
+blocker is therefore
+\path{m2_benchmark_parameter_count_classification_v11.csv}. That M2
+benchmark-parameter countability classification is now present too and
+classifies all twelve M2 profile/nuisance slots without writing count values,
+benchmark values, prediction rows, parsimony, scores, or a dark-sector verdict.
+The next concrete blocker is therefore
+\path{m2_benchmark_parameter_count_value_ledger_v12.csv}. That M2
+benchmark-parameter count-value ledger is now present too and resolves four
+protocol/guard rows to zero while leaving eight benchmark/nuisance rows
+conditional, without writing final M2 count, benchmark values, prediction rows,
+parsimony, scores, or a dark-sector verdict. The next concrete blocker is
+therefore
+\path{m2_benchmark_parameter_adjustable_slot_resolution_v13.csv}. The M2
+adjustable-slot resolution is now present too and resolves the eight
+conditional benchmark/nuisance rows to zero under the current no-values and
+no-predictions scaffold. The M2 final-count candidate is now present too and
+records candidate \(k_{\mathrm{M2,global}}=0\) only as a freeze input.
+The M2 final-count freeze is now present too and freezes protocol-local
+\(k_{\mathrm{M2,global}}=0\), handing off to the per-galaxy benchmark
+privilege audit. The M2 per-galaxy benchmark-privilege audit and freeze are
+now present too, freezing all eighteen row-specific M2 benchmark privileges at
+zero without benchmark values, parsimony, scores, or a dark-sector verdict.
+The current count-readiness blocker is therefore
+\path{shared_input_count_discount_policy_v10.csv}.
+
+The v82 upstream-results impact ledger records two design-level updates. First,
+Paper 10 makes the future Paper 11 score shape-aware: level/amplitude support,
+shape/readout support, row sensitivity, and control resistance must not be
+collapsed into one fitted rescue parameter. Second, the Tau Core theory hub now
+offers a local \(K_{\mathrm{time}}\) carrier/rank-domain closure pattern that
+strengthens the audit discipline for rank-domain scoring objects. Neither
+update activates endpoint scoring. The current scoring-facing artifact is
+\path{shared_input_count_discount_policy_v10.csv}, after the
+coefficient-policy, fixed-scale, fallback-policy, M0 no-dark
+family-prediction row emission, M0 label-rule freeze, present row-writer, formula-free
+executable-kernel, equation-free velocity-formula, coupling-blocked
+equation-body, unit-lift-blocked coupling-rule, and dimension-anchor-blocked
+unit-lift, anchor-source-law-blocked dimension-anchor,
+candidate-basis-blocked anchor-source-law, selection-rule-blocked
+candidate-basis, value-freeze-blocked selection-rule, and
+unit-normalization-blocked value-freeze slots were closed as
+no-values/no-predictions guards, followed by the source-side anchor,
+formula-body freeze, prediction-row value-freeze, family-row emission gates,
+the no-formula/no-values M1 response-slot table contract, and the no-values
+M1 admissibility contract, followed by the no-values/no-predictions M2
+benchmark-profile contract, the M2 nuisance-policy contract, the shared-input
+contract, and the no-final-count/no-parsimony numeric parameter-count v06
+contract, followed by the count-readiness-blocked numeric parameter-count v08
+gate and the v09 count-readiness closure ledger.
 
 \section{Claim Boundary}
 
@@ -434,7 +731,15 @@ This paper does not claim:
 \item that a Tau dark-sector physical field is proved;
 \item that galaxy rotation, lensing, CMB, BAO, growth, or cosmology are solved;
 \item that a \(\mathrm{Response}_{\tau}\) formula or
-\(S_{\tau}^{\mathrm{resp}}\) functional has been constructed.
+\(S_{\tau}^{\mathrm{resp}}\) functional has been constructed;
+\item that external protocol-dependent time measurements validate Tau Core,
+prove physical time, or supply a galaxy-readout formula;
+\item that the restricted local \(U_{\mathrm{read}}\) scoring anchor proves
+global \(P_{\mathrm{order}}\), physical time, physical readout, or a galaxy
+endpoint verdict.
+\item that Paper 10 DESI shape/readout support or Tau Core local
+\(K_{\mathrm{time}}\) rank-domain closure proves a dark-sector decision,
+physical readout, or endpoint score.
 \end{itemize}
 
 \bibliographystyle{plain}

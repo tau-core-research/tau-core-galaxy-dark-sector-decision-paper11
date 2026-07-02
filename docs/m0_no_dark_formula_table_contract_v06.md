@@ -1,7 +1,7 @@
 # M0 No-Dark Formula Table Contract v06
 
 **Doc class:** no-dark M0 formula-table contract
-**Status:** contract ready; formula body blocked; no scoring
+**Status:** contract ready; coefficient policy closed; scale/fallback policy blocked; no scoring
 
 Script:
 
@@ -26,14 +26,17 @@ prediction rows can be written.
 The expected status is:
 
 ```text
-M0_NO_DARK_FORMULA_TABLE_CONTRACT_READY_BODY_BLOCKED
+M0_NO_DARK_FORMULA_TABLE_READY_FOR_PREDICTION_ROWS
 ```
 
-The table contract exists, but zero formula-body rows and zero numeric
-prediction rows are written. The next concrete missing artifact is:
+The table contract exists and the coefficient-policy, fixed-scale, and
+fallback-policy slots are now closed by `m0_no_dark_coefficient_policy_v07`,
+`m0_no_dark_scale_policy_v07`, and `m0_no_dark_fallback_policy_v07`, but zero
+formula-body rows and zero numeric prediction rows are written. The next
+concrete missing artifact is:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+family_prediction_tables_v08.csv
 ```
 
 ## Claim Boundary

@@ -1,7 +1,7 @@
 # Family Prediction Table Contract v80
 
 **Doc class:** family-prediction table contract
-**Status:** prediction-table schema ready; formula slots blocked; no scoring
+**Status:** prediction-table schema ready; parameter counts blocked; no scoring
 
 Script:
 
@@ -26,25 +26,34 @@ from `family_formula_table_v05.csv` into explicit blocking requirements.
 The expected status is:
 
 ```text
-FAMILY_PREDICTION_TABLE_CONTRACT_READY_FORMULA_SLOTS_BLOCKED
+FAMILY_PREDICTION_TABLE_CONTRACT_READY_PARAMETER_COUNTS_BLOCKED
 ```
 
-The schema is ready, but zero formula slots are ready and zero numeric
-prediction rows are written. The `m0_no_dark_formula_table_v06`,
+The schema is ready, all eight formula slots are ready, and 450 M0 no-dark
+prediction rows are written without endpoint
+scores. The `m0_no_dark_formula_table_v06`,
 `m0_no_dark_formula_body_v07`, `m0_no_dark_readout_equation_v08`,
 `m0_no_dark_equation_kernel_v09`, `m0_no_dark_kernel_expression_v10`, and
 `m0_no_dark_frozen_expression_v11` contracts are now present, and the v12
-source-rule contract is declared. The first concrete missing formula artifact
-is:
+source-rule contract is declared. The `m0_label_rule_table_v06`,
+`m1_tau_response_formula_table_v06`, and `m1_admissibility_table_v06`
+contracts are also present. The M1 response and admissibility tables are only
+pre-scoring contracts: they claim no `Response_tau` formula, write no response
+values, and write no M1 prediction rows. The `m2_benchmark_profile_table_v06`
+contract is present too and freezes only the benchmark-profile policy, not
+numeric profile values or M2 prediction rows. The `m2_nuisance_policy_table_v06`
+contract is present too and freezes only nuisance-policy handling, not numeric
+nuisance values or M2 prediction rows. The `shared_scoring_input_table_v06`
+contract is present too and freezes only shared input policy, not numeric input
+values or endpoint scores. The first concrete missing
+count artifact is:
 
 ```text
-m0_no_dark_rule_parent_assumption_basis_v14
+numeric_parameter_count_table_v08.csv
 ```
 
 ## Claim Boundary
 
-This contract does not define a Tau response formula, does not compute
-predicted velocities, does not compare families, and does not make a
-dark-sector verdict. It only narrows the scoring frontier from the broad family
-prediction table to the first missing parent-assumption basis for the no-dark
-rule derivation.
+This contract does not compute endpoint scores, does not compare families, and
+does not make a dark-sector verdict. It only narrows the scoring frontier from
+the broad family prediction table to final numeric parameter counts.
