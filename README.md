@@ -10,6 +10,11 @@ galaxy-rotation endpoints require a dark-sector response layer, or whether a
 no-dark Tau morphology/readout endpoint can remain sufficient under held-out
 tests and wrong-family controls.
 
+Terminology note: `Tau morphology/readout` here means a no-dark endpoint whose
+inputs are projected/source-frozen handles on a Tau-side **morphological
+body** `M_tau`. It does not mean that an observed 4D morphology label is the
+full source object.
+
 ## Main Claim
 
 The repository defines a reproducible decision scaffold for comparing three
