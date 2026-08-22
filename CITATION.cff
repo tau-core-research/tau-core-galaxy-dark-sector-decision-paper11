@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 title: "A source-frozen decision protocol for dark-sector necessity in Tau Core galaxy rotation"
-message: "If you use this private draft package, please cite the repository and manuscript."
+message: "If you use this public draft package, please cite the repository and manuscript."
 type: article
 authors:
   - family-names: Olcsak
     given-names: Jozsef
 year: 2026
-date-released: "2026-06-11"
-version: "v0.1.0-private"
+date-released: "2026-08-22"
+version: "v0.1.0"
 repository-code: "https://github.com/tau-core-research/tau-core-galaxy-dark-sector-decision-paper11"
 license: MIT
