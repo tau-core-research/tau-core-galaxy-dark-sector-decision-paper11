@@ -8,6 +8,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_full_4d_subfamily_remains_blocked() -> None:
+    tex = (ROOT / "paper11_submission_source/main.tex").read_text()
+    assert "Blocked Full-4D Readout Subfamily" in tex
+    assert "This subfamily is blocked" in tex
+    assert "changes no activation row, family score, or decision status" in tex
+
+
 def test_required_files_exist() -> None:
     required = [
         "README.md",

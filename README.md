@@ -29,6 +29,16 @@ M2: standard dark-sector benchmark endpoint
 The decision is galaxy-scope only and must be made from source-frozen inputs,
 held-out endpoint tests, and controls that prevent residual leakage.
 
+## Blocked Full-4D Subfamily
+
+The observer-specific full-4D descent is represented as a transport-completion
+tag on `M0` or `M1`, not as a fourth endpoint family. It remains blocked until
+one source-derived radial `D_O(R)` fixes lapse, shift, spatial metric and photon
+transfer before endpoint access, includes the exact `D_O=I` null, and supplies
+time-only, spatial-only, shift-only, full-coframe, standard-systematics and
+non-rotation cross-readout controls. This update changes no current activation
+row or score.
+
 ## Does Not Claim
 
 - It does not claim that dark matter does not exist.
@@ -41,6 +51,8 @@ held-out endpoint tests, and controls that prevent residual leakage.
   global `P_order`, physical time, physical readout, or a dark-sector decision.
 - It does not claim that Paper 10 DESI shape/readout support, or the Tau Core
   local `K_time` rank-domain closure, activates Paper 11 endpoint scoring.
+- It does not claim a source-derived nonzero `D_O(R)` or a detected Tau 4D
+  metric distortion.
 
 ## Included Data
 
@@ -399,6 +411,13 @@ docs/post_hash_review_promotion_response_intake_v53.md
 docs/authorized_provenance_evidence_payload_v54.md
 docs/active_v21_provenance_evidence_writer_v55.md
 ```
+
+## Full-4D Score Boundary
+
+A nonzero mixed parent block does not establish a galaxy anomaly. The exact
+comparison is `E_K = (K_HH - K_std) - C K_VV^-1 C^dagger`, and Paper 11 does
+not yet supply its source-frozen nonzero terminal image. The dark-sector
+decision remains blocked and all current scores remain unchanged.
 
 ## Reproduce
 
