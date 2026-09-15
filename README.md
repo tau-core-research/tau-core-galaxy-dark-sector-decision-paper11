@@ -39,6 +39,13 @@ time-only, spatial-only, shift-only, full-coframe, standard-systematics and
 non-rotation cross-readout controls. This update changes no current activation
 row or score.
 
+The conditional shift control is now algebraically fixed by the common packet,
+including its rapidity-to-velocity conversion and the absence of a separate
+terminal gain. Activation still requires a nonzero source incidence, stable
+\`Q_OS\`, and a complete non-duplicated joint terminal law that can distinguish
+body morphology from observer access. None is currently occupied or frozen,
+so Paper 11 remains endpoint-blocked.
+
 ## Does Not Claim
 
 - It does not claim that dark matter does not exist.
@@ -966,3 +973,23 @@ rows as zero M1 response privileges, and after the v11 per-galaxy
 response-privilege freeze froze those eighteen rows at zero, and after the M2
 benchmark-parameter count route and M2 per-galaxy benchmark-privilege route
 closed without benchmark values, parsimony, scores, or a dark-sector verdict.
+
+<!-- BEGIN OBSERVER UPDATE 20260914 -->
+## Observer realization update (2026-09-14)
+
+For galactic inference, these observer constructions do not derive a rotation-curve correction or identify a measured residual as a parent effect. Existing endpoint freezes and scores are unchanged.
+
+The manuscript distinguishes inherited BRAC contact, conditional coherent-state
+selection and interacting local covariance from physical observer identification,
+preparation and stable resolution. Those physical claims remain open. No
+empirical score was changed. The [dependency and source-result ledger](data/derived/observer_update_2026_09_14.json) records the assumptions and controls.
+<!-- END OBSERVER UPDATE 20260914 -->
+
+<!-- BEGIN LAB UPDATE 20260915 -->
+## Finite lab integration (2026-09-15)
+
+The manuscript imports the scope-specific source, body, observer or terminal
+result from the current lab. Supplied priors, conditional recovery and physical
+selection remain separate. No SI constant, viable universe or Tau-specific
+signal is newly established. See the [source and ownership ledger](data/derived/lab_update_2026_09_15.json).
+<!-- END LAB UPDATE 20260915 -->
