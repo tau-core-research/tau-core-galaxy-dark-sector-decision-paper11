@@ -1,25 +1,23 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
-\usepackage{hyperref}
+\usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\setlength{\emergencystretch}{2em}
 
 \title{A Source-Frozen Decision Protocol for Dark-Sector Necessity in Tau Core Galaxy Rotation}
 \author{Jozsef Olcsak}
-\date{Private draft, 2026\\Last revised: 2026-08-26}
+\date{Last revised: 14 November 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This paper defines a galaxy-scope decision protocol for comparing three
-endpoint families: a no-dark Tau morphology/readout endpoint, a Tau
-base-substrate response endpoint, and a standard dark-sector benchmark. The
-goal is not to prove or reject dark matter globally, but to make the narrower
-question decidable under source-frozen inputs, held-out tests, and controls
-that block residual leakage. The protocol is a scaffold only: it supplies no
-\(\mathrm{Response}_{\tau}\) formula, no \(S_{\tau}^{\mathrm{resp}}\)
-functional, no channel map, and no physical readout claim.
+This paper defines a source-frozen, galaxy-scope decision protocol for testing dark-sector necessity across three declared model families: a no-dark Tau morphology/readout endpoint ($M_0$), a Tau base-substrate response endpoint ($M_1$), and a standard dark-sector benchmark ($M_2$). Rather than claiming a global proof or rejection of dark matter, the protocol renders the narrower galaxy-rotation question decidable under pre-registered sample roles, shared held-out scoring rules, parsimony accounting, and leakage controls that forbid residual feedback before activation. In its canonical \texttt{v82} state, the repository completes source-side provenance verification, raw SPARC import ($450$ radial rows across $18$ frozen galaxies), and $72$-component prescore leakage certification, emits the non-scored $M_0$ baryonic anchor table $v_{\mathrm{body}}(R):=v_{\mathrm{anchor}}(R)$, and freezes protocol-local parameter and per-galaxy privilege counts at zero across $M_0$, $M_1$, and $M_2$, leaving the shared-input count-discount policy (\path{shared_input_count_discount_policy_v10.csv}), unconstructed $M_1/M_2$ prediction tables, control runners, and numerical decision cutoffs as explicit pre-scoring gates. No $\mathrm{Response}_{\tau}$ law, $S_{\tau}^{\mathrm{resp}}$ functional, or endpoint verdict is claimed here; upstream zero-parameter $171$-galaxy SPARC and high-redshift OCSR benchmarks are documented separately without activating Paper~11 endpoint scoring.
 \end{abstract}
 
 \section{Scope}
@@ -32,7 +30,7 @@ response layer?}
 The answer is restricted to the tested endpoint class. It is not a global
 claim about dark matter, dark energy, lensing, CMB, BAO, growth, or cosmology.
 The protocol is intended to sit downstream of the Tau Core theory architecture
-and the private Paper 9--10 freeze/readout scaffolds
+and the Paper 9--10 freeze/readout scaffolds
 \cite{tauCoreTheoryHub2026,tauCorePaper9,tauCorePaper10}.
 
 In the current Tau Core terminology, the source-side object behind any
@@ -70,9 +68,9 @@ reported partial-order incomparability envelope.
 For Paper 11, this result is a theory-side scoring primitive: it shows that a
 local Tau Core scoring/readout object can be made source-frozen,
 non-circular, observer-interface guarded, null/gauge compatible,
-coarse-graining conservative, and explicit about incomparability. It does not
-construct the galaxy endpoint score, fill family prediction tables, decide
-between \(M_0,M_1,M_2\), prove physical time, or establish a physical readout.
+coarse-graining conservative, and explicit about incomparability. It does not activate endpoint scoring, construct the galaxy endpoint score, fill family
+prediction tables, decide between \(M_0,M_1,M_2\), prove physical time, or
+establish a physical readout.
 
 The latest Tau Core theory-hub work also supplies a separate local
 \(K_{\mathrm{time}}\) audit pattern from the CERN/SPS chain: local nonphysical
@@ -121,7 +119,7 @@ and supplies the associated null/photon transfer.  On an equatorial circular
 path the local speed must obey
 \begin{equation}
  v_{O,{\rm local}}^2(R)
- ={q_{\phi\phi}^{(O)}(R)\over N_O^2(R)}
+ =\frac{q_{\phi\phi}^{(O)}(R)}{N_O^2(R)}
  \left[\Omega(R)+\beta_O^\phi(R)\right]^2,
  \label{eq:paper11-full-4d-local-speed}
 \end{equation}
@@ -159,8 +157,7 @@ the oriented row
 and standard photon-rapidity occupation would imply
 \[
  h_\tau
- =c\,{(1-\beta_{\rm dyn}^{2})\tanh q_\tau
-       \over 1+\beta_{\rm dyn}\tanh q_\tau}.
+ =c\,\frac{(1-\beta_{\rm dyn}^{2})\tanh q_\tau}{1+\beta_{\rm dyn}\tanh q_\tau}.
 \]
 This removes an arbitrary post-source velocity gain from that declared
 ablation, but does not activate \(M_0^{4D}\) or \(M_1^{4D}\).  A rotation
@@ -232,16 +229,12 @@ global falsification of Tau Core.
 
 The present repository supplies a decision-protocol scaffold, a frozen-reference
 policy-bundle instance \(PB11\_v01\), a first galaxy endpoint decision
-manifest, and v01 sample, scoring, control, and threshold pre-registration
-manifests. It also supplies v02 galaxy-role and scoring-formula freeze
-manifests and v03 family-budget plus control-implementation freeze manifests.
-It further supplies v04 source-field, formula-registry, and control-runner
-contracts, plus v05 row-level source-audit, family formula-table readiness, and
-numeric-count readiness ledgers. The next honest target is source import,
-leakage audit, concrete family formula tables, numeric parameter counts, and
-executable control runners. A v06 executable readiness audit currently reports
-that endpoint scoring remains blocked. A v07 scoring preflight currently
-reports that scoring is not ready. The following remain absent:
+manifest, and structured pre-registration, provenance, leakage-certification,
+formula-contract, and parameter-count ledgers culminating in canonical state
+\texttt{v82}. While row-level source inputs and the non-scored \(M_0\) baryonic
+anchor table are populated, endpoint scoring remains blocked by unactivated
+\(M_1/M_2\) prediction tables, shared-input count-discount policy, executable
+control runners, and numerical decision thresholds. The following remain absent:
 \[
 \begin{aligned}
 &\mathrm{Response}_{\tau}, \quad
@@ -252,547 +245,103 @@ S_{\tau}^{\mathrm{resp}},\\
 \]
 as constructed mathematical objects. No endpoint result is reported.
 
-\section{Decision Manifests}
+\section{Decision Manifests: Canonical \texttt{v82} Architecture}
+\label{sec:decision-manifests}
 
-The protocol-level manifests freeze the three model-family roles, policy-bundle
-requirements, and allowed decision outcomes. The \(PB11\_v01\) bundle freezes
-references to the Tau dark-sector carrier, source, state, admissibility, term,
-selection, and channel policy stubs. It is a reference freeze only: it does not
-fill carrier elements, \(\delta M\), \(X_{\mathrm{resp}}\),
-\(\mathrm{Adm}_{\mathrm{resp}}\), \(S_{\tau}^{\mathrm{resp}}\), or
-\(\mathrm{Select}_{\mathrm{stab}}\).
+Across protocol revisions \texttt{v01} through \texttt{v82}, the repository
+decomposes the pre-scoring freeze into six auditable dependency tracks so that
+source import, leakage review, formula-body assembly, and parameter-budget
+accounting are each verified independently before any endpoint comparison can
+execute. Table~\ref{tab:v82-architecture} summarizes the canonical \texttt{v82}
+state of each track.
 
-The first galaxy endpoint manifest declares the required source-side decisions:
-train-sample policy, held-out sample policy, shared scoring rule, wrong-family
-controls, shuffle controls, radial-zone diagnostics, and verdict ladder. No
-galaxy sample is selected in this version.
+\begin{table}[ht!]
+\centering
+\caption{Canonical \texttt{v82} pre-scoring manifest architecture across the six Paper~11 dependency tracks.}
+\label{tab:v82-architecture}
+\footnotesize
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{2.3cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.7cm}@{}}
+\toprule
+\textbf{Track} & \textbf{Ledger span} & \textbf{Scope and canonical artifacts} & \textbf{\texttt{v82} status} \\
+\midrule
+1.\ Policy \& roles & \texttt{PB11\_v01}, \texttt{v01--v07} & Three-family roles ($M_0,M_1,M_2$), five sample roles, six score components, six control contracts, and preflight blocker audit. & Policy frozen; scoring blocked \\
+2.\ Provenance \& import & \texttt{v08--v36}, \texttt{v44--v57} & SHA-256 verified SPARC provenance (\texttt{source\_\allowbreak{}import\_\allowbreak{}provenance\_\allowbreak{}evidence\_\allowbreak{}v21.csv}) and authorized raw/real import (\texttt{source\_\allowbreak{}import\_\allowbreak{}real\_\allowbreak{}values\_\allowbreak{}v12.csv}: $18$ galaxies, $450$ rows). & $18/18$ galaxies imported \\
+3.\ Leakage \& activation & \texttt{v37--v43}, \texttt{v58--v79} & Four-component prescore leakage review across all $18$ galaxies ($72$ rows in \texttt{leakage\_\allowbreak{}audit\_\allowbreak{}evidence\_\allowbreak{}v10.csv}) and row-level gate activation (\texttt{v79}). & $72/72$ certified; $18$ rows active \\
+4.\ Family formula tables & \texttt{v06--v14}, \texttt{v80--v81} & Non-scored $M_0$ baryonic anchor $v_{\mathrm{body}}(R):=v_{\mathrm{anchor}}(R)$ ($450$ rows emitted into \texttt{family\_\allowbreak{}prediction\_\allowbreak{}tables\_\allowbreak{}v08.csv}); $M_1$ response/admissibility and $M_2$ profile/nuisance slots held as no-values contracts. & $M_0$ emitted; $M_1,M_2$ unfilled \\
+5.\ Parameter \& privilege budgets & \texttt{v06--v15} ($M_0,M_1,M_2$) & Global slot inventories, adjustability resolutions, and per-galaxy privilege audits freezing protocol-local $k_{\mathrm{global}}=0$ and $0/18$ row privileges across $M_0,M_1,M_2$. & Next gate: \texttt{shared\_\allowbreak{}input\_\allowbreak{}v10} \\
+6.\ Upstream scoring guards & \texttt{v81--v82} & Local $U_{\mathrm{read}}$ partial-order primitive, $K_{\mathrm{time}}$ rank-domain discipline, and Paper~10 level-vs.-shape control guardrails. & Guardrails active; no scoring \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-The v01 pre-registration layer declares five sample roles, six scoring
-components, five controls, and four verdict labels. These records still do not
-select galaxies, define numeric cutoffs, run controls, or produce a family
-winner.
+\paragraph{Tracks 1--3: Pre-registration, SPARC provenance, and 72-row leakage certification.}
+The foundational policy bundle \texttt{PB11\_v01} and layers \texttt{v01--v07}
+freeze the five sample roles (train, held-out, control, challenge, and
+transfer-candidate), six scoring components (full curve, inner zone, outer
+zone, parsimony, held-out median, and control veto), and six control gates
+(shuffled-label, wrong-family, null-source, leakage, radial-zone, and
+family-budget parity) without selecting numerical cutoffs. Following template
+scaffolding (\texttt{v08--v25}), independent SHA-256 recomputation and
+two-stage human-review intake (\texttt{v44--v55}; preserving \texttt{v26--v34}
+as superseded historical work orders) populate all $18$ candidate SPARC
+provenance records in \path{data/input/source_import_provenance_evidence_v21.csv},
+enabling the authorized raw MassModels adapter (\texttt{v56--v57}, \texttt{v17})
+to write $450$ radial velocity rows into
+\path{data/input/source_import_real_values_v12.csv}. Layers \texttt{v58--v78}
+then expand the \texttt{v10} leakage contract into $72$ prescore verification
+items ($4$ components $\times$ $18$ galaxies: source route, observed input,
+morphology-label policy, and benchmark-policy isolation), auditing and writing
+all $72$ certified rows to \path{data/input/leakage_audit_evidence_v10.csv} so
+that the \texttt{v79} row-activation gate marks all $18$ galaxy rows ready for
+downstream prerequisites while keeping endpoint scoring disabled.
 
-The v02 layer declares a concrete source-side galaxy-role list and a shared
-scoring-formula policy. The galaxy rows are not an activated statistical sample:
-they preserve train, held-out, control, challenge, and transfer-candidate roles
-without importing endpoint scores. The score policy fixes full-curve, inner
-zone, outer zone, parsimony, held-out median, and control-veto components, but
-it still does not run endpoint scoring or declare numerical thresholds.
-
-The v03 layer freezes what must count as family flexibility and how the
-controls must be implemented. The parameter-count manifest is intentionally a
-count-rule freeze rather than a numeric count result: final counts require
-activated formula registries for \(M_0\), \(M_1\), and \(M_2\). The control
-manifest fixes shuffled-label, wrong-family, null-source, leakage, radial-zone,
-and family-budget parity gates, but does not run those gates.
-
-The v04 layer declares activation requirements rather than endpoint results.
-It specifies source-field completeness requirements, formula-registry slots,
-and control-runner input/output contracts. These contracts must be satisfied
-before scoring can be activated; they do not fill the formulas, count numeric
-parameters, run controls, or report any family comparison.
-
-The v05 layer adds row-level and family-level readiness ledgers. Every concrete
-galaxy row remains activation-blocked pending source import and leakage audit.
-Every family formula slot remains unfilled, so numeric parameter counts and
-parsimony scores remain blocked. This is a negative readiness result, not a
-physics result.
-
-The v06 readiness audit is the first executable non-endpoint runner. It writes
-activation, formula/count, control-runner, and summary blocker tables. Its
-current output blocks endpoint scoring: no galaxy row is active, no formula
-table is filled, numeric counts are not ready, and control runners are not yet
-implemented.
-
-The v07 scoring preflight names the concrete artifacts required before the
-first scoring run: activated rows, observed input tables, family prediction
-tables, numeric parameter counts, control outputs, and numeric decision
-thresholds. The scoring formula components are present only as frozen policy;
-they are not executed.
-
-The v81 theory-side scoring anchor records the restricted local
-\(U_{\mathrm{read}}\) closure-defect partial-order diagnostic imported from
-the Tau Core theory hub. This strengthens the mathematical discipline of the
-Paper 11 scoring architecture by supplying a proof-backed local
-source-frozen scoring primitive. It does not activate endpoint scoring, fill
-family predictions, construct \(\mathrm{Response}_{\tau}\), or decide whether
-a dark-sector response layer is necessary.
-
-The v08 scoring-input scaffold creates the activated-row and observed-input
-table shapes expected by a future scoring runner. It activates zero rows and
-imports zero observed numeric rows, so scoring remains blocked pending source
-import and leakage audit.
-
-The v09 source-import and leakage audit evaluates the v08 placeholders. It
-now finds source-side values present and the leakage pass reviewed. No endpoint
-score is allowed at this layer. This is a scoring-gate result only: it does
-not compute scores or compare model families.
-
-The v10 source-import contract defines the required provenance, source-route,
-observed-input, and leakage-evidence fields for each declared scoring row. The
-contract is present, but all values remain unfilled.
-
-The v58 leakage-audit evidence template expands the v10 leakage contract into
-72 review rows: four leakage checks for each of the eighteen frozen galaxies.
-It is template material only, creates zero leakage-pass rows, and does not open
-endpoint scoring.
-
-The v59 leakage-audit review package bundles that template with the leakage
-contract, current frontier summaries, and a fillable review-response template.
-It is review-only: all response rows default to no leakage pass and no row
-activation.
-
-The v60 completed leakage-review response intake records the returned review
-as a no-go decision because required evidence is not filled. It covers all 72
-review rows, authorizes zero leakage-pass rows, authorizes zero activation
-rows, and keeps endpoint scoring disabled.
-
-The v61 leakage prescore artifact work order converts that no-go into 72 open
-artifact tasks across the four leakage checks. It creates zero leakage-evidence
-rows and authorizes no activation or scoring.
-
-The v11 source-import value ledger instantiates those fields row by row. It
-contains placeholders only: no source route, observed numeric value, or leakage
-evidence has been filled.
-
-The v12 real-value import gate defines the external input file required for
-source import. In the present package the authorized writer has populated that
-file from the active v15 raw SPARC-like input. The gate imports 450 numeric
-rows for the eighteen frozen galaxies and marks the value gate ready for
-leakage review, but it activates no scoring rows.
-
-The v13 scoring-activation gate combines row-level source/leakage status with
-global formula, parameter-count, control-runner, and threshold prerequisites.
-It reports that row activation is ready for all eighteen rows, while endpoint
-scoring remains blocked because all four global prerequisite classes remain
-blocked.
-
-The v14 source-import template supplies the CSV shape needed for the future
-real-value input file. It is template material only, not observed data, and it
-does not change the blocked scoring status.
-
-The v15 raw-source adapter declares the machine-readable route from a
-SPARC-like raw input table into the v12 real-value input shape. The active v56
-writer provides 450 raw MassModels rows for review. The adapter itself still
-writes no v12 target file.
-
-The v16 write-authorization gate separates raw-source validation from writing
-the real v12 input file. In the current package v57 supplies explicit write
-authorization, so v16 reports the write path ready while still allowing no
-scoring.
-
-The v17 authorized writer writes the v12 target input from the active v15 raw
-input after v57 authorization. It writes 450 rows and still does not pass
-leakage audit, activate rows, or score model families.
-
-The v18 raw-input template supplies the CSV shape for a future SPARC-like raw
-source file. It is template material only and is not used as observed data.
-
-The v19 provenance manifest records the source evidence required before raw
-import can be accepted. The active v21 evidence writer now supplies complete
-provenance rows for all eighteen candidate galaxies.
-
-The v20 provenance audit makes that gate executable. With the active v21 input
-present, all eighteen provenance rows pass the raw-import prerequisite while
-endpoint scoring remains disabled.
-
-The v21 provenance evidence template supplies the CSV shape for future source
-evidence. It is template material only, not provenance evidence.
-
-The v22 provenance evidence gate checks for that evidence input. In the present
-package the evidence file is present and validation remains pending review, so
-promotion is allowed as a source-side protocol step but not as a scoring result.
-
-The v23 provenance-promotion gate prevents the v19 provenance manifest from
-being promoted unless the v22 evidence gate allows it. In the present package
-all eighteen provenance rows are promoted for raw import, with no scoring
-activation.
-
-The v24 scoring-dependency closure collects the current provenance, raw-import,
-real-value, leakage, activation, formula, count, control, and threshold
-dependencies into one ledger. It now records seven ready source-side
-dependencies and six blocked downstream dependencies. It does not compute an
-endpoint score.
-
-The v25 scoring-unblock priority ledger orders those dependencies. It
-identifies the current frontier as leakage-audit evidence, not a model verdict
-or a numerical endpoint score.
-
-The v26--v34 frontier provenance work-order and post-writer artifacts are kept
-as historical/review protocol artifacts. They do not override the active v55
-provenance writer and do not open endpoint scoring.
-
-The v35 post-writer raw-adapter recheck links the post-writer raw-import state
-to the v15 adapter. The adapter itself writes no v12 target, while the separate
-authorized writer may have already populated the packaged v12 input.
-
-The v36 post-writer real-values gate recheck links the v12 target back to
-activation. It sees 450 imported numeric rows and eighteen value-gate passes,
-but zero rows are activated.
-
-The v37 post-writer leakage-audit recheck links the real-values state back to
-the leakage gate. All eighteen rows pass the leakage recheck and can hand off
-to row activation.
-
-The v38 post-writer scoring-activation recheck links that leakage result back
-to the activation gate. All eighteen rows are activated at the row-gate level,
-but endpoint scoring remains blocked by the global prerequisite classes.
-
-The v39 post-writer scoring-preflight recheck links the blocked activation
-state back to the preflight checklist. All six preflight requirements remain
-blocked and zero requirements are ready after recheck.
-
-The v40 post-writer scoring-dependency closure recheck links that preflight
-state back to the dependency graph. The post-writer scoring path remains
-blocked because no preflight requirement is ready after activation.
-
-The v41 post-writer scoring-unblock priority recheck links that blocked
-dependency graph back to the unblock ledger. The first frontier is
-\texttt{SCD24\_FAMILY\_FORMULA\_TABLES}. It requires
-\path{m0_no_dark_family_prediction_row_emission_v08}. This follows the source-side
-rule-derivation gates, the v13 statement-side freeze provenance route, the
-v12 payload gates through leakage certification, and the present-but-blocked
-\path{m0_no_dark_prediction_row_writer_v08} and
-\path{m0_no_dark_executable_prediction_kernel_v08} gates, plus the
-equation-free \path{m0_no_dark_velocity_readout_formula_v08} gate and the
-present-but-coupling-blocked
-\path{m0_no_dark_source_to_rotation_equation_body_v08} gate, followed by the
-present-but-unit-lift-blocked
-\path{m0_no_dark_source_to_velocity_coupling_rule_v08} gate, and the
-present-but-dimension-anchor-blocked
-\path{m0_no_dark_velocity_unit_lift_rule_v08} gate, followed by the
-present-but-anchor-source-law-blocked
-\path{m0_no_dark_velocity_dimension_anchor_rule_v08} gate and the
-present-but-candidate-basis-blocked
-\path{m0_no_dark_velocity_anchor_source_law_v08} gate and the
-present-but-selection-rule-blocked
-\path{m0_no_dark_velocity_anchor_candidate_basis_v08} gate and the
-present-but-value-freeze-blocked
-\path{m0_no_dark_velocity_anchor_selection_rule_v08} gate and the
-present-but-unit-normalization-blocked
-\path{m0_no_dark_velocity_anchor_value_freeze_v08} gate. The v14 M0 no-dark
-frozen-expression body formulates the source-side assembly envelope without a
-velocity formula or prediction rows. The v81 family-prediction frontier trace
-keeps the broad family-prediction table frontier while the M0 no-dark
-formula-table policy slots are now closed; the earlier gates, including the
-now-closed no-values coefficient-policy guard, fixed-scale guard, and
-fallback-policy guard, do not themselves
-define an executable formula or score.
-
-The v42 post-writer frontier evidence-acceptance recheck records that the
-current frontier is no longer provenance evidence. All eighteen rows remain
-blocked for scoring.
-
-The v43 post-writer frontier work-order recheck preserves the historical
-provenance work-order state without changing the leakage frontier or allowing
-scoring.
-
-The v44 frontier provenance-evidence intake contract converts that open
-frontier into review rules and a row-level manual collection checklist. It
-creates zero evidence rows and does not allow promotion by contract alone.
-
-The v45 frontier provenance source-candidate ledger applies that intake
-contract to public SPARC source candidates. It identifies candidate source rows
-for all eighteen frozen galaxies, but still creates zero v21 evidence rows.
-
-The v46 frontier provenance-evidence payload draft converts those candidates
-into a review-required draft with the v21 column shape. All eighteen rows remain
-review-required and zero rows are marked complete.
-
-The v47 frontier provenance review package bundles the v44--v46 review
-artifacts into a reviewer handoff directory and zip. The package is not active
-v21 evidence and does not authorize source import or scoring.
-
-The v48 frontier provenance review-response intake records the completed review
-response. The response accepts the draft only as review-ready, with eighteen
-route/prescore passes, a hash-recomputation caveat, zero complete evidence rows
-authorized, and zero v21 evidence rows created.
-
-The v49 frontier review-promotion gate checks whether the v48 response can
-promote rows into active v21 provenance evidence. It blocks all eighteen rows
-because the external SPARC hash was not independently recomputed and the
-response did not explicitly authorize v21 copy or provenance completion.
-
-The v50 external hash recompute audit closes the hash caveat by matching both
-cached SPARC source files against the v45 ledger. The v51 post-hash promotion
-recheck narrows the remaining block to explicit review-promotion authorization:
-all eighteen rows have primary hash support, but zero rows may write v21
-evidence or activate scoring.
-
-The v52 post-hash review-promotion package bundles the v46, v48, v49, v50, and
-v51 artifacts with a fillable authorization template for the next human review
-decision. It remains review-only and does not create v21 evidence or allow
-scoring.
-
-The v53 completed authorization response intake accepts all eighteen rows for
-later ingestion, with v21 copy and provenance-complete authorization set to
-true while endpoint scoring remains false. The v54 authorized provenance
-evidence payload converts that authorization into an eighteen-row
-\texttt{PROVENANCE\_EVIDENCE\_COMPLETE} payload under \texttt{data/derived/};
-it is ready for a separate active v21 write gate but is not yet active source
-input.
-
-The v55 active v21 provenance-evidence writer writes all eighteen complete
-provenance rows into
-\path{data/input/source_import_provenance_evidence_v21.csv}. After
-rerunning the source-side gates, v22, v23, and v20 are ready, and the scoring
-unblock frontier moves to raw source input. The v56 active raw SPARC-like input
-writer writes 450 MassModels rows for the eighteen frozen galaxies into
-\path{data/input/source_import_raw_sparc_like_v15.csv}. The v57 active
-write-authorization artifact permits the v17 writer to populate
-\path{data/input/source_import_real_values_v12.csv}. The current frontier is
-now the leakage-pass review gate after the v10 leakage evidence input. Endpoint
-scoring remains disabled.
-
-The v58 leakage-evidence template, v59 review package, v60 no-go intake, and
-v61 work order localize that frontier to 72 prescore artifact tasks across
-eighteen galaxies and four leakage checks. The v62 collection package converts
-those tasks into a fillable artifact-response handoff. It is not leakage
-evidence, authorizes zero activation rows, and keeps endpoint scoring disabled.
-The v63 intake gate declares the next response check. Because the completed
-collection response provides no reviewed prescore artifact identifiers or
-hash/accession values, all 72 rows remain blocked and no leakage evidence
-candidate is created.
-The v64 request ledger converts those blocked rows into explicit row-level
-requests with minimal required fields and forbidden endpoint-derived inputs,
-while still creating zero evidence rows and zero scoring rows.
-The v65 review package turns that ledger into a fillable response template for
-reviewed prescore artifact identifiers and hash/accession values.
-The v66 intake records the completed response as present but still blocked:
-zero reviewed prescore artifacts are supplied and zero leakage-evidence
-candidates are created.
-The v67 candidate ledger then maps all 72 open requests to existing repository
-candidate artifacts for review. Thirty-six candidates are direct source-route
-or observed-input candidates, and thirty-six are partial morphology-label or
-benchmark-policy candidates. No candidate is promoted without review.
-The v68 candidate review package turns those candidates into a fillable
-review handoff while still creating zero leakage-evidence rows and zero scoring
-rows.
-The v69 intake records the completed candidate review response: 36 full
-source-route and observed-input candidates are accepted only for a later
-leakage-evidence ingestion gate, while 36 partial candidates remain blocked.
-It creates zero leakage-evidence rows and zero scoring rows.
-The v70 ingestion gate converts those accepted rows into draft evidence
-candidates only. Because the morphology-label and benchmark-policy components
-remain blocked, the gate does not create active leakage evidence, authorize
-leakage pass, or permit endpoint scoring.
-The v71 sufficiency policy fixes the scoring-facing minimum as a full
-four-component leakage requirement. It packages the 36 blocked morphology-label
-and benchmark-policy rows for separate sufficiency review without creating
-evidence rows, activation rows, or scores.
-The v72 scoring-frontier status then identifies the completed v71 sufficiency
-response as accepted and full leakage-evidence ingestion as the next immediate
-artifact before scoring activation can be reconsidered.
-The v73 sufficiency-response intake makes that frontier executable: all 36
-partial sufficiency rows are accepted for later ingestion, while no evidence,
-leakage pass, activation, or score is created.
-The v74 preaudit checks those rows against the local source and policy
-manifests and marks them review-ready but not accepted, preserving the same
-zero-evidence and zero-scoring boundary.
-The v75 response-draft package converts that preaudit into a proposed v71
-sufficiency response for independent review, but it is not a completed response
-and remains non-ingested and non-scoring.
-The v76 full leakage-evidence ingestion gate then combines the accepted v70
-source/observed candidates with the accepted v73 morphology/benchmark
-sufficiency rows. All 72 component rows, covering all four leakage components
-for all 18 galaxies, are ready for a later v10 target evidence writer; however,
-the gate still creates no target evidence rows, authorizes no leakage pass,
-activates no rows, and computes no score.
-The v77 leakage-audit evidence writer writes
-\path{data/input/leakage_audit_evidence_v10.csv} with 72 review-pending
-evidence rows. It still authorizes no leakage pass, activates no rows, and
-computes no score. The v78 leakage-audit pass review gate authorizes all 72
-component passes and all 18 galaxy-level leakage passes, but still authorizes
-zero activation rows and computes no score. The v79 row-activation policy then
-activates all 18 galaxy rows for the later scoring prerequisite chain, but
-still computes no score. The v80 family-prediction table contract then narrows
-the next blocker through the v06 M0 no-dark formula contract, the v07 body
-contract, the v08 readout-equation contract, the v09 kernel contract, and the
-v10 kernel-expression contract, then through the v11 frozen-expression
-contract to the v12 source-rule contract and v13 rule-derivation contract. The
-v14 parent-assumption basis, rule-selection map, and term-generation record
-are ready, the v13 statement-side gates through freeze provenance are ready,
-the v12 symbol-binding table is ready, the v12 constant policy is ready, the
-v12 dimensional trace is ready, the v12 machine-form payload is ready, and the
-v12 payload-leakage certificate is ready. The v14 M0 no-dark frozen-expression
-body is formulated as a definition-level assembly envelope, without velocity
-formula, prediction rows, or scoring. The v81 family-prediction frontier trace
-keeps the broad scoring frontier at \path{family_prediction_tables_v08.csv}
-after the M0 no-dark formula-table policy slots are closed; the table now
-contains 450 M0 no-dark family-prediction rows without endpoint scores, the
-row-writer gate is present, the executable-kernel gate is present, and
-the velocity-formula and equation-body gates are present without a lawful
-source-to-velocity coupling. The coupling-rule gate is present without a lawful
-velocity-unit lift. The velocity-unit lift gate is present without a lawful
-velocity-dimension anchor. The velocity-dimension anchor gate is present
-without a lawful anchor source law. The velocity-anchor source-law gate is
-present without a pre-scoring anchor candidate basis. The velocity-anchor
-candidate-basis gate is present without a pre-scoring anchor selection rule.
-The velocity-anchor selection-rule gate is present without a pre-scoring anchor
-value freeze. The velocity-anchor value-freeze gate is present without a
-formula-ready unit normalization. The velocity-anchor unit-normalization gate
-is present without a component-combination rule. The velocity-anchor
-component-combination rule is present without a component-weight policy. The
-velocity-anchor component-weight policy is present without a component-weight
-value freeze. The velocity-anchor component-weight value freeze is present
-without a combined-anchor rule. The velocity-anchor combined-anchor rule is
-present before the exact symbolic expression freeze. The velocity-anchor
-combined-anchor expression freeze is now present and fixes
-\[
+\paragraph{Track 4: Family formula contracts and $M_0$ baryonic anchor emission.}
+With source-side rows certified, the \texttt{v41} and \texttt{v80--v81}
+dependency traces move the active frontier to
+\texttt{SCD24\_FAMILY\_FORMULA\_TABLES} (\path{family_prediction_tables_v08.csv}).
+Across the $M_0$ derivation chain (\texttt{v06--v14}), symbol-binding,
+dimensional-anchor, unit-normalization, and component-weight freezes fix the
+purely baryonic source-side velocity anchor
+\begin{equation}
 v_{\mathrm{anchor}}^2 =
 \frac{s_{\mathrm{gas}}w_{\mathrm{gas}}v_{\mathrm{gas}}^2
 +s_{\mathrm{disk}}w_{\mathrm{disk}}v_{\mathrm{disk}}^2
 +s_{\mathrm{bulge}}w_{\mathrm{bulge}}v_{\mathrm{bulge}}^2}
-{n_{\mathrm{anchor}}}\, .
-\]
-The velocity-readout formula body is now frozen as
-\[
-v_{\mathrm{body}}(R) := v_{\mathrm{anchor}}(R)\, ,
-\]
-but it writes no endpoint scores. The intervening
-\path{m0_no_dark_prediction_row_value_freeze_v08} artifact freezes 450 M0
-no-dark row values, and
-\path{m0_no_dark_family_prediction_row_emission_v08} emits those values into
-the family prediction table without scoring. The
-\path{m0_label_rule_table_v06} artifact freezes the M0 morphology-label rule
-without row-level label values or label validation. The
-\path{m1_tau_response_formula_table_v06} artifact closes the M1 response-slot
-contract as a scaffold only: it claims no \(\mathrm{Response}_{\tau}\)
-formula, writes no response values, writes no M1 prediction rows, and does not
-activate scoring. The \path{m1_admissibility_table_v06} artifact closes the M1
-admissibility rule as a pre-scoring non-circularity/no-posthoc-rescue guard,
-again without response values, M1 prediction rows, endpoint scores, or family
-comparison. The \path{m2_benchmark_profile_table_v06} artifact closes the M2
-benchmark-profile policy as a pre-scoring benchmark contract, without numeric
-profile values, M2 prediction rows, endpoint scores, standard dark-sector
-validation, or family comparison. The \path{m2_nuisance_policy_table_v06}
-artifact closes the M2 nuisance-policy slot as a pre-scoring contract,
-without numeric nuisance values, M2 prediction rows, endpoint scores, standard
-dark-sector validation, or family comparison. The
-\path{shared_scoring_input_table_v06} artifact closes the shared scoring-input
-slot as a pre-scoring contract, without numeric input values, family prediction
-rows, endpoint scores, or family comparison. The
-\path{numeric_parameter_count_table_v06} artifact closes the count-rule
-contract without final numeric count values, parsimony scores, endpoint scores,
-or family comparison. The \path{numeric_parameter_count_table_v08.csv}
-artifact is now present as a final-count readiness gate, but it writes no final
-numeric count values, no per-galaxy privilege counts, no parsimony scores, no
-endpoint scores, and no family comparison. The next concrete blocker is
-\path{numeric_count_readiness_closure_v09.csv}. The
-\path{numeric_count_readiness_closure_v09.csv} artifact is now present too and
-decomposes all seven count-readiness rows without writing counts or parsimony
-scores. The M0 global parameter inventory is now present as
-\path{m0_global_parameter_inventory_v10.csv}; it exposes the six global M0
-slot classes without count values or numeric values. The v11 countability
-classification is now present too and classifies those six slots without
-writing numeric count values, coefficient values, or per-galaxy privilege
-counts. The v12 count-value ledger is now present too; it resolves two zero
-slot values while keeping four conditional slot values pending and writes no
-final \(k_{\mathrm{M0}}\), parsimony score, or endpoint score. The v13
-adjustable-slot resolution is now present too; it resolves the four conditional
-slots to zero using source-basis, symbol-binding, shared-input,
-readout-contract, and fallback-policy evidence, while still writing no final
-\(k_{\mathrm{M0}}\), parsimony score, or endpoint score. The v14 final-count
-candidate is now present too and records candidate \(k_{\mathrm{M0}}=0\) only
-as a freeze input, without a frozen count, parsimony score, or endpoint score.
-The v15 final-count freeze is now present too and freezes
-\(k_{\mathrm{M0,global}}=0\), while still writing no per-galaxy counts,
-parsimony score, or endpoint score. The next concrete blocker is therefore
-\path{m0_per_galaxy_privilege_count_audit_v10.csv}. That audit is now present
-too and resolves all eighteen M0 rows as zero row-specific privileges, while
-still not freezing the per-galaxy count, computing parsimony, or activating
-scoring. The next concrete blocker is therefore
-\path{m0_per_galaxy_privilege_count_freeze_v11.csv}. That freeze is now present
-too and freezes all eighteen audited M0 rows at zero row-specific privileges,
-while still not computing parsimony or activating scoring. The next concrete
-blocker is therefore \path{m1_response_parameter_inventory_v10.csv}. That M1
-inventory is now present too and exposes the six M1 response slots without
-countability classification, response values, parsimony, or endpoint scoring.
-The next concrete blocker is therefore
-\path{m1_response_parameter_count_classification_v11.csv}. That classification
-is now present too and classifies the six M1 response slots without count
-values, response values, parsimony, or endpoint scoring. The next concrete
-blocker is therefore \path{m1_response_parameter_count_value_ledger_v12.csv}.
-That ledger is now present too and resolves activation, handoff, and
-zero-response guards to zero while leaving carrier, amplitude, and scale as
-conditional response slots. The next concrete blocker is therefore
-\path{m1_response_parameter_adjustable_slot_resolution_v13.csv}. That M1
-adjustable-slot resolution is now present too and resolves the current
-carrier, amplitude, and scale rows to zero under the no-response/no-values
-scaffold, without proving physical M1 absence. The next concrete blocker is
-therefore \path{m1_response_parameter_final_count_candidate_v14.csv}. That M1
-final-count candidate is now present too and records candidate
-\(k_{M1,\mathrm{global}}=0\) only as a freeze input, without freezing the count,
-writing \(\mathrm{Response}_\tau\), writing response values, parsimony, or
-scores. The next concrete blocker is therefore
-\path{m1_response_parameter_final_count_freeze_v15.csv}. That M1 final-count
-freeze is now present too and freezes protocol-local
-\(k_{M1,\mathrm{global}}=0\), without writing \(\mathrm{Response}_\tau\),
-response values, per-galaxy response privilege counts, parsimony, or scores.
-The next concrete blocker is therefore
-\path{m1_per_galaxy_response_privilege_count_audit_v10.csv}. That M1
-per-galaxy response-privilege audit is now present too and resolves all
-eighteen rows as zero row-specific M1 response privileges, without freezing the
-per-galaxy count, writing \(\mathrm{Response}_\tau\), response values,
-parsimony, or scores. The next concrete blocker is therefore
-\path{m1_per_galaxy_response_privilege_count_freeze_v11.csv}. That M1
-per-galaxy response-privilege freeze is now present too and freezes all
-eighteen audited rows at zero protocol-local response privileges, without
-writing \(\mathrm{Response}_\tau\), response values, parsimony, or scores. The
-next concrete blocker is therefore
-\path{m2_benchmark_parameter_inventory_v10.csv}. That M2 benchmark-parameter
-inventory is now present too and records twelve profile/nuisance slots for
-later countability classification, without writing benchmark values,
-prediction rows, parsimony, scores, or a dark-sector verdict. The next concrete
-blocker is therefore
-\path{m2_benchmark_parameter_count_classification_v11.csv}. That M2
-benchmark-parameter countability classification is now present too and
-classifies all twelve M2 profile/nuisance slots without writing count values,
-benchmark values, prediction rows, parsimony, scores, or a dark-sector verdict.
-The next concrete blocker is therefore
-\path{m2_benchmark_parameter_count_value_ledger_v12.csv}. That M2
-benchmark-parameter count-value ledger is now present too and resolves four
-protocol/guard rows to zero while leaving eight benchmark/nuisance rows
-conditional, without writing final M2 count, benchmark values, prediction rows,
-parsimony, scores, or a dark-sector verdict. The next concrete blocker is
-therefore
-\path{m2_benchmark_parameter_adjustable_slot_resolution_v13.csv}. The M2
-adjustable-slot resolution is now present too and resolves the eight
-conditional benchmark/nuisance rows to zero under the current no-values and
-no-predictions scaffold. The M2 final-count candidate is now present too and
-records candidate \(k_{\mathrm{M2,global}}=0\) only as a freeze input.
-The M2 final-count freeze is now present too and freezes protocol-local
-\(k_{\mathrm{M2,global}}=0\), handing off to the per-galaxy benchmark
-privilege audit. The M2 per-galaxy benchmark-privilege audit and freeze are
-now present too, freezing all eighteen row-specific M2 benchmark privileges at
-zero without benchmark values, parsimony, scores, or a dark-sector verdict.
-The current count-readiness blocker is therefore
-\path{shared_input_count_discount_policy_v10.csv}.
+{n_{\mathrm{anchor}}}\,,
+\qquad
+v_{\mathrm{body}}(R) := v_{\mathrm{anchor}}(R)\,,
+\label{eq:paper11-m0-baryonic-anchor}
+\end{equation}
+and \path{m0_no_dark_family_prediction_row_emission_v08} emits the resulting
+$450$ non-scored $M_0$ rows alongside the frozen morphology-label rule contract
+(\path{m0_label_rule_table_v06}). By contrast, the $M_1$ response-slot and
+admissibility contracts (\path{m1_tau_response_formula_table_v06},
+\path{m1_admissibility_table_v06}), the $M_2$ halo-profile and nuisance-policy
+contracts (\path{m2_benchmark_profile_table_v06},
+\path{m2_nuisance_policy_table_v06}), and the shared scoring-input contract
+(\path{shared_scoring_input_table_v06}) remain closed as pre-scoring
+no-values/no-predictions scaffolds.
 
-The v82 upstream-results impact ledger records two design-level updates. First,
-Paper 10 makes the future Paper 11 score shape-aware: level/amplitude support,
-shape/readout support, row sensitivity, and control resistance must not be
-collapsed into one fitted rescue parameter. Second, the Tau Core theory hub now
-offers a local \(K_{\mathrm{time}}\) carrier/rank-domain closure pattern that
-strengthens the audit discipline for rank-domain scoring objects. Neither
-update activates endpoint scoring. The current scoring-facing artifact is
-\path{shared_input_count_discount_policy_v10.csv}, after the
-coefficient-policy, fixed-scale, fallback-policy, M0 no-dark
-family-prediction row emission, M0 label-rule freeze, present row-writer, formula-free
-executable-kernel, equation-free velocity-formula, coupling-blocked
-equation-body, unit-lift-blocked coupling-rule, and dimension-anchor-blocked
-unit-lift, anchor-source-law-blocked dimension-anchor,
-candidate-basis-blocked anchor-source-law, selection-rule-blocked
-candidate-basis, value-freeze-blocked selection-rule, and
-unit-normalization-blocked value-freeze slots were closed as
-no-values/no-predictions guards, followed by the source-side anchor,
-formula-body freeze, prediction-row value-freeze, family-row emission gates,
-the no-formula/no-values M1 response-slot table contract, and the no-values
-M1 admissibility contract, followed by the no-values/no-predictions M2
-benchmark-profile contract, the M2 nuisance-policy contract, the shared-input
-contract, and the no-final-count/no-parsimony numeric parameter-count v06
-contract, followed by the count-readiness-blocked numeric parameter-count v08
-gate and the v09 count-readiness closure ledger.
+\paragraph{Tracks 5--6: Protocol-local parameter freezes and \texttt{v81--v82} upstream guards.}
+To prevent hidden flexibility in future parsimony comparisons, the
+count-readiness decomposition (\path{numeric_count_readiness_closure_v09.csv})
+audits global slot inventories (\texttt{v10}), countability classifications
+(\texttt{v11}), value ledgers (\texttt{v12}), conditional-slot resolutions
+(\texttt{v13}), and final-count freezes (\texttt{v14--v15}) together with
+$18$-galaxy row-privilege audits (\texttt{v10--v11}) across all three model
+families ($6$ global slots in $M_0$, $6$ response slots in $M_1$, and $12$
+profile/nuisance slots in $M_2$). Under the current no-values scaffold for
+$M_1$ and $M_2$ and the fixed baryonic anchor for $M_0$, protocol-local global
+counts freeze at $k_{\mathrm{M0,global}}=k_{M1,\mathrm{global}}=k_{\mathrm{M2,global}}=0$
+with $0/18$ per-galaxy privileges in every family, advancing the active
+count-readiness blocker to \path{shared_input_count_discount_policy_v10.csv}.
+Finally, the \texttt{v81} theory-side scoring anchor imports the restricted
+local $U_{\mathrm{read}}$ partial-order primitive (It does not activate
+endpoint scoring, fill $M_1/M_2$ predictions, or construct
+$\mathrm{Response}_{\tau}$), and the \texttt{v82} upstream-impact ledger binds
+Paper~10's separation of level/amplitude absorption from shape/control
+resistance together with local $K_{\mathrm{time}}$ rank-domain discipline.
 
 \section{Claim Boundary}
 
@@ -808,19 +357,22 @@ This paper does not claim:
 prove physical time, or supply a galaxy-readout formula;
 \item that the restricted local \(U_{\mathrm{read}}\) scoring anchor proves
 global \(P_{\mathrm{order}}\), physical time, physical readout, or a galaxy
-endpoint verdict.
+endpoint verdict;
 \item that a nonzero galaxy residual, a morphology-matched score, or a
 null/time split reconstructs a parent source arrow, a full body connection, or
 a varying source-owned access projector;
 \item that Paper 10 DESI shape/readout support or Tau Core local
 \(K_{\mathrm{time}}\) rank-domain closure proves a dark-sector decision,
-physical readout, or endpoint score.
+physical readout, or endpoint score;
 \item that the blocked full-4D subfamily supplies a source-derived nonzero
 \(D_O(R)\), activates scoring, or detects non-Einsteinian Tau distortion.
 \end{itemize}
 
+\section{Upstream Theory Synchronization and Benchmark Boundary}
+\label{sec:upstream-sync}
+
 % BEGIN OBSERVER UPDATE 20260914
-\section{Observer realization: inherited results and physical boundary}
+\subsection{Observer realization: inherited results and physical boundary}
 \label{sec:observer-update-20260914}
 The current observer programme distinguishes a conditional mathematical
 construction from an occupied physical measuring system. The source order
@@ -829,7 +381,7 @@ observer--source restriction, shared descriptor, and resolved terminal
 readouts. Neither a detector nor an empirical residual constructs the parent
 body backwards. Dynamics below concern downstream subsystems only.
 
-The canonical observer-origin derivation, Sections 22--26, owns the following
+Technical Paper TD-II (Body-to-Readout Derivation) owns the following
 results. The existing joint source action fixes static and frequency-dependent
 response together. Variation of the BRAC potential couples to the field
 square; a linear field coupling is a distinct comparator unless derived by
@@ -850,8 +402,8 @@ a preparation mechanism, and a covariance or optimal abstract measurement is
 not an implemented stable quantizer $Q_{OS}$.
 
 \paragraph{Ownership and use.}
-The central observer-origin note owns the new contact, state and covariance
-derivations; the body-readout technical companion carries the consolidated
+The central observer-origin note owns the contact, state and covariance
+derivations; Technical Paper TD-II (Body-to-Readout Derivation) carries the consolidated
 mathematics. Foundation Papers IV, V and VI retain physical-selection,
 clock-descent and quantum-readout ownership, respectively. This paper imports
 only the consequences within its scope. No observational dataset, baseline,
@@ -859,50 +411,89 @@ frozen coefficient, score or empirical conclusion is revised by this update.
 The reproducibility supplement records the source hashes and the exact
 conditional/physical distinction.
 
-
 \paragraph{Consequence for this paper.}
 For galactic inference, these observer constructions do not derive a rotation-curve correction or identify a measured residual as a parent effect. Existing endpoint freezes and scores are unchanged.
 % END OBSERVER UPDATE 20260914
 
 % BEGIN LAB UPDATE 20260915
-\section{Finite source-to-readout implementation and its scope}
+\subsection{Finite source-to-readout implementation and its scope}
 The current finite laboratory is a reproducible implementation, not a new Nature-selection theorem. The modular family search ranks source-side finite conditioning, not galaxy residuals. The separate galaxy-training mode retains an explicitly supplied spectral-log terminal completion; previously exposed or training galaxies are not fresh validation systems. Neither improving a training curve nor changing graph size establishes morphology ownership, a dark-sector explanation or a Tau-specific residual. Published endpoint rules and scores are unchanged.
 \paragraph{Ownership and reproducibility.}
-The seed--body companion owns the finite minimum/Hessian example, the body--readout companion its ordered access and contact reduction, and the terminal companion its conditional propagation boundary. The physical-source papers retain the source-selection obligation. Code, declared priors, adverse controls and provenance are available at \url{https://github.com/tau-core-research/tau-core-theory/tree/main/experiments/seed_evolution_lab}. Numerical tests are internal evidence only; no published empirical score is changed.
+The seed--body companion owns the finite minimum/Hessian example, Technical Paper TD-II (Body-to-Readout Derivation) its ordered access and contact reduction, and the terminal companion its conditional propagation boundary. The physical-source papers retain the source-selection obligation. Code, declared priors, adverse controls and provenance are available at \url{https://github.com/tau-core-research/tau-core-theory/tree/main/experiments/seed_evolution_lab}. Numerical tests are internal evidence only; no published empirical score is changed.
 % END LAB UPDATE 20260915
 
 % BEGIN STATE UPDATE 20260918
-\section{Source identification and recovery}
+\subsection{Source identification and recovery}
 The current observer audit separates a conditional forward construction from physical source selection. A frozen body, occupied observer incidence, preparation, complete instrument and stable resolution can determine records without selecting those inputs from Nature. Equal effects do not fix postmeasurement states, and symmetry within a chosen interaction family does not exclude other symmetric couplings. For galactic inference, these observer constructions do not derive a rotation-curve correction or identify a measured residual as a parent effect. Existing endpoint freezes and scores are unchanged.
 
 \paragraph{Dependency and claim ownership.}
-Foundation VI and the body--readout technical companion own the finite instrument/access proof; Foundation IV and TD-0 retain physical source selection; Foundation V, the temporal synthesis and seed--body companion own the gradient/inertial distinction. This paper inherits only the stated specialization. Canonical assumptions, countermodels and calibration audits are in \url{https://github.com/tau-core-research/tau-core-theory/blob/main/docs/tau_rqm_instrument_to_record_bridge_001.md}. No physical seed, Nature occupation or Tau-exclusive observation is established by this update. Existing empirical endpoint definitions and scores are unchanged.
+Foundation VI and Technical Paper TD-II (Body-to-Readout Derivation) own the finite instrument/access proof; Foundation IV and TD-0 retain physical source selection; Foundation V, the temporal synthesis and seed--body companion own the gradient/inertial distinction. This paper inherits only the stated specialization. Canonical assumptions, countermodels and calibration audits are in \url{https://github.com/tau-core-research/tau-core-theory/blob/main/docs/tau_rqm_instrument_to_record_bridge_001.md}. No physical seed, Nature occupation or Tau-exclusive observation is established by this update. Existing empirical endpoint definitions and scores are unchanged.
 % END STATE UPDATE 20260918
 
 % BEGIN PAIR READOUT UPDATE 20260927
-\section{Conditional source preparation and time-resolved access}
-The common-operator scalar--Dirac completion now supports an explicit
-conditional chain from interaction vertices to pair transfer and joint
-readout. Nonzero vertices do not select occupation. Relational coherence
-can be generated from an occupied number-diagonal pair even while both
-local mean fields vanish. In a declared resonant rotating-wave and Markov
-loss model, finite-window emission retains this coherence information,
-whereas an all-time count discards it. This is standard-compatible quantum
-recovery, not a Tau-specific observational residual.
-For galactic inference, these observer constructions do not derive a rotation-curve correction or identify a measured residual as a parent effect. Existing endpoint freezes and scores are unchanged.
-\paragraph{Dependency ownership and limits.}
-The P4 common-source assembly owns the scalar/Yukawa benchmark and finite
-preparation calculations; Foundation VI and the body--readout companion
-inherit the joint-access mathematics. Foundation IV and TD-0 retain
-physical source selection, and Foundation V retains clock descent.
-The parent remains atemporal: the evolution above is a conditional
-downstream 4D model, not parent memory or a derived morphogenetic time.
-Physical initial occupation, a gauge-complete realization, detector
-amplification, absolute calibration and stable observer-relative $Q_{OS}$
-remain unselected. No empirical endpoint or score is changed.
-The canonical derivation and reproducible numerical sources are linked at
-\url{https://github.com/tau-core-research/tau-core-theory/blob/main/docs/tau_core_p4_nonabelian_particle_common_source_assembly_001.md}.
+\paragraph{Imported result (CPR1).}
+\href{https://github.com/tau-core-research/tau-core-higgs-module-paper4/blob/main/paper4_full_derivation/full_derivation.pdf#nameddest=cpr1}{Paper 4, \emph{Full Derivation Ledger for the Branch A Higgs Module}}, section ``Conditional source preparation and time-resolved access, Theorem CPR1(b,c)'' v1.0 (2026-09-28), is the sole proof owner.
+The imported access-specific result is not a galaxy rotation law or an empirical correction. The frozen galactic construction and every endpoint score remain unchanged; this finite quantum model cannot identify a galactic residual as a parent effect.
+Physical preparation, detector/clock calibration and stable $Q_{OS}$ remain assumptions; no Tau-exclusive observation follows.
 % END PAIR READOUT UPDATE 20260927
+
+% BEGIN FOUNDATIONS UPDATE 20260929
+\subsection{Upstream OCSR-H1 galactic rotation, extended-disk interpolation, and three-pillar closures}
+\label{sec:upstream-ocsr-galactic-20260929}
+
+In the upstream theory hub (\texttt{F21--F49} and the 14 November 2026 canonical mathematical unification), analytical closures and empirical benchmark audits have been completed on the $K_4$ branch without modifying the frozen Paper~11 gates:
+\begin{enumerate}[leftmargin=1.8em]
+\item \textbf{Three-pillar canonical unification (\textbf{Theorems U1--U4}, \textbf{F1--F4}, \texttt{COV-DIR}, \texttt{HOMOG-K4}):}
+First, Chung's normalized Laplacian on $K_4$, $\widehat{\Delta}_{K_4}=I_4-D^{-1/2}AD^{-1/2}=\frac{4}{3}P_\perp$, equals the $4\times 4$ Clifford Gram matrix $G_{ij}=\frac{1}{4}\operatorname{Tr}(e_i e_j^\dagger)$ (\textbf{Theorem U1}), making convention \texttt{C2} algebraically identical to \texttt{C1} and fixing $r_{\mathrm{seed}}=1/4$, $\alpha_{\mathrm{OCSR}}=\operatorname{Tr}((I_4-H_b)_+)=5\sqrt{3}/24\approx 0.360843918$ (\texttt{OCSR-H1}, \texttt{OCSR-NOBYPASS-H1}), and $\Omega_b/\Omega_{\mathrm{DM}}=3/16$.
+Second, exact projector idempotency $\Pi^2=\Pi\implies\dot{r}\equiv 0$ eliminates the \texttt{F44-T3} radial drift (\textbf{Theorem U2}), while intensive Bisognano--Wichmann KMS periodicity fixes $\eta_{\mathrm{hor}}=1$ UV-invariantly across $K_4$-homogeneous charts (\texttt{HOMOG-K4}, \textbf{Theorem U4}) and exterior exactness $\mathrm{d}K$ derives $|\kappa_{\mathrm{KH}}(z)|$, yielding the present-day apparent-horizon scale (at Planck 2018 $H_0=67.36\;\mathrm{km\,s^{-1}\,Mpc^{-1}}$)
+\[
+a_0^{\mathrm{OCSR}} = \frac{\alpha_{\mathrm{OCSR}}}{2}\,cH_0 = \frac{5\sqrt{3}}{48}\,cH_0 = 1.1808\times 10^{-10}\;\mathrm{m/s^2},
+\]
+and the properly normalized redshift evolution (\texttt{CHH-H1}, \texttt{CHH-DIR1})
+\[
+\frac{a_0^{\mathrm{KH}}(z)}{a_0^{\mathrm{KH}}(0)}
+= \frac{H(z)}{H_0}\,\left|1-\frac{3}{4}\Omega_m(z)\right|\left|1-\frac{3}{4}\Omega_{m,0}\right|^{-1}
+\qquad \left(\frac{a_0^{\mathrm{KH}}(0)}{a_0^{\mathrm{KH}}(0)}=1\right).
+\]
+Third, Acz\'el--Cauchy functional uniqueness and the Frullani integral identity lock the single closed-form 4D dilogarithmic continuum action $W_{\mathrm{COCA}}(s)$ with $k=0$ free parameters (\textbf{Theorem U3}), while emergent spin-$1/2$ tetrad Dirac kinematics (\textbf{Theorems F1--F4}, \texttt{COV-DIR}) close the fermionic sector. Upstream status preserves \texttt{NATURE\_LEVEL\_CLOSURE = false} honestly due to the single ontic postulate \texttt{POST-OCC-NU1} (\texttt{EAS-SNPR-N1}) and group-scale baryonic AGN feedback.
+
+\item \textbf{Reconciling extended-disk algebraic $F_{\mathrm{OD}}(y)$ versus COCA logarithmic $F_{\mathrm{OD,COCA}}(x)$:}
+Two distinct dimensionless outer-domain expressions appear across the upstream notes and must not be conflated. At the local 4D continuum action level (\textbf{Theorem U3}), differentiating the closed-form dilogarithmic density $W_{\mathrm{COCA}}(s)$ with respect to the inverse acceleration ratio $x := a_0^{\mathrm{OCSR}}/g_N$ yields the logarithmic susceptibility/potential enhancement
+\[
+F_{\mathrm{OD,COCA}}(x) = 1 + \alpha_{\mathrm{OCSR}}\ln(1+x), \qquad x = \frac{a_0^{\mathrm{OCSR}}}{g_N} = y^{-1}.
+\]
+Conversely, in the 3D cylindrical extended-disk rotation-curve benchmark (\texttt{F24--F28}), convolving the screened Yukawa kernel $G_{\mathrm{Yukawa}}(\mathbf{x}-\mathbf{x}')$ with distributed screening scale $\ell_{\tau,\mathrm{local}}(R')=\sqrt{GM_{\mathrm{enc}}(R')/a_0^{\mathrm{OCSR}}}$ ($\lambda_{\mathrm{screen}}=0.471576\,\ell_\tau$) over finite exponential stellar plus H\,\textsc{i} disks is parameterized in terms of the forward Newtonian ratio $y := g_N/a_0^{\mathrm{OCSR}}$ by the zero-parameter algebraic radial-force interpolation
+\[
+F_{\mathrm{OD}}(y) = 1 + \left[1 + \left(\frac{y}{\alpha_{\mathrm{OCSR}}^2}\right)^{\alpha_{\mathrm{OCSR}}}\right]^{-1/(2\alpha_{\mathrm{OCSR}})}, \qquad y = \frac{g_N}{a_0^{\mathrm{OCSR}}},
+\]
+which satisfies $g_{\mathrm{eff}}(R)=g_N(R)F_{\mathrm{OD}}(y)\to g_N(R)$ in the high-acceleration core ($y\gg 1$, where quadratic screening yields $|\gamma_{\mathrm{PPN}}-1|_{\mathrm{Cassini}}=6.37\times 10^{-11}$, Double Pulsar $|\Delta\dot{\omega}/\dot{\omega}_{\mathrm{GR}}|_{\mathrm{J0737}}=9.98\times 10^{-11}$, preferred-frame $|\alpha_1|=1.27\times 10^{-10}$, $|\alpha_2|=6.37\times 10^{-11}$, and Saturn $|\Delta\dot{\varpi}_{\hbar}|=6.60\times 10^{-17}\,{}^{\prime\prime}/\mathrm{cy}$, \texttt{F21--F23, F34--F37}) and reproduces the asymptotic flat-rotation scaling $g_{\mathrm{eff}}\to\sqrt{g_N a_0^{\mathrm{OCSR}}}$ ($F_{\mathrm{OD}}(y)\sim \alpha_{\mathrm{OCSR}}\,y^{-1/2}/\alpha_{\mathrm{OCSR}}=y^{-1/2}$) for $y\ll \alpha_{\mathrm{OCSR}}^2$.
+
+\item \textbf{171-galaxy SPARC parity and high-$z$ JWST+ALMA self-critical audit (\texttt{F24--F49}):}
+Across all $171$ SPARC galaxies ($3{,}373$ points; shared $\Upsilon_{\mathrm{disk}}=0.5$, $\Upsilon_{\mathrm{bul}}=0.7\,M_\odot/L_\odot$, $k_{\mathrm{gal}}=0$), the upstream benchmark achieves per-galaxy median $\mathrm{RMSE}=12.67\;\mathrm{km/s}$ at Planck $H_0=67.36$ ($12.48\;\mathrm{km/s}$ at $H_{0,\mathrm{CC}}=68.30$) versus $41.09\;\mathrm{km/s}$ for Newtonian baryons and $13.74\;\mathrm{km/s}$ for SPARC-calibrated MOND/RAR ($98/171$ wins, paired median difference $-0.54\;\mathrm{km/s}$, sign-test $p=0.066$, Wilcoxon $p=0.236$; outer-halo $R>\ell_\tau$ median $11.78$ vs.\ $12.07\;\mathrm{km/s}$; unweighted point-pooled RMS $23.20$ vs.\ $22.89\;\mathrm{km/s}$). While linearized rank-3 Woodbury error propagation gives $109/171$ Gaussian wins ($p_{2\mathrm{s}}=4.04\times 10^{-4}$), exact nonlinear 2D quadrature over $(\eta_\Upsilon,\eta_s)$ across Gaussian, Student-$t_4$, and catalog uncertainties yields $97\text{--}106/171$ wins with non-significant Wilcoxon $p\in[0.115,0.377]$, confirming competitive zero-parameter galactic parity without fitting $a_0$. In the Milky Way thin disk, 2026 \texttt{C3PO} 3D RV wide binaries ($\gamma_g=1.02^{+0.09}_{-0.08}$) match EFE screening ($1.097$) while leaving open the pre-registered \texttt{DF5} Gaia DR4 outer-halo test ($\gamma_g\in[1.59,1.81]$). Across $66$ high-$z$ JWST+ALMA galaxies ($z=0.79\text{--}14.18$, \texttt{F36, F39}), $a_0^{\mathrm{KH}}(z)$ ($z_{\mathrm{dip}}=0.6316$) improves over static $a_0(0)$ ($\Delta\chi^2=-15.80$) and lowers \texttt{ZF-UDS-7329}'s implied baryon conversion efficiency from $\epsilon_*^{\Lambda\mathrm{CDM}}=2.80$ to $\epsilon_*^{\mathrm{Tau}}=0.66<1$, whereas on the $14$ compact $z=4.23\text{--}7.31$ cold \texttt{[C II]} starbursts ($a_N/a_0\simeq 6.9$, \texttt{F43}), pure Newtonian baryons already reach $87.54\;\mathrm{km/s}$ at $\alpha_{\mathrm{[C\,II]}}=30$, leaving \texttt{Tau KH} ($91.92\;\mathrm{km/s}$) and \texttt{Static RAR} ($88.46\;\mathrm{km/s}$) statistically indistinguishable ($p=0.2910$) while rejecting kinematic Tolman scaling ($117.17\;\mathrm{km/s}$, $p=0.0195$).
+\end{enumerate}
+
+\paragraph{Boundary for Paper 11.}
+Figures~\ref{fig:paper11-upstream-sparc} and~\ref{fig:paper11-upstream-highz} illustrate the upstream 171-galaxy SPARC benchmark and high-$z$ JWST+ALMA audit (\texttt{F24--F49}). These upstream results do not alter the frozen Paper~11 protocol: this update changes no activation row, family score, or decision status, does not activate endpoint scoring, and leaves \path{shared_input_count_discount_policy_v10.csv} and \texttt{NATURE\_LEVEL\_CLOSURE = false} unchanged.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/fig_sparc_rotcurves_and_rar.png}
+\caption{Upstream zero-parameter galactic rotation-curve benchmark across the 171-galaxy SPARC sample (\texttt{F24--F28, F37}; shared $\Upsilon_{\mathrm{disk}}=0.5$, $\Upsilon_{\mathrm{bul}}=0.7\,M_\odot/L_\odot$, $k_{\mathrm{gal}}=0$). \textbf{(a--d)} Representative rotation curves (\texttt{DDO 154}, \texttt{NGC 2403}, \texttt{NGC 3198}, \texttt{UGC 02885}) comparing SPARC data $\pm\sigma_V$, Newtonian baryons, screened disk Yukawa (\texttt{F24}), MOND/RAR ($a_{0,\mathrm{emp}}=1.20\times 10^{-10}\;\mathrm{m/s^2}$), and Planck-anchored Tau \texttt{OCSR-H1} ($a_0^{\mathrm{OCSR}}=1.1808\times 10^{-10}\;\mathrm{m/s^2}$). \textbf{(e)} 3,373-point RAR. \textbf{(f)} 171-galaxy RMSE CDF (medians: Tau $12.67\;\mathrm{km/s}$ vs.\ MOND/RAR $13.74\;\mathrm{km/s}$, paired sign-test $p=0.066$, competitive galactic parity without fitting $a_0$).}
+\label{fig:paper11-upstream-sparc}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/fig_highz_jwst_a0z_and_cii_audit.png}
+\caption{Upstream high-redshift $a_0(z)$ evolution, JWST ultra-massive galaxy baryon efficiency, and self-critical $z>4$ \texttt{[C II]} audit (\texttt{F36, F39, F43}). \textbf{(a)} Normalized Kodama--Hayward $a_0^{\mathrm{KH}}(z)/a_0^{\mathrm{KH}}(0)$ ($z_{\mathrm{dip}}=0.6316$, 43-disk $\mathrm{AIC}=149.6$ vs.\ static RAR $194.1$ and kinematic Tolman $284.8$). \textbf{(b)} Required $\epsilon_*$ on \emph{Nature} 2024 JWST ultra-massive galaxies (\texttt{ZF-UDS-7329}: $2.80\to 0.66$). \textbf{(c)} 14-galaxy $z=4.23\text{--}7.31$ cold \texttt{[C II]} starbursts ($a_N/a_0\simeq 6.9$): Newtonian baryons achieve $87.54\;\mathrm{km/s}$ at $\alpha_{\mathrm{[C\,II]}}=30$, leaving \texttt{Tau KH} ($91.92$) and \texttt{Static RAR} ($88.46$) statistically tied ($p=0.2910$) while rejecting \texttt{Tau Kin} ($117.17$, $p=0.0195$).}
+\label{fig:paper11-upstream-highz}
+\end{figure}
+% END FOUNDATIONS UPDATE 20260929
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have established a source-frozen, leakage-audited decision protocol for testing whether the declared galaxy-rotation endpoint class requires a dark-sector response layer beyond no-dark Tau morphology/readout ($M_0$), comparing $M_0$ against a Tau base-substrate response family ($M_1$) and a standard dark-sector benchmark ($M_2$). Through canonical revision \texttt{v82}, the protocol verifies SPARC provenance and imports $450$ radial velocity rows across $18$ galaxies, certifies all $72$ prescore four-component leakage checks, emits the non-scored $M_0$ baryonic anchor predictions $v_{\mathrm{body}}(R):=v_{\mathrm{anchor}}(R)$, freezes protocol-local global and per-galaxy privilege counts at zero under the current scaffolds, and enforces level-versus-shape and rank-domain guardrails imported from Paper~10 and the theory hub. Endpoint scoring remains deliberately unactivated pending completion of \path{shared_input_count_discount_policy_v10.csv}, concrete $M_1$ and $M_2$ prediction tables, executable control suites, and pre-registered numerical decision thresholds.
 
 \bibliographystyle{plain}
 \bibliography{refs}
